@@ -2,13 +2,16 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type UserProfile = Database['public']['Tables']['users']['Row'];
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   userRole: string | null;
-  userProfile: any | null;
+  userProfile: UserProfile | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,7 +39,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<any | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -44,11 +47,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         setUserProfile(data);
         setUserRole(data.role);
+      } else if (error) {
+        console.error('Error fetching user profile:', error);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -59,6 +64,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -66,7 +72,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Defer profile fetch to avoid deadlock
           setTimeout(() => {
             fetchUserProfile(session.user.id);
-          }, 0);
+          }, 100);
         } else {
           setUserProfile(null);
           setUserRole(null);
@@ -78,13 +84,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         setTimeout(() => {
           fetchUserProfile(session.user.id);
-        }, 0);
+        }, 100);
       }
       
       setLoading(false);
