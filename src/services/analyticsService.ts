@@ -31,37 +31,58 @@ export interface DailyActivity {
   earnings: number;
 }
 
+// Simple interfaces to break type inference
+interface ServiceRow {
+  id: string;
+  title: string;
+  price_usdc: number | null;
+}
+
+interface BookingRow {
+  id: string;
+  service_id: string;
+  status: string;
+  usdc_amount: number | null;
+  created_at: string;
+}
+
+interface ReviewRow {
+  rating: number;
+}
+
 export const fetchAnalyticsMetrics = async (userId: string): Promise<AnalyticsMetrics> => {
-  const { data: services } = await supabase
+  // Fetch services with explicit typing
+  const servicesResponse = await supabase
     .from('services')
     .select('id, title, price_usdc')
     .eq('creator_id', userId);
 
-  const serviceIds = services?.map(s => s.id) || [];
+  const services = (servicesResponse.data || []) as ServiceRow[];
+  const serviceIds = services.map(s => s.id);
 
-  let bookings: any[] = [];
+  let bookings: BookingRow[] = [];
   if (serviceIds.length > 0) {
-    const { data } = await supabase
+    const bookingsResponse = await supabase
       .from('bookings')
       .select('id, service_id, status, usdc_amount, created_at')
       .in('service_id', serviceIds);
-    bookings = data || [];
+    bookings = (bookingsResponse.data || []) as BookingRow[];
   }
 
-  let reviews: any[] = [];
+  let reviews: ReviewRow[] = [];
   if (serviceIds.length > 0) {
-    const { data } = await supabase
+    const reviewsResponse = await supabase
       .from('reviews')
       .select('rating')
       .in('service_id', serviceIds);
-    reviews = data || [];
+    reviews = (reviewsResponse.data || []) as ReviewRow[];
   }
 
   const completedBookings = bookings.filter(b => b.status === 'completed');
   const totalEarnings = completedBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
   const totalBookings = bookings.length;
   const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-  const activeServices = services?.length || 0;
+  const activeServices = services.length;
   const completionRate = totalBookings > 0 ? (completedBookings.length / totalBookings) * 100 : 0;
 
   return {
@@ -74,22 +95,23 @@ export const fetchAnalyticsMetrics = async (userId: string): Promise<AnalyticsMe
 };
 
 export const fetchMonthlyEarnings = async (userId: string): Promise<MonthlyEarning[]> => {
-  const { data: services } = await supabase
+  const servicesResponse = await supabase
     .from('services')
     .select('id')
     .eq('creator_id', userId);
 
-  const serviceIds = services?.map(s => s.id) || [];
+  const services = (servicesResponse.data || []) as { id: string }[];
+  const serviceIds = services.map(s => s.id);
 
   if (serviceIds.length === 0) return [];
 
-  const { data: bookings } = await supabase
+  const bookingsResponse = await supabase
     .from('bookings')
     .select('usdc_amount, created_at, status')
     .in('service_id', serviceIds)
     .eq('status', 'completed');
 
-  const completedBookings = bookings || [];
+  const completedBookings = (bookingsResponse.data || []) as BookingRow[];
 
   const monthlyEarnings = [];
   for (let i = 5; i >= 0; i--) {
@@ -114,24 +136,26 @@ export const fetchMonthlyEarnings = async (userId: string): Promise<MonthlyEarni
 };
 
 export const fetchServicePopularity = async (userId: string): Promise<ServicePopularity[]> => {
-  const { data: services } = await supabase
+  const servicesResponse = await supabase
     .from('services')
     .select('id, title')
     .eq('creator_id', userId);
 
-  if (!services) return [];
+  const services = (servicesResponse.data || []) as ServiceRow[];
+
+  if (!services.length) return [];
 
   const serviceIds = services.map(s => s.id);
   
-  if (serviceIds.length === 0) return [];
-
-  const { data: bookings } = await supabase
+  const bookingsResponse = await supabase
     .from('bookings')
     .select('service_id')
     .in('service_id', serviceIds);
 
+  const bookings = (bookingsResponse.data || []) as { service_id: string }[];
+
   return services.map(service => {
-    const serviceBookings = bookings?.filter(b => b.service_id === service.id).length || 0;
+    const serviceBookings = bookings.filter(b => b.service_id === service.id).length;
     return {
       service: service.title.length > 20 ? service.title.substring(0, 20) + '...' : service.title,
       bookings: serviceBookings
@@ -140,12 +164,13 @@ export const fetchServicePopularity = async (userId: string): Promise<ServicePop
 };
 
 export const fetchRatingDistribution = async (userId: string): Promise<RatingDistribution[]> => {
-  const { data: services } = await supabase
+  const servicesResponse = await supabase
     .from('services')
     .select('id')
     .eq('creator_id', userId);
 
-  const serviceIds = services?.map(s => s.id) || [];
+  const services = (servicesResponse.data || []) as { id: string }[];
+  const serviceIds = services.map(s => s.id);
 
   if (serviceIds.length === 0) {
     return [
@@ -157,14 +182,16 @@ export const fetchRatingDistribution = async (userId: string): Promise<RatingDis
     ];
   }
 
-  const { data: reviews } = await supabase
+  const reviewsResponse = await supabase
     .from('reviews')
     .select('rating')
     .in('service_id', serviceIds);
 
+  const reviews = (reviewsResponse.data || []) as ReviewRow[];
+
   const ratingCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   
-  reviews?.forEach(review => {
+  reviews.forEach(review => {
     const rating = Math.floor(review.rating);
     if (rating >= 1 && rating <= 5) {
       ratingCounts[rating]++;
@@ -178,12 +205,13 @@ export const fetchRatingDistribution = async (userId: string): Promise<RatingDis
 };
 
 export const fetchDailyActivity = async (userId: string): Promise<DailyActivity[]> => {
-  const { data: services } = await supabase
+  const servicesResponse = await supabase
     .from('services')
     .select('id')
     .eq('creator_id', userId);
 
-  const serviceIds = services?.map(s => s.id) || [];
+  const services = (servicesResponse.data || []) as { id: string }[];
+  const serviceIds = services.map(s => s.id);
 
   if (serviceIds.length === 0) {
     return Array.from({ length: 30 }, (_, i) => ({
@@ -193,18 +221,20 @@ export const fetchDailyActivity = async (userId: string): Promise<DailyActivity[
     }));
   }
 
-  const { data: bookings } = await supabase
+  const bookingsResponse = await supabase
     .from('bookings')
     .select('created_at, status, usdc_amount')
     .in('service_id', serviceIds);
 
+  const bookings = (bookingsResponse.data || []) as BookingRow[];
+
   const recentActivity = [];
   for (let i = 29; i >= 0; i--) {
     const date = subDays(new Date(), i);
-    const dayBookings = bookings?.filter(b => {
+    const dayBookings = bookings.filter(b => {
       const bookingDate = new Date(b.created_at);
       return format(bookingDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-    }) || [];
+    });
     
     const dayEarnings = dayBookings
       .filter(b => b.status === 'completed')
