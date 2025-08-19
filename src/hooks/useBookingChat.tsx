@@ -13,7 +13,12 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!bookingId || !userId) return;
+    if (!bookingId || !userId) {
+      console.log('useBookingChat: Missing bookingId or userId');
+      return;
+    }
+
+    console.log('useBookingChat: Setting up subscription for booking:', bookingId, 'user:', userId);
 
     const channel = supabase
       .channel(`booking-chat-${bookingId}`)
@@ -26,7 +31,7 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
           filter: `booking_id=eq.${bookingId}`
         },
         (payload) => {
-          console.log('New message received:', payload);
+          console.log('useBookingChat: New message received:', payload);
           // Invalidate the messages query to fetch new data
           queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
         }
@@ -40,7 +45,7 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
           filter: `id=eq.${bookingId}`
         },
         (payload) => {
-          console.log('Booking updated:', payload);
+          console.log('useBookingChat: Booking updated:', payload);
           // Invalidate booking queries when status changes
           queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
           queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
@@ -48,16 +53,18 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
         }
       )
       .subscribe((status) => {
+        console.log('useBookingChat: Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
-          console.log('Connected to booking chat:', bookingId);
+          console.log('useBookingChat: Connected to booking chat:', bookingId);
         } else if (status === 'CLOSED') {
           setIsConnected(false);
-          console.log('Disconnected from booking chat:', bookingId);
+          console.log('useBookingChat: Disconnected from booking chat:', bookingId);
         }
       });
 
     return () => {
+      console.log('useBookingChat: Cleaning up subscription');
       supabase.removeChannel(channel);
       setIsConnected(false);
     };

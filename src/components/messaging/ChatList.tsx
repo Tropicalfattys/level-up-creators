@@ -21,6 +21,8 @@ export const ChatList = ({ userRole }: ChatListProps) => {
     queryFn: async () => {
       if (!user?.id) return [];
 
+      console.log('Fetching chats for user:', user.id, 'role:', userRole);
+
       let query = supabase
         .from('bookings')
         .select(`
@@ -28,30 +30,63 @@ export const ChatList = ({ userRole }: ChatListProps) => {
           status,
           created_at,
           usdc_amount,
+          client_id,
+          creator_id,
           client:users!bookings_client_id_fkey (id, handle, avatar_url),
           creator:users!bookings_creator_id_fkey (id, handle, avatar_url),
           services (title),
-          latest_message:messages!messages_booking_id_fkey (
+          latest_message:messages (
             body,
             created_at,
             from_user:users!messages_from_user_id_fkey (handle)
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1, { foreignTable: 'latest_message' });
 
       // Filter based on user role and participation
       if (userRole === 'admin') {
-        // Admin can see all bookings with messages
-        query = query.not('latest_message', 'is', null);
+        // Admin can see all bookings that have messages
+        // We'll filter for bookings that have at least one message
       } else {
         // Regular users see only their bookings
         query = query.or(`client_id.eq.${user.id},creator_id.eq.${user.id}`);
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching chats:', error);
+        throw error;
+      }
 
-      return data?.filter(booking => booking.latest_message && booking.latest_message.length > 0) || [];
+      console.log('Raw chat data:', data);
+
+      // Filter out bookings without messages and get the latest message for each
+      const chatsWithMessages = [];
+      
+      for (const booking of data || []) {
+        // Get the latest message for this booking
+        const { data: messages, error: messageError } = await supabase
+          .from('messages')
+          .select(`
+            body,
+            created_at,
+            from_user:users!messages_from_user_id_fkey (handle)
+          `)
+          .eq('booking_id', booking.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!messageError && messages && messages.length > 0) {
+          chatsWithMessages.push({
+            ...booking,
+            latest_message: messages
+          });
+        }
+      }
+
+      console.log('Processed chats with messages:', chatsWithMessages);
+      return chatsWithMessages;
     },
     enabled: !!user?.id
   });
@@ -97,7 +132,7 @@ export const ChatList = ({ userRole }: ChatListProps) => {
       <CardContent className="space-y-2">
         {chats.map((chat) => {
           const latestMessage = chat.latest_message?.[0];
-          const isClient = user?.id === chat.client?.id;
+          const isClient = user?.id === chat.client_id;
           const otherUser = isClient ? chat.creator : chat.client;
           
           return (

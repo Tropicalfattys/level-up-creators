@@ -60,6 +60,7 @@ export const ChatInterface = ({
   const { data: messages, isLoading } = useQuery({
     queryKey: ['booking-messages', bookingId],
     queryFn: async (): Promise<Message[]> => {
+      console.log('Fetching messages for booking:', bookingId);
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -69,15 +70,19 @@ export const ChatInterface = ({
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
       return data || [];
-    },
-    refetchInterval: 3000 // Poll for new messages
+    }
   });
 
   const sendMessage = useMutation({
     mutationFn: async ({ messageBody, attachments }: { messageBody: string; attachments?: any }) => {
       if (!user || (!messageBody.trim() && !attachments)) return;
+
+      console.log('Sending message:', { messageBody, attachments, bookingId });
 
       // Determine recipient based on sender
       let toUserId = otherUserId;
@@ -101,14 +106,18 @@ export const ChatInterface = ({
         .from('messages')
         .insert([messageData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       setMessage('');
       setPendingAttachments([]);
       queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Failed to send message:', error);
       toast.error('Failed to send message');
     }
   });
@@ -133,6 +142,7 @@ export const ChatInterface = ({
 
   // Set up real-time subscription
   useEffect(() => {
+    console.log('Setting up real-time subscription for booking:', bookingId);
     const channel = supabase
       .channel(`booking-messages-${bookingId}`)
       .on(
@@ -143,13 +153,17 @@ export const ChatInterface = ({
           table: 'messages',
           filter: `booking_id=eq.${bookingId}`
         },
-        () => {
+        (payload) => {
+          console.log('New message received via realtime:', payload);
           queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [bookingId, queryClient]);
