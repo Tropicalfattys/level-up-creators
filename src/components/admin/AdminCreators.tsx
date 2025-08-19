@@ -1,29 +1,369 @@
 
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Shield, Users, Search, CheckCircle, XCircle, Clock, Star, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const AdminCreators = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+  const [adminNote, setAdminNote] = useState('');
+  const queryClient = useQueryClient();
+
+  const { data: creators, isLoading } = useQuery({
+    queryKey: ['admin-creators'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('creators')
+        .select(`
+          *,
+          users!creators_user_id_fkey (
+            id,
+            handle,
+            email,
+            avatar_url,
+            created_at
+          ),
+          services (
+            id,
+            title,
+            active
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: adminNotes } = useQuery({
+    queryKey: ['admin-notes', selectedCreator?.id],
+    queryFn: async () => {
+      if (!selectedCreator?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('admin_notes')
+        .select(`
+          *,
+          admin:admin_id (handle)
+        `)
+        .eq('user_id', selectedCreator.user_id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCreator?.id
+  });
+
+  const approveCreator = useMutation({
+    mutationFn: async (creatorId: string) => {
+      const { error } = await supabase
+        .from('creators')
+        .update({ 
+          approved: true, 
+          approved_at: new Date().toISOString() 
+        })
+        .eq('id', creatorId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+      toast.success('Creator approved successfully');
+    },
+    onError: () => {
+      toast.error('Failed to approve creator');
+    }
+  });
+
+  const rejectCreator = useMutation({
+    mutationFn: async (creatorId: string) => {
+      const { error } = await supabase
+        .from('creators')
+        .update({ approved: false })
+        .eq('id', creatorId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+      toast.success('Creator rejected');
+    },
+    onError: () => {
+      toast.error('Failed to reject creator');
+    }
+  });
+
+  const addAdminNote = useMutation({
+    mutationFn: async ({ userId, note }: { userId: string; note: string }) => {
+      const { error } = await supabase
+        .from('admin_notes')
+        .insert({
+          user_id: userId,
+          admin_id: (await supabase.auth.getUser()).data.user?.id,
+          note
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-notes'] });
+      setAdminNote('');
+      toast.success('Admin note added');
+    },
+    onError: () => {
+      toast.error('Failed to add admin note');
+    }
+  });
+
+  const filteredCreators = creators?.filter(creator => {
+    const user = creator.users;
+    const matchesSearch = !searchTerm || 
+      user?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      creator.headline?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'approved' && creator.approved) ||
+      (statusFilter === 'pending' && !creator.approved);
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (approved: boolean) => {
+    return approved ? 'default' : 'secondary';
+  };
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'pro': return 'destructive';
+      case 'mid': return 'default';
+      default: return 'outline';
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading creators...</div>;
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Creator Management
-        </CardTitle>
-        <CardDescription>
-          Approve, reject, and manage creator applications
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">Creator System Ready</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            The creator management system is set up and ready. 
-            Creator applications will appear here once users start applying to become creators.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Creator Management
+          </CardTitle>
+          <CardDescription>
+            Approve, reject, and manage creator applications
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search creators..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Creators List */}
+          <div className="space-y-4">
+            {filteredCreators?.map((creator) => (
+              <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                    {creator.users?.avatar_url ? (
+                      <img 
+                        src={creator.users.avatar_url} 
+                        alt={creator.users.handle} 
+                        className="w-12 h-12 rounded-full"
+                      />
+                    ) : (
+                      <span className="font-medium">
+                        {creator.users?.handle?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">{creator.users?.handle || 'No username'}</p>
+                    <p className="text-sm text-muted-foreground">{creator.users?.email}</p>
+                    {creator.headline && (
+                      <p className="text-sm text-muted-foreground mt-1">{creator.headline}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Applied {new Date(creator.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={getTierColor(creator.tier)}>
+                    {creator.tier}
+                  </Badge>
+                  <Badge variant={getStatusColor(creator.approved)}>
+                    {creator.approved ? (
+                      <>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Approved
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-3 w-3 mr-1" />
+                        Pending
+                      </>
+                    )}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {creator.services?.length || 0} services
+                  </span>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedCreator(creator)}
+                      >
+                        View Details
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Creator Details: {creator.users?.handle}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-medium mb-2">Basic Info</h4>
+                            <div className="space-y-2 text-sm">
+                              <p><strong>Email:</strong> {creator.users?.email}</p>
+                              <p><strong>Tier:</strong> {creator.tier}</p>
+                              <p><strong>Priority Score:</strong> {creator.priority_score}</p>
+                              <p><strong>Services:</strong> {creator.services?.length || 0}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="font-medium mb-2">Status</h4>
+                            <div className="space-y-2 text-sm">
+                              <p><strong>Approved:</strong> {creator.approved ? 'Yes' : 'No'}</p>
+                              {creator.approved_at && (
+                                <p><strong>Approved At:</strong> {new Date(creator.approved_at).toLocaleString()}</p>
+                              )}
+                              <p><strong>Applied:</strong> {new Date(creator.created_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {creator.intro_video_url && (
+                          <div>
+                            <h4 className="font-medium mb-2">Intro Video</h4>
+                            <a 
+                              href={creator.intro_video_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              View Intro Video <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="font-medium mb-2">Admin Notes</h4>
+                          <div className="space-y-2 mb-3">
+                            {adminNotes?.map((note) => (
+                              <div key={note.id} className="p-2 bg-muted rounded text-sm">
+                                <p>{note.note}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  By {note.admin?.handle} on {new Date(note.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                            ))}
+                            {(!adminNotes || adminNotes.length === 0) && (
+                              <p className="text-sm text-muted-foreground">No admin notes yet</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Textarea
+                              placeholder="Add admin note..."
+                              value={adminNote}
+                              onChange={(e) => setAdminNote(e.target.value)}
+                              className="flex-1"
+                              rows={2}
+                            />
+                            <Button 
+                              onClick={() => addAdminNote.mutate({ 
+                                userId: creator.user_id, 
+                                note: adminNote 
+                              })}
+                              disabled={!adminNote.trim()}
+                              size="sm"
+                            >
+                              Add Note
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-4">
+                          {!creator.approved ? (
+                            <Button 
+                              onClick={() => approveCreator.mutate(creator.id)}
+                              className="flex-1"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve Creator
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="destructive"
+                              onClick={() => rejectCreator.mutate(creator.id)}
+                              className="flex-1"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Revoke Approval
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+            ))}
+            {(!filteredCreators || filteredCreators.length === 0) && (
+              <div className="text-center py-8 text-muted-foreground">
+                No creators found
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
