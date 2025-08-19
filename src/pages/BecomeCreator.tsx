@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Crown, Star, Zap, Upload } from 'lucide-react';
+import { Check, Crown, Star, Zap, Upload, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CreatorPayment } from '@/components/creator/CreatorPayment';
@@ -112,14 +111,15 @@ export default function BecomeCreator() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <RefreshCw className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading subscription plans...</p>
         </div>
       </div>
     );
   }
 
-  if (tiersError || !dynamicTiers) {
+  if (tiersError) {
+    console.error('Error loading pricing tiers:', tiersError);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -128,6 +128,24 @@ export default function BecomeCreator() {
             Unable to load subscription plans. Please try again later.
           </p>
           <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dynamicTiers || Object.keys(dynamicTiers).length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-yellow-600">No Plans Available</h1>
+          <p className="text-muted-foreground mb-6">
+            No subscription plans are currently available. Please contact support.
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
         </div>
@@ -323,7 +341,7 @@ export default function BecomeCreator() {
           isOpen={showPayment}
           onClose={() => setShowPayment(false)}
           onPaymentSuccess={handlePaymentSuccess}
-          tier={selectedTier as 'basic' | 'mid' | 'pro'} // Updated type casting
+          tier={selectedTier as 'basic' | 'mid' | 'pro'}
         />
       )}
     </>

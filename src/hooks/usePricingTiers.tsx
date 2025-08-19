@@ -56,21 +56,11 @@ export const usePricingTiers = () => {
       });
       
       console.log('usePricingTiers: Converted data:', convertedData);
-      
-      // Ensure we have all expected tiers
-      const expectedTiers = ['basic', 'mid', 'pro'];
-      const foundTiers = convertedData.map(t => t.tier_name);
-      const missingTiers = expectedTiers.filter(t => !foundTiers.includes(t));
-      
-      if (missingTiers.length > 0) {
-        console.warn('usePricingTiers: Missing expected tiers:', missingTiers);
-      }
-      
       return convertedData;
     },
-    staleTime: 1 * 60 * 1000, // 1 minute
-    refetchOnWindowFocus: true, 
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Reduce unnecessary refetches
+    refetchInterval: false, // Don't auto-refetch unless needed
   });
 };
 
@@ -83,6 +73,7 @@ export const useDynamicCreatorTiers = () => {
   const creatorTiers = pricingTiers?.reduce((acc, tier) => {
     const tierName = tier.tier_name as 'basic' | 'mid' | 'pro';
     
+    // Only process the expected tier names
     if (['basic', 'mid', 'pro'].includes(tierName)) {
       acc[tierName] = {
         price: tier.price_usdc,
@@ -91,7 +82,7 @@ export const useDynamicCreatorTiers = () => {
       };
       console.log(`useDynamicCreatorTiers: Added tier ${tierName}:`, acc[tierName]);
     } else {
-      console.warn(`useDynamicCreatorTiers: Unknown tier_name: ${tier.tier_name}`);
+      console.warn(`useDynamicCreatorTiers: Unexpected tier_name found: ${tier.tier_name} - skipping`);
     }
     
     return acc;
@@ -102,10 +93,13 @@ export const useDynamicCreatorTiers = () => {
   // Validate that we have all expected tiers
   if (creatorTiers) {
     const expectedTiers: ('basic' | 'mid' | 'pro')[] = ['basic', 'mid', 'pro'];
-    const missingTiers = expectedTiers.filter(tier => !creatorTiers[tier]);
+    const foundTiers = Object.keys(creatorTiers) as ('basic' | 'mid' | 'pro')[];
+    const missingTiers = expectedTiers.filter(tier => !foundTiers.includes(tier));
     
     if (missingTiers.length > 0) {
-      console.error('useDynamicCreatorTiers: Missing tiers in final object:', missingTiers);
+      console.error('useDynamicCreatorTiers: Missing expected tiers:', missingTiers);
+    } else {
+      console.log('useDynamicCreatorTiers: ✅ All expected tiers found successfully!');
     }
   }
 
