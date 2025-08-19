@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Crown, Star, Zap, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { WalletConnect } from '@/components/payments/WalletConnect';
 
 export default function BecomeCreator() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -20,8 +20,6 @@ export default function BecomeCreator() {
   const [applicationData, setApplicationData] = useState({
     headline: '',
     category: '',
-    payoutAddressEth: '',
-    payoutAddressSol: '',
     introVideo: null as File | null
   });
 
@@ -34,6 +32,7 @@ export default function BecomeCreator() {
       id: 'basic',
       name: 'Starter',
       price: 'Free',
+      priceAmount: 0,
       description: 'Get started with basic features',
       features: [
         'Create up to 3 services',
@@ -48,6 +47,7 @@ export default function BecomeCreator() {
       id: 'mid',
       name: 'Plus',
       price: '$25 USDC',
+      priceAmount: 25,
       description: 'Enhanced features for growing creators',
       features: [
         'Unlimited services',
@@ -63,6 +63,7 @@ export default function BecomeCreator() {
       id: 'pro',
       name: 'Pro',
       price: '$50 USDC',
+      priceAmount: 50,
       description: 'Premium features for top creators',
       features: [
         'Everything in Plus',
@@ -86,8 +87,6 @@ export default function BecomeCreator() {
         headline: data.headline,
         category: data.category,
         tier: selectedTier,
-        payout_address_eth: data.payoutAddressEth,
-        payout_address_sol: data.payoutAddressSol,
         approved: false
       };
 
@@ -100,6 +99,7 @@ export default function BecomeCreator() {
     onSuccess: () => {
       toast.success('Application submitted successfully! We\'ll review it within 3 business days.');
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
       navigate('/dashboard');
     },
     onError: (error) => {
@@ -114,17 +114,21 @@ export default function BecomeCreator() {
       return;
     }
 
-    if (selectedTier === 'basic') {
-      // Free tier - submit directly
-      submitApplication.mutate(applicationData);
-    } else {
+    const selectedTierData = tiers.find(t => t.id === selectedTier);
+    
+    if (selectedTierData && selectedTierData.priceAmount > 0) {
       // Paid tier - go to payment
       setStep('payment');
+    } else {
+      // Free tier - submit directly
+      submitApplication.mutate(applicationData);
     }
   };
 
-  const handlePaymentSuccess = () => {
-    // This will be called after successful payment
+  const handlePaymentSuccess = (txHash: string, chain: string) => {
+    toast.success('Payment confirmed! Submitting your application...');
+    // Here you would typically verify the transaction
+    // For now, we'll proceed with the application
     submitApplication.mutate(applicationData);
   };
 
@@ -238,7 +242,7 @@ export default function BecomeCreator() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label htmlFor="headline">Headline *</Label>
+              <Label htmlFor="headline">Professional Headline *</Label>
               <Input
                 id="headline"
                 value={applicationData.headline}
@@ -249,7 +253,7 @@ export default function BecomeCreator() {
             </div>
 
             <div>
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category">Expertise Category *</Label>
               <Select 
                 value={applicationData.category} 
                 onValueChange={(value) => setApplicationData(prev => ({ ...prev, category: value }))}
@@ -266,28 +270,6 @@ export default function BecomeCreator() {
                   <SelectItem value="marketing">Marketing</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="ethAddress">Ethereum Payout Address</Label>
-              <Input
-                id="ethAddress"
-                value={applicationData.payoutAddressEth}
-                onChange={(e) => setApplicationData(prev => ({ ...prev, payoutAddressEth: e.target.value }))}
-                placeholder="0x..."
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="solAddress">Solana Payout Address</Label>
-              <Input
-                id="solAddress"
-                value={applicationData.payoutAddressSol}
-                onChange={(e) => setApplicationData(prev => ({ ...prev, payoutAddressSol: e.target.value }))}
-                placeholder="Solana wallet address..."
-                className="mt-1"
-              />
             </div>
 
             {selectedTier === 'pro' && (
@@ -310,6 +292,12 @@ export default function BecomeCreator() {
               </div>
             )}
 
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Note:</strong> Payout addresses can be configured later in your profile settings after approval.
+              </p>
+            </div>
+
             <div className="flex gap-4">
               <Button 
                 variant="outline" 
@@ -323,7 +311,7 @@ export default function BecomeCreator() {
                 className="flex-1"
                 disabled={submitApplication.isPending}
               >
-                {submitApplication.isPending ? 'Submitting...' : 'Submit Application'}
+                {submitApplication.isPending ? 'Submitting...' : 'Continue'}
               </Button>
             </div>
           </CardContent>
@@ -333,36 +321,23 @@ export default function BecomeCreator() {
   }
 
   if (step === 'payment') {
+    const selectedTierData = tiers.find(t => t.id === selectedTier);
+    
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Complete Payment</h1>
           <p className="text-muted-foreground">
-            Complete your {selectedTier} tier payment to finish your application
+            Pay {selectedTierData?.price} to activate your {selectedTierData?.name} tier
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Required</CardTitle>
-            <CardDescription>
-              Pay with USDC using MetaMask (Ethereum/Base) or Phantom (Solana)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-2xl font-bold mb-4">
-                {tiers.find(t => t.id === selectedTier)?.price}
-              </p>
-              <p className="text-muted-foreground mb-6">
-                Payment integration will be implemented in the next phase
-              </p>
-              <Button onClick={handlePaymentSuccess}>
-                Simulate Payment Success
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <WalletConnect
+          amount={selectedTierData?.priceAmount || 0}
+          currency="USDC"
+          onPaymentSuccess={handlePaymentSuccess}
+          onCancel={() => setStep('application')}
+        />
       </div>
     );
   }

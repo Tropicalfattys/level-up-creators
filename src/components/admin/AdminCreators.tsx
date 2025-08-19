@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Shield, Users, Search, CheckCircle, XCircle, Clock, Star, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Temporary type definitions until Supabase types are regenerated
 interface CreatorData {
   id: string;
   user_id: string;
@@ -23,6 +22,7 @@ interface CreatorData {
   tier: string;
   priority_score: number;
   intro_video_url: string | null;
+  category: string | null;
   users: {
     id: string;
     handle: string;
@@ -55,11 +55,11 @@ export const AdminCreators = () => {
   const [adminNote, setAdminNote] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: creators, isLoading } = useQuery({
+  const { data: creators, isLoading, error } = useQuery({
     queryKey: ['admin-creators'],
     queryFn: async (): Promise<CreatorData[]> => {
       try {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('creators')
           .select(`
             *,
@@ -80,23 +80,25 @@ export const AdminCreators = () => {
         
         if (error) {
           console.error('Creators query error:', error);
-          return [];
+          throw error;
         }
+        
+        console.log('Fetched creators:', data);
         return data || [];
       } catch (error) {
         console.error('Creators fetch error:', error);
-        return [];
+        throw error;
       }
     }
   });
 
   const { data: adminNotes } = useQuery({
-    queryKey: ['admin-notes', selectedCreator?.id],
+    queryKey: ['admin-notes', selectedCreator?.user_id],
     queryFn: async (): Promise<AdminNoteData[]> => {
-      if (!selectedCreator?.id) return [];
+      if (!selectedCreator?.user_id) return [];
       
       try {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('admin_notes')
           .select(`
             *,
@@ -115,13 +117,13 @@ export const AdminCreators = () => {
         return [];
       }
     },
-    enabled: !!selectedCreator?.id
+    enabled: !!selectedCreator?.user_id
   });
 
   const approveCreator = useMutation({
     mutationFn: async (creatorId: string) => {
       try {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('creators')
           .update({ 
             approved: true, 
@@ -148,9 +150,9 @@ export const AdminCreators = () => {
   const rejectCreator = useMutation({
     mutationFn: async (creatorId: string) => {
       try {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('creators')
-          .update({ approved: false })
+          .delete()
           .eq('id', creatorId);
         
         if (error) throw error;
@@ -161,7 +163,7 @@ export const AdminCreators = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
-      toast.success('Creator rejected');
+      toast.success('Creator application rejected and removed');
     },
     onError: (error) => {
       console.error('Reject creator mutation error:', error);
@@ -172,11 +174,14 @@ export const AdminCreators = () => {
   const addAdminNote = useMutation({
     mutationFn: async ({ userId, note }: { userId: string; note: string }) => {
       try {
-        const { error } = await (supabase as any)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Admin not authenticated');
+
+        const { error } = await supabase
           .from('admin_notes')
           .insert({
             user_id: userId,
-            admin_id: (await supabase.auth.getUser()).data.user?.id,
+            admin_id: user.id,
             note
           });
         
@@ -227,13 +232,21 @@ export const AdminCreators = () => {
     return <div className="text-center py-8">Loading creators...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-600">
+        Error loading creators: {error.message}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Creator Management
+            Creator Management ({creators?.length || 0} total)
           </CardTitle>
           <CardDescription>
             Approve, reject, and manage creator applications
@@ -263,6 +276,28 @@ export const AdminCreators = () => {
             </Select>
           </div>
 
+          {/* Summary Stats */}
+          {creators && (
+            <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{creators.length}</div>
+                <div className="text-sm text-muted-foreground">Total Applications</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {creators.filter(c => c.approved).length}
+                </div>
+                <div className="text-sm text-muted-foreground">Approved</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {creators.filter(c => !c.approved).length}
+                </div>
+                <div className="text-sm text-muted-foreground">Pending</div>
+              </div>
+            </div>
+          )}
+
           {/* Creators List */}
           <div className="space-y-4">
             {filteredCreators?.map((creator: CreatorData) => (
@@ -273,11 +308,12 @@ export const AdminCreators = () => {
                       <img 
                         src={creator.users.avatar_url} 
                         alt={creator.users.handle || 'User'} 
-                        className="w-12 h-12 rounded-full"
+                        className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
                       <span className="font-medium">
-                        {creator.users?.handle?.charAt(0).toUpperCase() || '?'}
+                        {creator.users?.handle?.charAt(0).toUpperCase() || 
+                         creator.users?.email?.charAt(0).toUpperCase() || '?'}
                       </span>
                     )}
                   </div>
@@ -286,6 +322,11 @@ export const AdminCreators = () => {
                     <p className="text-sm text-muted-foreground">{creator.users?.email}</p>
                     {creator.headline && (
                       <p className="text-sm text-muted-foreground mt-1">{creator.headline}</p>
+                    )}
+                    {creator.category && (
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {creator.category}
+                      </Badge>
                     )}
                     <p className="text-xs text-muted-foreground">
                       Applied {new Date(creator.created_at).toLocaleDateString()}
@@ -323,9 +364,9 @@ export const AdminCreators = () => {
                         View Details
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Creator Details: {creator.users?.handle}</DialogTitle>
+                        <DialogTitle>Creator Details: {creator.users?.handle || creator.users?.email}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
@@ -333,6 +374,9 @@ export const AdminCreators = () => {
                             <h4 className="font-medium mb-2">Basic Info</h4>
                             <div className="space-y-2 text-sm">
                               <p><strong>Email:</strong> {creator.users?.email}</p>
+                              <p><strong>Handle:</strong> {creator.users?.handle || 'Not set'}</p>
+                              <p><strong>Headline:</strong> {creator.headline || 'Not set'}</p>
+                              <p><strong>Category:</strong> {creator.category || 'Not set'}</p>
                               <p><strong>Tier:</strong> {creator.tier}</p>
                               <p><strong>Priority Score:</strong> {creator.priority_score}</p>
                               <p><strong>Services:</strong> {creator.services?.length || 0}</p>
@@ -366,12 +410,12 @@ export const AdminCreators = () => {
 
                         <div>
                           <h4 className="font-medium mb-2">Admin Notes</h4>
-                          <div className="space-y-2 mb-3">
+                          <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
                             {adminNotes?.map((note: AdminNoteData) => (
                               <div key={note.id} className="p-2 bg-muted rounded text-sm">
                                 <p>{note.note}</p>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  By {note.admin?.handle} on {new Date(note.created_at).toLocaleString()}
+                                  By {note.admin?.handle || 'Admin'} on {new Date(note.created_at).toLocaleString()}
                                 </p>
                               </div>
                             ))}
@@ -392,7 +436,7 @@ export const AdminCreators = () => {
                                 userId: creator.user_id, 
                                 note: adminNote 
                               })}
-                              disabled={!adminNote.trim()}
+                              disabled={!adminNote.trim() || addAdminNote.isPending}
                               size="sm"
                             >
                               Add Note
@@ -402,21 +446,34 @@ export const AdminCreators = () => {
 
                         <div className="flex gap-2 pt-4">
                           {!creator.approved ? (
-                            <Button 
-                              onClick={() => approveCreator.mutate(creator.id)}
-                              className="flex-1"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve Creator
-                            </Button>
+                            <>
+                              <Button 
+                                onClick={() => approveCreator.mutate(creator.id)}
+                                disabled={approveCreator.isPending}
+                                className="flex-1"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                {approveCreator.isPending ? 'Approving...' : 'Approve Creator'}
+                              </Button>
+                              <Button 
+                                variant="destructive"
+                                onClick={() => rejectCreator.mutate(creator.id)}
+                                disabled={rejectCreator.isPending}
+                                className="flex-1"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                {rejectCreator.isPending ? 'Rejecting...' : 'Reject Application'}
+                              </Button>
+                            </>
                           ) : (
                             <Button 
                               variant="destructive"
                               onClick={() => rejectCreator.mutate(creator.id)}
+                              disabled={rejectCreator.isPending}
                               className="flex-1"
                             >
                               <XCircle className="h-4 w-4 mr-2" />
-                              Revoke Approval
+                              {rejectCreator.isPending ? 'Revoking...' : 'Revoke Approval'}
                             </Button>
                           )}
                         </div>
@@ -428,7 +485,7 @@ export const AdminCreators = () => {
             ))}
             {(!filteredCreators || filteredCreators.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
-                No creators found
+                {creators?.length === 0 ? 'No creator applications found' : 'No creators match your search criteria'}
               </div>
             )}
           </div>

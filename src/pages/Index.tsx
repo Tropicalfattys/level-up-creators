@@ -1,14 +1,49 @@
 
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  DollarSign, 
+  Users, 
+  Star, 
+  Crown, 
+  TrendingUp,
+  MessageSquare,
+  Calendar,
+  Plus
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { DollarSign, Users, MessageCircle, Star } from 'lucide-react';
 
 export default function Index() {
-  const { userProfile, userRole } = useAuth();
+  const { user, userRole, loading } = useAuth();
 
-  if (!userProfile) {
+  // Check if user has a creator profile
+  const { data: creatorProfile } = useQuery({
+    queryKey: ['creator-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching creator profile:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -16,178 +51,215 @@ export default function Index() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Welcome to CryptoTalent</h1>
+          <p className="text-muted-foreground mb-6">
+            Please sign in to access your dashboard
+          </p>
+          <Button asChild>
+            <Link to="/auth">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {userProfile.handle}!
-        </h1>
+        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
         <p className="text-muted-foreground">
-          {userRole === 'admin' && 'Manage the platform and support users'}
-          {userRole === 'creator' && 'Create amazing content and grow your earnings'}
-          {userRole === 'client' && 'Book your favorite creators and get personalized content'}
+          Welcome back! Here's what's happening with your account.
         </p>
       </div>
 
-      <div className="grid gap-6">
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {userRole === 'creator' ? 'Total Earnings' : 'Total Spent'}
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">$0.00</div>
-              <p className="text-xs text-muted-foreground">
-                +0% from last month
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {userRole === 'creator' ? 'Completed Orders' : 'Bookings Made'}
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                +0 from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Chats</CardTitle>
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                No active conversations
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {userRole === 'creator' ? 'Average Rating' : 'Referral Credits'}
-              </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {userRole === 'creator' ? '0.0' : `$${userProfile.referral_credits || 0}`}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {userRole === 'creator' ? 'No reviews yet' : 'Available credits'}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
+      {/* Creator Application CTA */}
+      {!creatorProfile && userRole !== 'admin' && (
+        <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Get started with these common tasks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid md:grid-cols-3 gap-4">
-              {userRole === 'client' && (
-                <>
-                  <Button asChild className="h-auto p-4">
-                    <Link to="/browse" className="flex flex-col items-center gap-2">
-                      <Users className="h-6 w-6" />
-                      <span>Browse Creators</span>
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild className="h-auto p-4">
-                    <Link to="/become-creator" className="flex flex-col items-center gap-2">
-                      <DollarSign className="h-6 w-6" />
-                      <span>Become Creator</span>
-                    </Link>
-                  </Button>
-                </>
-              )}
-              
-              {userRole === 'creator' && (
-                <>
-                  <Button asChild className="h-auto p-4">
-                    <Link to="/creator-dashboard" className="flex flex-col items-center gap-2">
-                      <DollarSign className="h-6 w-6" />
-                      <span>Creator Dashboard</span>
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild className="h-auto p-4">
-                    <Link to="/services" className="flex flex-col items-center gap-2">
-                      <Users className="h-6 w-6" />
-                      <span>Manage Services</span>
-                    </Link>
-                  </Button>
-                </>
-              )}
-
-              {userRole === 'admin' && (
-                <>
-                  <Button asChild className="h-auto p-4">
-                    <Link to="/admin" className="flex flex-col items-center gap-2">
-                      <Users className="h-6 w-6" />
-                      <span>Admin Panel</span>
-                    </Link>
-                  </Button>
-                </>
-              )}
-
-              <Button variant="outline" asChild className="h-auto p-4">
-                <Link to="/settings" className="flex flex-col items-center gap-2">
-                  <Star className="h-6 w-6" />
-                  <span>Settings</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-primary" />
+                  Become a Creator
+                </CardTitle>
+                <CardDescription>
+                  Start earning by offering your expertise to the crypto community
+                </CardDescription>
+              </div>
+              <Button asChild>
+                <Link to="/become-creator">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Apply Now
                 </Link>
               </Button>
             </div>
-          </CardContent>
+          </CardHeader>
         </Card>
+      )}
 
-        {/* Referral Section */}
-        <Card>
+      {/* Creator Application Status */}
+      {creatorProfile && !creatorProfile.approved && (
+        <Card className="mb-8 border-orange-200 bg-orange-50">
           <CardHeader>
-            <CardTitle>Invite Friends & Earn</CardTitle>
-            <CardDescription>
-              Share your referral link and earn $1.00 credit for each successful signup
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Clock className="h-5 w-5" />
+              Creator Application Pending
+            </CardTitle>
+            <CardDescription className="text-orange-600">
+              Your creator application is under review. We'll notify you within 3 business days.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 p-2 bg-muted rounded text-sm">
-                  {window.location.origin}/auth?ref={userProfile.referral_code}
-                </code>
-                <Button 
-                  size="sm" 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${userProfile.referral_code}`);
-                  }}
-                >
-                  Copy
+        </Card>
+      )}
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          {userRole === 'creator' && creatorProfile?.approved && (
+            <TabsTrigger value="creator">Creator Tools</TabsTrigger>
+          )}
+          {userRole === 'admin' && (
+            <TabsTrigger value="admin">Admin Panel</TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Profile</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{userRole || 'Client'}</div>
+                <p className="text-xs text-muted-foreground">Your current role</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Activity</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">0</div>
+                <p className="text-xs text-muted-foreground">Recent bookings</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Earnings</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">$0.00</div>
+                <p className="text-xs text-muted-foreground">Total earned</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link to="/browse">
+                    <Star className="h-4 w-4 mr-2" />
+                    Browse Services
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link to="/settings">
+                    <Users className="h-4 w-4 mr-2" />
+                    Profile Settings
+                  </Link>
+                </Button>
+                {!creatorProfile && (
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link to="/become-creator">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Become a Creator
+                    </Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">
+                  No recent activity to show
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {userRole === 'creator' && creatorProfile?.approved && (
+          <TabsContent value="creator">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Creator Tools</h2>
+                <Button asChild>
+                  <Link to="/creator-dashboard">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Full Dashboard
+                  </Link>
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                You have ${userProfile.referral_credits || 0} in referral credits
-              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Services</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild className="w-full">
+                      <Link to="/services">Manage Services</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Bookings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild className="w-full">
+                      <Link to="/creator-dashboard">View Bookings</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </TabsContent>
+        )}
+
+        {userRole === 'admin' && (
+          <TabsContent value="admin">
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Tools</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link to="/admin">Admin Panel</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
