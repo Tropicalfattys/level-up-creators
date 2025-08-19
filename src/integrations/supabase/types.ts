@@ -55,32 +55,50 @@ export type Database = {
       }
       bookings: {
         Row: {
+          accepted_at: string | null
+          chain: string | null
           client_id: string | null
           created_at: string | null
           creator_id: string | null
+          delivered_at: string | null
           id: string
+          payment_address: string | null
+          release_at: string | null
           service_id: string | null
           status: string | null
+          tx_hash: string | null
           updated_at: string | null
           usdc_amount: number
         }
         Insert: {
+          accepted_at?: string | null
+          chain?: string | null
           client_id?: string | null
           created_at?: string | null
           creator_id?: string | null
+          delivered_at?: string | null
           id?: string
+          payment_address?: string | null
+          release_at?: string | null
           service_id?: string | null
           status?: string | null
+          tx_hash?: string | null
           updated_at?: string | null
           usdc_amount: number
         }
         Update: {
+          accepted_at?: string | null
+          chain?: string | null
           client_id?: string | null
           created_at?: string | null
           creator_id?: string | null
+          delivered_at?: string | null
           id?: string
+          payment_address?: string | null
+          release_at?: string | null
           service_id?: string | null
           status?: string | null
+          tx_hash?: string | null
           updated_at?: string | null
           usdc_amount?: number
         }
@@ -108,37 +126,82 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       creators: {
         Row: {
           approved: boolean | null
           approved_at: string | null
+          category: string | null
           created_at: string | null
           headline: string | null
           id: string
           intro_video_url: string | null
+          payout_address_eth: string | null
+          payout_address_sol: string | null
           priority_score: number | null
+          rating: number | null
+          review_count: number | null
           tier: string | null
           user_id: string | null
         }
         Insert: {
           approved?: boolean | null
           approved_at?: string | null
+          category?: string | null
           created_at?: string | null
           headline?: string | null
           id?: string
           intro_video_url?: string | null
+          payout_address_eth?: string | null
+          payout_address_sol?: string | null
           priority_score?: number | null
+          rating?: number | null
+          review_count?: number | null
           tier?: string | null
           user_id?: string | null
         }
         Update: {
           approved?: boolean | null
           approved_at?: string | null
+          category?: string | null
           created_at?: string | null
           headline?: string | null
           id?: string
           intro_video_url?: string | null
+          payout_address_eth?: string | null
+          payout_address_sol?: string | null
           priority_score?: number | null
+          rating?: number | null
+          review_count?: number | null
           tier?: string | null
           user_id?: string | null
         }
@@ -203,11 +266,117 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          attachments: Json | null
+          body: string
+          booking_id: string | null
+          created_at: string | null
+          from_user_id: string | null
+          id: string
+          to_user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          body: string
+          booking_id?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          to_user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          body?: string
+          booking_id?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          booking_id: string | null
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number | null
+          reviewee_id: string | null
+          reviewer_id: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          reviewee_id?: string | null
+          reviewer_id?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          reviewee_id?: string | null
+          reviewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           active: boolean | null
+          category: string | null
           created_at: string | null
           creator_id: string | null
+          delivery_days: number | null
           description: string | null
           id: string
           price_usdc: number | null
@@ -216,8 +385,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          category?: string | null
           created_at?: string | null
           creator_id?: string | null
+          delivery_days?: number | null
           description?: string | null
           id?: string
           price_usdc?: number | null
@@ -226,8 +397,10 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          category?: string | null
           created_at?: string | null
           creator_id?: string | null
+          delivery_days?: number | null
           description?: string | null
           id?: string
           price_usdc?: number | null
@@ -254,6 +427,7 @@ export type Database = {
           id: string
           referral_code: string | null
           referral_credits: number | null
+          referred_by: string | null
           role: string | null
           updated_at: string | null
         }
@@ -266,6 +440,7 @@ export type Database = {
           id: string
           referral_code?: string | null
           referral_credits?: number | null
+          referred_by?: string | null
           role?: string | null
           updated_at?: string | null
         }
@@ -278,10 +453,19 @@ export type Database = {
           id?: string
           referral_code?: string | null
           referral_credits?: number | null
+          referred_by?: string | null
           role?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
