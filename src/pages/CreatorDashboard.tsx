@@ -9,8 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
-import { CreatorAnalytics } from '@/components/creator/CreatorAnalytics';
-import { BarChart3, Package, Calendar, DollarSign, RefreshCw } from 'lucide-react';
+import { Package, Calendar, DollarSign, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -179,12 +178,8 @@ const CreatorDashboard = () => {
         </div>
 
         {/* Dashboard Tabs */}
-        <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
+        <Tabs defaultValue="services" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="services" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Services
@@ -198,10 +193,6 @@ const CreatorDashboard = () => {
               Earnings
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="analytics">
-            <CreatorAnalytics />
-          </TabsContent>
 
           <TabsContent value="services">
             <CreatorServices />
