@@ -2,9 +2,20 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 
-type UserProfile = Database['public']['Tables']['users']['Row'];
+// Define UserProfile type directly until types are regenerated
+interface UserProfile {
+  id: string;
+  email?: string;
+  role?: string;
+  handle?: string;
+  avatar_url?: string;
+  bio?: string;
+  created_at?: string;
+  updated_at?: string;
+  referral_code?: string;
+  referral_credits?: number;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -51,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (!error && data) {
         setUserProfile(data);
-        setUserRole(data.role);
+        setUserRole(data.role || 'client');
       } else if (error) {
         console.error('Error fetching user profile:', error);
       }
