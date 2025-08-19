@@ -22,6 +22,9 @@ export interface Booking {
   chain?: string;
   tx_hash?: string;
   payment_address?: string;
+  deliverable_url?: string;
+  platform_fee?: number;
+  creator_amount?: number;
   delivered_at?: string;
   accepted_at?: string;
   release_at?: string;
@@ -100,6 +103,16 @@ export interface ContactMessage {
   subject: string;
   message: string;
   status: string;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_user_id?: string;
+  action: string;
+  target_table?: string;
+  target_id?: string;
+  metadata?: any;
   created_at: string;
 }
 

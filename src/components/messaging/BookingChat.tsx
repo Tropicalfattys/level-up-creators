@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { MessageAttachments } from './MessageAttachments';
 
 interface Message {
   id: string;
@@ -32,6 +33,7 @@ interface BookingChatProps {
 
 export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: BookingChatProps) => {
   const [message, setMessage] = useState('');
+  const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -55,22 +57,29 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   });
 
   const sendMessage = useMutation({
-    mutationFn: async (messageBody: string) => {
-      if (!user || !messageBody.trim()) return;
+    mutationFn: async ({ messageBody, attachments }: { messageBody: string; attachments?: any }) => {
+      if (!user || (!messageBody.trim() && !attachments)) return;
+
+      const messageData: any = {
+        booking_id: bookingId,
+        from_user_id: user.id,
+        to_user_id: otherUserId,
+        body: messageBody.trim() || 'Sent attachments'
+      };
+
+      if (attachments && attachments.length > 0) {
+        messageData.attachments = { files: attachments };
+      }
 
       const { error } = await supabase
         .from('messages')
-        .insert([{
-          booking_id: bookingId,
-          from_user_id: user.id,
-          to_user_id: otherUserId,
-          body: messageBody.trim()
-        }]);
+        .insert([messageData]);
 
       if (error) throw error;
     },
     onSuccess: () => {
       setMessage('');
+      setPendingAttachments([]);
       queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
     },
     onError: () => {
@@ -80,9 +89,16 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      sendMessage.mutate(message);
+    if (message.trim() || pendingAttachments.length > 0) {
+      sendMessage.mutate({ 
+        messageBody: message,
+        attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined
+      });
     }
+  };
+
+  const handleAttachmentAdd = (attachment: any) => {
+    setPendingAttachments(prev => [...prev, attachment]);
   };
 
   useEffect(() => {
@@ -148,6 +164,17 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                   }`}
                 >
                   <p className="text-sm">{msg.body}</p>
+                  
+                  {/* Message Attachments */}
+                  {msg.attachments?.files && (
+                    <div className="mt-2">
+                      <MessageAttachments 
+                        attachments={msg.attachments.files}
+                        canUpload={false}
+                      />
+                    </div>
+                  )}
+                  
                   <p
                     className={`text-xs mt-1 ${
                       msg.from_user_id === user?.id
@@ -168,8 +195,24 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Pending Attachments Preview */}
+        {pendingAttachments.length > 0 && (
+          <div className="border-t p-4 bg-muted/30">
+            <MessageAttachments 
+              attachments={pendingAttachments}
+              canUpload={false}
+            />
+          </div>
+        )}
+
         {/* Message Input */}
         <div className="border-t p-4">
+          <div className="mb-2">
+            <MessageAttachments
+              onAttachmentAdd={handleAttachmentAdd}
+              canUpload={true}
+            />
+          </div>
           <form onSubmit={handleSend} className="flex gap-2">
             <Input
               value={message}
@@ -178,10 +221,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
               className="flex-1"
               disabled={sendMessage.isPending}
             />
-            <Button size="sm" variant="outline" type="button">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button size="sm" type="submit" disabled={sendMessage.isPending || !message.trim()}>
+            <Button size="sm" type="submit" disabled={sendMessage.isPending || (!message.trim() && pendingAttachments.length === 0)}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

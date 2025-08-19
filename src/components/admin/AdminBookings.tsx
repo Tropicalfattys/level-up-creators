@@ -4,188 +4,118 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageCircle, ShoppingCart, Search, ExternalLink, DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ExternalLink, Search, Filter, DollarSign, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
-
-// Temporary type definitions until Supabase types are regenerated
-interface BookingData {
-  id: string;
-  created_at: string;
-  status: string;
-  usdc_amount: number | null;
-  platform_fee: number | null;
-  creator_amount: number | null;
-  tx_hash: string | null;
-  deliverable_url: string | null;
-  delivered_at: string | null;
-  accepted_at: string | null;
-  services: {
-    id: string;
-    title: string;
-    description: string;
-    price_usdc: number;
-  } | null;
-  client: {
-    id: string;
-    handle: string;
-    email: string;
-  } | null;
-  creator: {
-    id: string;
-    handle: string;
-    email: string;
-  } | null;
-}
-
-interface MessageData {
-  id: string;
-  body: string;
-  created_at: string;
-  from_user: {
-    handle: string;
-  } | null;
-  to_user: {
-    handle: string;
-  } | null;
-}
 
 export const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
+  const [chainFilter, setChainFilter] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['admin-bookings'],
-    queryFn: async (): Promise<BookingData[]> => {
-      try {
-        const { data, error } = await (supabase as any)
-          .from('bookings')
-          .select(`
-            *,
-            services (
-              id,
-              title,
-              description,
-              price_usdc
-            ),
-            client:client_id (
-              id,
-              handle,
-              email
-            ),
-            creator:creator_id (
-              id,
-              handle,
-              email
-            )
-          `)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Bookings query error:', error);
-          return [];
-        }
-        return data || [];
-      } catch (error) {
-        console.error('Bookings fetch error:', error);
-        return [];
+    queryKey: ['admin-bookings', searchTerm, statusFilter, chainFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('bookings')
+        .select(`
+          *,
+          services (title, price_usdc),
+          client:users!bookings_client_id_fkey (handle, email),
+          creator:users!bookings_creator_id_fkey (handle, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
       }
+
+      if (chainFilter !== 'all') {
+        query = query.eq('chain', chainFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data?.filter(booking => {
+        if (!searchTerm) return true;
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          booking.client?.handle?.toLowerCase().includes(searchLower) ||
+          booking.creator?.handle?.toLowerCase().includes(searchLower) ||
+          booking.services?.title?.toLowerCase().includes(searchLower) ||
+          booking.tx_hash?.toLowerCase().includes(searchLower)
+        );
+      }) || [];
     }
   });
 
-  const { data: messages } = useQuery({
-    queryKey: ['booking-messages', selectedBooking?.id],
-    queryFn: async (): Promise<MessageData[]> => {
-      if (!selectedBooking?.id) return [];
-      
-      try {
-        const { data, error } = await (supabase as any)
-          .from('messages')
-          .select(`
-            *,
-            from_user:from_user_id (handle),
-            to_user:to_user_id (handle)
-          `)
-          .eq('booking_id', selectedBooking.id)
-          .order('created_at', { ascending: true });
-        
-        if (error) {
-          console.error('Messages query error:', error);
-          return [];
-        }
-        return data || [];
-      } catch (error) {
-        console.error('Messages fetch error:', error);
-        return [];
-      }
-    },
-    enabled: !!selectedBooking?.id
-  });
-
   const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
-      try {
-        const { error } = await (supabase as any)
-          .from('bookings')
-          .update({ status })
-          .eq('id', bookingId);
-        
-        if (error) throw error;
-      } catch (error) {
-        console.error('Update booking error:', error);
-        throw error;
-      }
+    mutationFn: async ({ bookingId, status, adminNote }: { bookingId: string; status: string; adminNote?: string }) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status,
+          ...(status === 'released' && { release_at: new Date().toISOString() })
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Log admin action
+      await supabase.from('audit_logs').insert({
+        action: `booking_status_changed_to_${status}`,
+        target_table: 'bookings',
+        target_id: bookingId,
+        metadata: { adminNote, previousStatus: status }
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       toast.success('Booking status updated');
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
     },
-    onError: (error) => {
-      console.error('Update booking mutation error:', error);
+    onError: () => {
       toast.error('Failed to update booking status');
     }
   });
 
-  const filteredBookings = bookings?.filter((booking: BookingData) => {
-    const matchesSearch = !searchTerm || 
-      booking.client?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.creator?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.services?.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'draft': { color: 'bg-gray-500', label: 'Draft' },
+      'paid': { color: 'bg-blue-500', label: 'Paid' },
+      'in_progress': { color: 'bg-yellow-500', label: 'In Progress' },
+      'delivered': { color: 'bg-purple-500', label: 'Delivered' },
+      'accepted': { color: 'bg-green-500', label: 'Accepted' },
+      'disputed': { color: 'bg-red-500', label: 'Disputed' },
+      'refunded': { color: 'bg-orange-500', label: 'Refunded' },
+      'released': { color: 'bg-green-600', label: 'Released' },
+      'canceled': { color: 'bg-gray-600', label: 'Canceled' }
+    };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'outline';
-      case 'paid': return 'default';
-      case 'in_progress': return 'secondary';
-      case 'delivered': return 'default';
-      case 'accepted': return 'default';
-      case 'disputed': return 'destructive';
-      case 'refunded': return 'destructive';
-      case 'released': return 'default';
-      case 'canceled': return 'secondary';
-      default: return 'outline';
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    return <Badge className={config.color}>{config.label}</Badge>;
+  };
+
+  const getExplorerUrl = (chain: string, txHash: string) => {
+    switch (chain?.toLowerCase()) {
+      case 'ethereum':
+        return `https://etherscan.io/tx/${txHash}`;
+      case 'base':
+        return `https://basescan.org/tx/${txHash}`;
+      case 'solana':
+        return `https://explorer.solana.com/tx/${txHash}`;
+      default:
+        return '#';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid': return <DollarSign className="h-3 w-3 mr-1" />;
-      case 'in_progress': return <Clock className="h-3 w-3 mr-1" />;
-      case 'delivered': return <CheckCircle className="h-3 w-3 mr-1" />;
-      case 'accepted': return <CheckCircle className="h-3 w-3 mr-1" />;
-      default: return null;
-    }
-  };
+  const totalVolume = bookings?.reduce((sum, booking) => sum + Number(booking.usdc_amount || 0), 0) || 0;
+  const disputedBookings = bookings?.filter(b => b.status === 'disputed').length || 0;
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
@@ -193,206 +123,177 @@ export const AdminBookings = () => {
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium">Total Volume</span>
+            </div>
+            <p className="text-2xl font-bold">${totalVolume.toFixed(2)} USDC</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Total Bookings</span>
+            </div>
+            <p className="text-2xl font-bold">{bookings?.length || 0}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-medium">Active Disputes</span>
+            </div>
+            <p className="text-2xl font-bold">{disputedBookings}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            Booking Management
-          </CardTitle>
+          <CardTitle>Bookings Management</CardTitle>
           <CardDescription>
-            Monitor payments, transactions, and booking lifecycle
+            Monitor all platform bookings and payments
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filters */}
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search bookings..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+        <CardContent>
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by user, service, or transaction hash..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
                 <SelectItem value="disputed">Disputed</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
                 <SelectItem value="released">Released</SelectItem>
-                <SelectItem value="canceled">Canceled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={chainFilter} onValueChange={setChainFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filter by chain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Chains</SelectItem>
+                <SelectItem value="ethereum">Ethereum</SelectItem>
+                <SelectItem value="base">Base</SelectItem>
+                <SelectItem value="solana">Solana</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Bookings List */}
-          <div className="space-y-4">
-            {filteredBookings?.map((booking: BookingData) => (
-              <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                    <ShoppingCart className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{booking.services?.title || 'Unknown Service'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {booking.client?.handle || 'Unknown'} → {booking.creator?.handle || 'Unknown'}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {booking.usdc_amount && (
-                        <span className="text-sm font-medium text-green-600">
-                          ${Number(booking.usdc_amount).toFixed(2)} USDC
-                        </span>
-                      )}
-                      {booking.platform_fee && (
-                        <span className="text-xs text-muted-foreground">
-                          (${Number(booking.platform_fee).toFixed(2)} fee)
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Created {new Date(booking.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={getStatusColor(booking.status)}>
-                    {getStatusIcon(booking.status)}
-                    {booking.status}
-                  </Badge>
-                  
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedBooking(booking)}
-                      >
-                        View Details
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
-                      <DialogHeader>
-                        <DialogTitle>Booking Details</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="font-medium mb-2">Service & Payment</h4>
-                            <div className="space-y-2 text-sm">
-                              <p><strong>Service:</strong> {booking.services?.title || 'Unknown'}</p>
-                              <p><strong>Description:</strong> {booking.services?.description || 'No description'}</p>
-                              <p><strong>Amount:</strong> ${Number(booking.usdc_amount || 0).toFixed(2)} USDC</p>
-                              <p><strong>Platform Fee:</strong> ${Number(booking.platform_fee || 0).toFixed(2)}</p>
-                              <p><strong>Creator Amount:</strong> ${Number(booking.creator_amount || 0).toFixed(2)}</p>
-                              {booking.tx_hash && (
-                                <p><strong>TX Hash:</strong> 
-                                  <a 
-                                    href={`https://etherscan.io/tx/${booking.tx_hash}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline ml-1"
-                                  >
-                                    {booking.tx_hash.slice(0, 10)}... <ExternalLink className="h-3 w-3 inline" />
-                                  </a>
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-2">Parties & Timeline</h4>
-                            <div className="space-y-2 text-sm">
-                              <p><strong>Client:</strong> {booking.client?.handle || 'Unknown'} ({booking.client?.email || 'No email'})</p>
-                              <p><strong>Creator:</strong> {booking.creator?.handle || 'Unknown'} ({booking.creator?.email || 'No email'})</p>
-                              <p><strong>Created:</strong> {new Date(booking.created_at).toLocaleString()}</p>
-                              {booking.delivered_at && (
-                                <p><strong>Delivered:</strong> {new Date(booking.delivered_at).toLocaleString()}</p>
-                              )}
-                              {booking.accepted_at && (
-                                <p><strong>Accepted:</strong> {new Date(booking.accepted_at).toLocaleString()}</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {booking.deliverable_url && (
-                          <div>
-                            <h4 className="font-medium mb-2">Deliverable</h4>
-                            <a 
-                              href={booking.deliverable_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                              View Deliverable <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </div>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Creator</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Chain</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bookings?.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{booking.services?.title}</p>
+                        <p className="text-xs text-muted-foreground">ID: {booking.id.slice(0, 8)}...</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">@{booking.client?.handle}</p>
+                        <p className="text-xs text-muted-foreground">{booking.client?.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">@{booking.creator?.handle}</p>
+                        <p className="text-xs text-muted-foreground">{booking.creator?.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">${booking.usdc_amount} USDC</p>
+                        <p className="text-xs text-muted-foreground">
+                          Platform: ${(Number(booking.usdc_amount) * 0.15).toFixed(2)}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{booking.chain}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">{format(new Date(booking.created_at), 'MMM d')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(booking.created_at), 'HH:mm')}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {booking.tx_hash && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(getExplorerUrl(booking.chain, booking.tx_hash), '_blank')}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
                         )}
-
-                        <div>
-                          <h4 className="font-medium mb-2">Messages ({messages?.length || 0})</h4>
-                          <div className="max-h-40 overflow-y-auto space-y-2">
-                            {messages?.map((message: MessageData) => (
-                              <div key={message.id} className="p-2 bg-muted rounded text-sm">
-                                <p><strong>{message.from_user?.handle || 'Unknown'}:</strong> {message.body}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(message.created_at).toLocaleString()}
-                                </p>
-                              </div>
-                            ))}
-                            {(!messages || messages.length === 0) && (
-                              <p className="text-sm text-muted-foreground">No messages yet</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-medium mb-2">Admin Actions</h4>
-                          <div className="flex gap-2">
-                            <Select
-                              value={booking.status}
-                              onValueChange={(status) => updateBookingStatus.mutate({ 
-                                bookingId: booking.id, 
-                                status 
+                        {booking.status === 'disputed' && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateBookingStatus.mutate({
+                                bookingId: booking.id,
+                                status: 'refunded'
                               })}
                             >
-                              <SelectTrigger className="w-48">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="accepted">Accepted</SelectItem>
-                                <SelectItem value="disputed">Disputed</SelectItem>
-                                <SelectItem value="refunded">Refunded</SelectItem>
-                                <SelectItem value="released">Released</SelectItem>
-                                <SelectItem value="canceled">Canceled</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              Refund
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateBookingStatus.mutate({
+                                bookingId: booking.id,
+                                status: 'released'
+                              })}
+                            >
+                              Release
+                            </Button>
                           </div>
-                        </div>
+                        )}
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            ))}
-            {(!filteredBookings || filteredBookings.length === 0) && (
-              <div className="text-center py-8 text-muted-foreground">
-                No bookings found
-              </div>
-            )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
