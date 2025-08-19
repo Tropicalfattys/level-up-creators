@@ -11,18 +11,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle, Scale, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { DisputeWithRelations } from '@/types/database';
 
 export const AdminDisputes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedDispute, setSelectedDispute] = useState<any>(null);
+  const [selectedDispute, setSelectedDispute] = useState<DisputeWithRelations | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
   const queryClient = useQueryClient();
 
   const { data: disputes, isLoading } = useQuery({
     queryKey: ['admin-disputes'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('disputes')
         .select(`
           *,
@@ -48,7 +49,7 @@ export const AdminDisputes = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as DisputeWithRelations[];
     }
   });
 
@@ -64,7 +65,7 @@ export const AdminDisputes = () => {
     }) => {
       const { data: user } = await supabase.auth.getUser();
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('disputes')
         .update({ 
           status,

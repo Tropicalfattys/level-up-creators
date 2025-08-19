@@ -14,6 +14,236 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notes: {
+        Row: {
+          admin_id: string | null
+          created_at: string | null
+          id: string
+          note: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          note: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          note?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notes_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          id: string
+          service_id: string | null
+          status: string | null
+          updated_at: string | null
+          usdc_amount: number
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          service_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdc_amount: number
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          service_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdc_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creators: {
+        Row: {
+          approved: boolean | null
+          approved_at: string | null
+          created_at: string | null
+          headline: string | null
+          id: string
+          intro_video_url: string | null
+          priority_score: number | null
+          tier: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          approved_at?: string | null
+          created_at?: string | null
+          headline?: string | null
+          id?: string
+          intro_video_url?: string | null
+          priority_score?: number | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          approved_at?: string | null
+          created_at?: string | null
+          headline?: string | null
+          id?: string
+          intro_video_url?: string | null
+          priority_score?: number | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disputes: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          opened_by: string
+          reason: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          opened_by: string
+          reason: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          opened_by?: string
+          reason?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          creator_id: string | null
+          description: string | null
+          id: string
+          price_usdc: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          price_usdc?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          price_usdc?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
