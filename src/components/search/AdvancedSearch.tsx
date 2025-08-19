@@ -32,8 +32,6 @@ interface Service {
     handle: string;
     avatar_url?: string;
   };
-  bookingCount: number;
-  avgRating: number;
 }
 
 export const AdvancedSearch = () => {
@@ -106,33 +104,7 @@ export const AdvancedSearch = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Get bookings and reviews for each service
-      const servicesWithStats = await Promise.all((data || []).map(async (service) => {
-        // Get booking count
-        const { count: bookingCount } = await supabase
-          .from('bookings')
-          .select('*', { count: 'exact', head: true })
-          .eq('service_id', service.id);
-
-        // Get reviews for rating calculation
-        const { data: reviews } = await supabase
-          .from('reviews')
-          .select('rating')
-          .eq('service_id', service.id);
-
-        const avgRating = reviews && reviews.length > 0 
-          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
-          : 0;
-
-        return {
-          ...service,
-          bookingCount: bookingCount || 0,
-          avgRating
-        };
-      }));
-
-      // Filter by rating
-      return servicesWithStats.filter(service => service.avgRating >= filters.minRating);
+      return data || [];
     },
     enabled: true
   });
@@ -305,25 +277,6 @@ export const AdvancedSearch = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Minimum Rating */}
-                <div className="space-y-2">
-                  <Label>Minimum Rating</Label>
-                  <div className="px-2">
-                    <Slider
-                      value={[filters.minRating]}
-                      onValueChange={(value) => updateFilter('minRating', value[0])}
-                      max={5}
-                      min={0}
-                      step={0.5}
-                      className="w-full"
-                    />
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Star className="h-3 w-3" />
-                      {filters.minRating}+ stars
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -360,13 +313,6 @@ export const AdvancedSearch = () => {
                           <Clock className="h-3 w-3" />
                           {service.delivery_days} days
                         </span>
-                        {service.avgRating > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3" />
-                            {service.avgRating.toFixed(1)}
-                          </span>
-                        )}
-                        <span>{service.bookingCount} bookings</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
