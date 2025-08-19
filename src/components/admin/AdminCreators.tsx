@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,11 +68,6 @@ export const AdminCreators = () => {
               email,
               avatar_url,
               created_at
-            ),
-            services (
-              id,
-              title,
-              active
             )
           `)
           .order('created_at', { ascending: false });
@@ -82,9 +76,26 @@ export const AdminCreators = () => {
           console.error('Creators query error:', error);
           throw error;
         }
+
+        // Fetch services separately to avoid relationship conflicts
+        const creatorsWithServices = await Promise.all(
+          (data || []).map(async (creator) => {
+            const { data: services, error: servicesError } = await supabase
+              .from('services')
+              .select('id, title, active')
+              .eq('creator_id', creator.user_id);
+            
+            if (servicesError) {
+              console.error('Services query error:', servicesError);
+              return { ...creator, services: [] };
+            }
+            
+            return { ...creator, services: services || [] };
+          })
+        );
         
-        console.log('Fetched creators:', data);
-        return data || [];
+        console.log('Fetched creators:', creatorsWithServices);
+        return creatorsWithServices;
       } catch (error) {
         console.error('Creators fetch error:', error);
         throw error;
@@ -101,8 +112,11 @@ export const AdminCreators = () => {
         const { data, error } = await supabase
           .from('admin_notes')
           .select(`
-            *,
-            admin:admin_id (handle)
+            id,
+            user_id,
+            admin_id,
+            note,
+            created_at
           `)
           .eq('user_id', selectedCreator.user_id)
           .order('created_at', { ascending: false });
@@ -111,7 +125,26 @@ export const AdminCreators = () => {
           console.error('Admin notes query error:', error);
           return [];
         }
-        return data || [];
+
+        // Fetch admin details separately
+        const notesWithAdmin = await Promise.all(
+          (data || []).map(async (note) => {
+            const { data: admin, error: adminError } = await supabase
+              .from('users')
+              .select('handle')
+              .eq('id', note.admin_id)
+              .single();
+            
+            if (adminError) {
+              console.error('Admin query error:', adminError);
+              return { ...note, admin: null };
+            }
+            
+            return { ...note, admin };
+          })
+        );
+
+        return notesWithAdmin;
       } catch (error) {
         console.error('Admin notes fetch error:', error);
         return [];

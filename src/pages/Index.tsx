@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +13,8 @@ import {
   TrendingUp,
   MessageSquare,
   Calendar,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
