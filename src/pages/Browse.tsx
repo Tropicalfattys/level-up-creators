@@ -44,50 +44,83 @@ export default function Browse() {
   const { data: creators, isLoading } = useQuery({
     queryKey: ['creators', categoryFilter, tierFilter, sortBy],
     queryFn: async (): Promise<CreatorWithServices[]> => {
-      let query = supabase
-        .from('creators')
-        .select(`
-          *,
-          users!creators_user_id_fkey (
-            handle,
-            avatar_url
-          ),
-          services (
-            id,
-            title,
-            description,
-            price_usdc,
-            delivery_days,
-            active
-          )
-        `)
-        .eq('approved', true);
+      try {
+        let query = supabase
+          .from('creators')
+          .select(`
+            *,
+            users!creators_user_id_fkey (
+              handle,
+              avatar_url
+            ),
+            services (
+              id,
+              title,
+              description,
+              price_usdc,
+              delivery_days,
+              active
+            )
+          `)
+          .eq('approved', true);
 
-      if (categoryFilter !== 'all') {
-        query = query.eq('category', categoryFilter);
+        if (categoryFilter !== 'all') {
+          query = query.eq('category', categoryFilter);
+        }
+
+        if (tierFilter !== 'all') {
+          query = query.eq('tier', tierFilter);
+        }
+
+        switch (sortBy) {
+          case 'rating':
+            query = query.order('rating', { ascending: false });
+            break;
+          case 'price_low':
+            query = query.order('priority_score', { ascending: false });
+            break;
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          default:
+            query = query.order('priority_score', { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (error) {
+          console.error('Query error:', error);
+          return [];
+        }
+        
+        // Transform the data to match our interface
+        const transformedData: CreatorWithServices[] = (data || []).map(creator => ({
+          id: creator.id,
+          user_id: creator.user_id,
+          approved: creator.approved,
+          headline: creator.headline || '',
+          tier: creator.tier || 'basic',
+          rating: creator.rating || 0,
+          review_count: creator.review_count || 0,
+          category: creator.category || '',
+          users: {
+            handle: creator.users?.handle || '',
+            avatar_url: creator.users?.avatar_url || ''
+          },
+          services: Array.isArray(creator.services) ? creator.services.map(service => ({
+            id: service.id,
+            title: service.title || '',
+            description: service.description || '',
+            price_usdc: service.price_usdc || 0,
+            delivery_days: service.delivery_days || 3,
+            active: service.active
+          })) : []
+        }));
+        
+        return transformedData;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        return [];
       }
-
-      if (tierFilter !== 'all') {
-        query = query.eq('tier', tierFilter);
-      }
-
-      switch (sortBy) {
-        case 'rating':
-          query = query.order('rating', { ascending: false });
-          break;
-        case 'price_low':
-          query = query.order('priority_score', { ascending: false }); // We'll sort by service price in JS
-          break;
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        default:
-          query = query.order('priority_score', { ascending: false });
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
     }
   });
 
