@@ -11,83 +11,147 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { MessageCircle, ShoppingCart, Search, ExternalLink, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Temporary type definitions until Supabase types are regenerated
+interface BookingData {
+  id: string;
+  created_at: string;
+  status: string;
+  usdc_amount: number | null;
+  platform_fee: number | null;
+  creator_amount: number | null;
+  tx_hash: string | null;
+  deliverable_url: string | null;
+  delivered_at: string | null;
+  accepted_at: string | null;
+  services: {
+    id: string;
+    title: string;
+    description: string;
+    price_usdc: number;
+  } | null;
+  client: {
+    id: string;
+    handle: string;
+    email: string;
+  } | null;
+  creator: {
+    id: string;
+    handle: string;
+    email: string;
+  } | null;
+}
+
+interface MessageData {
+  id: string;
+  body: string;
+  created_at: string;
+  from_user: {
+    handle: string;
+  } | null;
+  to_user: {
+    handle: string;
+  } | null;
+}
+
 export const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['admin-bookings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          services (
-            id,
-            title,
-            description,
-            price_usdc
-          ),
-          client:client_id (
-            id,
-            handle,
-            email
-          ),
-          creator:creator_id (
-            id,
-            handle,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+    queryFn: async (): Promise<BookingData[]> => {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('bookings')
+          .select(`
+            *,
+            services (
+              id,
+              title,
+              description,
+              price_usdc
+            ),
+            client:client_id (
+              id,
+              handle,
+              email
+            ),
+            creator:creator_id (
+              id,
+              handle,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Bookings query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Bookings fetch error:', error);
+        return [];
+      }
     }
   });
 
   const { data: messages } = useQuery({
     queryKey: ['booking-messages', selectedBooking?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<MessageData[]> => {
       if (!selectedBooking?.id) return [];
       
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          from_user:from_user_id (handle),
-          to_user:to_user_id (handle)
-        `)
-        .eq('booking_id', selectedBooking.id)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await (supabase as any)
+          .from('messages')
+          .select(`
+            *,
+            from_user:from_user_id (handle),
+            to_user:to_user_id (handle)
+          `)
+          .eq('booking_id', selectedBooking.id)
+          .order('created_at', { ascending: true });
+        
+        if (error) {
+          console.error('Messages query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Messages fetch error:', error);
+        return [];
+      }
     },
     enabled: !!selectedBooking?.id
   });
 
   const updateBookingStatus = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', bookingId);
-      
-      if (error) throw error;
+      try {
+        const { error } = await (supabase as any)
+          .from('bookings')
+          .update({ status })
+          .eq('id', bookingId);
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Update booking error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       toast.success('Booking status updated');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update booking mutation error:', error);
       toast.error('Failed to update booking status');
     }
   });
 
-  const filteredBookings = bookings?.filter(booking => {
+  const filteredBookings = bookings?.filter((booking: BookingData) => {
     const matchesSearch = !searchTerm || 
       booking.client?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.creator?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -172,7 +236,7 @@ export const AdminBookings = () => {
 
           {/* Bookings List */}
           <div className="space-y-4">
-            {filteredBookings?.map((booking) => (
+            {filteredBookings?.map((booking: BookingData) => (
               <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
@@ -181,7 +245,7 @@ export const AdminBookings = () => {
                   <div>
                     <p className="font-medium">{booking.services?.title || 'Unknown Service'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {booking.client?.handle} → {booking.creator?.handle}
+                      {booking.client?.handle || 'Unknown'} → {booking.creator?.handle || 'Unknown'}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       {booking.usdc_amount && (
@@ -225,8 +289,8 @@ export const AdminBookings = () => {
                           <div>
                             <h4 className="font-medium mb-2">Service & Payment</h4>
                             <div className="space-y-2 text-sm">
-                              <p><strong>Service:</strong> {booking.services?.title}</p>
-                              <p><strong>Description:</strong> {booking.services?.description}</p>
+                              <p><strong>Service:</strong> {booking.services?.title || 'Unknown'}</p>
+                              <p><strong>Description:</strong> {booking.services?.description || 'No description'}</p>
                               <p><strong>Amount:</strong> ${Number(booking.usdc_amount || 0).toFixed(2)} USDC</p>
                               <p><strong>Platform Fee:</strong> ${Number(booking.platform_fee || 0).toFixed(2)}</p>
                               <p><strong>Creator Amount:</strong> ${Number(booking.creator_amount || 0).toFixed(2)}</p>
@@ -247,8 +311,8 @@ export const AdminBookings = () => {
                           <div>
                             <h4 className="font-medium mb-2">Parties & Timeline</h4>
                             <div className="space-y-2 text-sm">
-                              <p><strong>Client:</strong> {booking.client?.handle} ({booking.client?.email})</p>
-                              <p><strong>Creator:</strong> {booking.creator?.handle} ({booking.creator?.email})</p>
+                              <p><strong>Client:</strong> {booking.client?.handle || 'Unknown'} ({booking.client?.email || 'No email'})</p>
+                              <p><strong>Creator:</strong> {booking.creator?.handle || 'Unknown'} ({booking.creator?.email || 'No email'})</p>
                               <p><strong>Created:</strong> {new Date(booking.created_at).toLocaleString()}</p>
                               {booking.delivered_at && (
                                 <p><strong>Delivered:</strong> {new Date(booking.delivered_at).toLocaleString()}</p>
@@ -277,9 +341,9 @@ export const AdminBookings = () => {
                         <div>
                           <h4 className="font-medium mb-2">Messages ({messages?.length || 0})</h4>
                           <div className="max-h-40 overflow-y-auto space-y-2">
-                            {messages?.map((message) => (
+                            {messages?.map((message: MessageData) => (
                               <div key={message.id} className="p-2 bg-muted rounded text-sm">
-                                <p><strong>{message.from_user?.handle}:</strong> {message.body}</p>
+                                <p><strong>{message.from_user?.handle || 'Unknown'}:</strong> {message.body}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {new Date(message.created_at).toLocaleString()}
                                 </p>
