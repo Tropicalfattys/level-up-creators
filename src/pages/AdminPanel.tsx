@@ -9,6 +9,7 @@ import { AdminDisputes } from '@/components/admin/AdminDisputes';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { AdminContacts } from '@/components/admin/AdminContacts';
 import { AdminAuditLogs } from '@/components/admin/AdminAuditLogs';
+import { AdminPricing } from '@/components/admin/AdminPricing';
 
 export default function AdminPanel() {
   const { userRole, loading } = useAuth();
@@ -46,7 +47,7 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="creators">Creators</TabsTrigger>
@@ -54,6 +55,7 @@ export default function AdminPanel() {
           <TabsTrigger value="disputes">Disputes</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics">
@@ -82,6 +84,10 @@ export default function AdminPanel() {
 
         <TabsContent value="audit">
           <AdminAuditLogs />
+        </TabsContent>
+
+        <TabsContent value="pricing">
+          <AdminPricing />
         </TabsContent>
       </Tabs>
     </div>
