@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { DollarSign, Save, RefreshCw, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -189,7 +188,7 @@ export const AdminPricing = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg capitalize">{tier.tier_name}</CardTitle>
-                        <CardDescription>{tier.display_name}</CardDescription>
+                        <CardDescription>ID: {tier.id}</CardDescription>
                       </div>
                       <Badge variant={tier.active ? "default" : "secondary"}>
                         {tier.active ? "Active" : "Inactive"}
@@ -211,11 +210,12 @@ export const AdminPricing = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor={`display-${tier.id}`}>Display Name</Label>
+                        <Label htmlFor={`display-${tier.id}`}>Display Name (Title)</Label>
                         <Input
                           id={`display-${tier.id}`}
                           value={getCurrentValue(tier, 'display_name') as string}
                           onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
+                          placeholder="e.g., Basic Plan, Premium Plan"
                         />
                       </div>
                     </div>
@@ -240,7 +240,7 @@ export const AdminPricing = () => {
                             <Input
                               value={feature}
                               onChange={(e) => handleFeatureChange(tier.id, index, e.target.value)}
-                              placeholder="Enter feature description"
+                              placeholder="Enter feature description (e.g., Create up to 3 services)"
                               className="flex-1"
                             />
                             <Button
@@ -262,7 +262,7 @@ export const AdminPricing = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pt-4 border-t">
                       <div className="flex items-center space-x-2">
                         <Switch
                           id={`active-${tier.id}`}

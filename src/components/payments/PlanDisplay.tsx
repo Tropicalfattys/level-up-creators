@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { DollarSign } from 'lucide-react';
 import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
-import { STATIC_CREATOR_TIERS } from '@/lib/contracts';
 
 interface PlanDisplayProps {
   tier: 'basic' | 'premium' | 'enterprise';
@@ -11,16 +10,47 @@ interface PlanDisplayProps {
 }
 
 export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
-  const { data: dynamicTiers } = useDynamicCreatorTiers();
+  const { data: dynamicTiers, isLoading } = useDynamicCreatorTiers();
   
-  // Use dynamic tiers if available, fallback to static
-  const tiers = dynamicTiers || STATIC_CREATOR_TIERS;
-  const tierInfo = tiers[tier];
+  // Use dynamic tiers - no fallback to static tiers
+  const tierInfo = dynamicTiers?.[tier];
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="animate-pulse h-4 bg-gray-200 rounded w-full"></div>
+            <div className="animate-pulse h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!tierInfo) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="capitalize text-red-600">Plan Not Found</CardTitle>
+          <CardDescription>
+            The {tier} plan is not currently available.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="capitalize">{tierInfo?.displayName || tier}</CardTitle>
+        <CardTitle className="capitalize">{tierInfo.displayName}</CardTitle>
         <CardDescription className="flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
           {amount === 0 ? 'FREE' : `${amount} USDC`}
@@ -28,7 +58,7 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {tierInfo?.features?.map((feature, index) => (
+          {tierInfo.features?.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-sm">
               <span className="w-2 h-2 bg-primary rounded-full"></span>
               {feature}

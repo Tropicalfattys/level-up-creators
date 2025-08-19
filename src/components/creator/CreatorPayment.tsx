@@ -8,7 +8,6 @@ import { WalletConnectionManager } from '@/components/payments/WalletConnectionM
 import { SecurityWarning } from '@/components/payments/SecurityWarning';
 import { PlanDisplay } from '@/components/payments/PlanDisplay';
 import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
-import { STATIC_CREATOR_TIERS } from '@/lib/contracts';
 
 interface CreatorPaymentProps {
   isOpen: boolean;
@@ -21,11 +20,11 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   const [isProcessing, setIsProcessing] = useState(false);
   const [securityWarningAccepted, setSecurityWarningAccepted] = useState(false);
   
-  const { data: dynamicTiers, isLoading } = useDynamicCreatorTiers();
+  const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
   
-  // Use dynamic pricing if available, fallback to static pricing
-  const tiers = dynamicTiers || STATIC_CREATOR_TIERS;
-  const amount = tiers[tier]?.price || 0;
+  // Use dynamic pricing - no fallback to static pricing
+  const amount = dynamicTiers?.[tier]?.price || 0;
+  const tierDisplayName = dynamicTiers?.[tier]?.displayName || tier;
 
   if (isProcessing) {
     return (
@@ -54,13 +53,66 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
     );
   }
 
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading pricing information...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Error Loading Pricing</DialogTitle>
+            <DialogDescription>
+              Unable to load pricing information. Please try again later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!dynamicTiers?.[tier]) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Plan Not Available</DialogTitle>
+            <DialogDescription>
+              The {tier} plan is not currently available. Please contact support.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   // For basic tier or free tiers, skip payment
   if (amount === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm {tiers[tier]?.displayName || 'Basic'} Plan</DialogTitle>
+            <DialogTitle>Confirm {tierDisplayName}</DialogTitle>
             <DialogDescription>
               This plan is free! Click confirm to proceed with your creator application.
             </DialogDescription>
@@ -79,19 +131,6 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
     );
   }
 
-  if (isLoading) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading pricing information...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
@@ -101,7 +140,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             Secure Crypto Payment
           </DialogTitle>
           <DialogDescription>
-            Choose your preferred wallet and network to pay {amount} USDC for the {tier} plan
+            Choose your preferred wallet and network to pay {amount} USDC for the {tierDisplayName}
           </DialogDescription>
         </DialogHeader>
 

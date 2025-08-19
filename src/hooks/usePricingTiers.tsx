@@ -28,11 +28,15 @@ export const usePricingTiers = () => {
       // Convert the Json features to string[] safely
       const convertedData = (data || []).map(tier => ({
         ...tier,
-        features: Array.isArray(tier.features) ? tier.features as string[] : []
+        features: Array.isArray(tier.features) ? tier.features as string[] : 
+                 typeof tier.features === 'string' ? [tier.features] :
+                 []
       }));
       
       return convertedData;
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true, // Refetch when user comes back to the app
   });
 };
 
