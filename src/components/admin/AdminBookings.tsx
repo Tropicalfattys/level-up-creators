@@ -56,7 +56,7 @@ export const AdminBookings = () => {
   });
 
   const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status, adminNote }: { bookingId: string; status: string; adminNote?: string }) => {
+    mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
       const { error } = await supabase
         .from('bookings')
         .update({ 
@@ -66,14 +66,6 @@ export const AdminBookings = () => {
         .eq('id', bookingId);
 
       if (error) throw error;
-
-      // Log admin action
-      await supabase.from('audit_logs').insert({
-        action: `booking_status_changed_to_${status}`,
-        target_table: 'bookings',
-        target_id: bookingId,
-        metadata: { adminNote, previousStatus: status }
-      });
     },
     onSuccess: () => {
       toast.success('Booking status updated');
