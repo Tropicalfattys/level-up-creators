@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,130 +19,135 @@ interface AnalyticsData {
   recentActivity: Array<{ date: string; bookings: number; earnings: number }>;
 }
 
+// Extract analytics fetching to separate function to prevent type recursion
+const fetchCreatorAnalytics = async (userId: string): Promise<AnalyticsData> => {
+  // Fetch services with explicit typing
+  const servicesQuery = await supabase
+    .from('services')
+    .select('id, title, price_usdc')
+    .eq('creator_id', userId);
+
+  if (servicesQuery.error) throw servicesQuery.error;
+  
+  const services = servicesQuery.data || [];
+  const serviceIds = services.map(s => s.id);
+
+  // Fetch bookings with explicit typing
+  let bookings: any[] = [];
+  if (serviceIds.length > 0) {
+    const bookingsQuery = await supabase
+      .from('bookings')
+      .select('id, service_id, status, usdc_amount, created_at')
+      .in('service_id', serviceIds);
+
+    if (bookingsQuery.error) throw bookingsQuery.error;
+    bookings = bookingsQuery.data || [];
+  }
+
+  // Fetch reviews with explicit typing
+  let reviews: any[] = [];
+  if (serviceIds.length > 0) {
+    const reviewsQuery = await supabase
+      .from('reviews')
+      .select('rating, created_at')
+      .in('service_id', serviceIds);
+
+    if (reviewsQuery.error) throw reviewsQuery.error;
+    reviews = reviewsQuery.data || [];
+  }
+
+  // Calculate metrics
+  const completedBookings = bookings.filter(b => b.status === 'completed');
+  const totalEarnings = completedBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
+  const totalBookings = bookings.length;
+  const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  const activeServices = services.length;
+  const completionRate = totalBookings > 0 ? (completedBookings.length / totalBookings) * 100 : 0;
+
+  // Monthly earnings
+  const monthlyEarnings = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = subDays(new Date(), i * 30);
+    const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+    const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
+    const monthBookings = completedBookings.filter(b => {
+      const bookingDate = new Date(b.created_at);
+      return bookingDate >= monthStart && bookingDate <= monthEnd;
+    });
+    
+    const earnings = monthBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
+    
+    monthlyEarnings.push({
+      month: format(date, 'MMM yyyy'),
+      earnings
+    });
+  }
+
+  // Service popularity
+  const servicePopularity = services.map(service => {
+    const serviceBookings = bookings.filter(b => b.service_id === service.id).length;
+    return {
+      service: service.title.length > 20 ? service.title.substring(0, 20) + '...' : service.title,
+      bookings: serviceBookings
+    };
+  }).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
+
+  // Rating distribution
+  const ratingCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach(review => {
+    const rating = Math.floor(review.rating);
+    if (rating >= 1 && rating <= 5) {
+      ratingCounts[rating]++;
+    }
+  });
+  
+  const ratingDistribution = Object.entries(ratingCounts).map(([rating, count]) => ({
+    rating: parseInt(rating),
+    count
+  }));
+
+  // Recent activity
+  const recentActivity = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    const dayBookings = bookings.filter(b => {
+      const bookingDate = new Date(b.created_at);
+      return format(bookingDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+    });
+    
+    const dayEarnings = dayBookings
+      .filter(b => b.status === 'completed')
+      .reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
+    
+    recentActivity.push({
+      date: format(date, 'MMM dd'),
+      bookings: dayBookings.length,
+      earnings: dayEarnings
+    });
+  }
+
+  return {
+    totalEarnings,
+    totalBookings,
+    avgRating,
+    activeServices,
+    completionRate,
+    monthlyEarnings,
+    servicePopularity,
+    ratingDistribution,
+    recentActivity
+  };
+};
+
 export const CreatorAnalytics = () => {
   const { user } = useAuth();
 
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['creator-analytics', user?.id],
-    queryFn: async () => {
+    queryFn: () => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      // Explicit field selection to prevent deep type instantiation
-      const servicesResult = await supabase
-        .from('services')
-        .select('id, title, price_usdc')
-        .eq('creator_id', user.id);
-
-      if (servicesResult.error) throw servicesResult.error;
-      const services: any[] = servicesResult.data || [];
-      const serviceIds = services.map(s => s.id);
-
-      let bookings: any[] = [];
-      if (serviceIds.length > 0) {
-        // Explicit field selection instead of '*' to prevent type recursion
-        const bookingsResult = await supabase
-          .from('bookings')
-          .select('id, service_id, status, usdc_amount, created_at')
-          .in('service_id', serviceIds);
-
-        if (bookingsResult.error) throw bookingsResult.error;
-        bookings = bookingsResult.data || [];
-      }
-
-      let reviews: any[] = [];
-      if (serviceIds.length > 0) {
-        const reviewsResult = await supabase
-          .from('reviews')
-          .select('rating, created_at')
-          .in('service_id', serviceIds);
-
-        if (reviewsResult.error) throw reviewsResult.error;
-        reviews = reviewsResult.data || [];
-      }
-
-      // Calculate metrics
-      const completedBookings = bookings.filter(b => b.status === 'completed');
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
-      const totalBookings = bookings.length;
-      const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-      const activeServices = services.length;
-      const completionRate = totalBookings > 0 ? (completedBookings.length / totalBookings) * 100 : 0;
-
-      // Monthly earnings
-      const monthlyEarnings = [];
-      for (let i = 5; i >= 0; i--) {
-        const date = subDays(new Date(), i * 30);
-        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        
-        const monthBookings = completedBookings.filter(b => {
-          const bookingDate = new Date(b.created_at);
-          return bookingDate >= monthStart && bookingDate <= monthEnd;
-        });
-        
-        const earnings = monthBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
-        
-        monthlyEarnings.push({
-          month: format(date, 'MMM yyyy'),
-          earnings
-        });
-      }
-
-      // Service popularity
-      const servicePopularity = services.map(service => {
-        const serviceBookings = bookings.filter(b => b.service_id === service.id).length;
-        return {
-          service: service.title.length > 20 ? service.title.substring(0, 20) + '...' : service.title,
-          bookings: serviceBookings
-        };
-      }).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
-
-      // Rating distribution
-      const ratingCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      reviews.forEach(review => {
-        const rating = Math.floor(review.rating);
-        if (rating >= 1 && rating <= 5) {
-          ratingCounts[rating]++;
-        }
-      });
-      
-      const ratingDistribution = Object.entries(ratingCounts).map(([rating, count]) => ({
-        rating: parseInt(rating),
-        count
-      }));
-
-      // Recent activity
-      const recentActivity = [];
-      for (let i = 29; i >= 0; i--) {
-        const date = subDays(new Date(), i);
-        const dayBookings = bookings.filter(b => {
-          const bookingDate = new Date(b.created_at);
-          return format(bookingDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-        });
-        
-        const dayEarnings = dayBookings
-          .filter(b => b.status === 'completed')
-          .reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
-        
-        recentActivity.push({
-          date: format(date, 'MMM dd'),
-          bookings: dayBookings.length,
-          earnings: dayEarnings
-        });
-      }
-
-      // Explicitly return typed object
-      return {
-        totalEarnings,
-        totalBookings,
-        avgRating,
-        activeServices,
-        completionRate,
-        monthlyEarnings,
-        servicePopularity,
-        ratingDistribution,
-        recentActivity
-      } as AnalyticsData;
+      return fetchCreatorAnalytics(user.id);
     },
     enabled: !!user?.id
   });
