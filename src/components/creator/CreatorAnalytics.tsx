@@ -3,11 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Users, Star, Calendar, Package } from 'lucide-react';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { TrendingUp, DollarSign, Users, Star, Package } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 interface AnalyticsData {
   totalEarnings: number;
@@ -42,16 +41,12 @@ export const CreatorAnalytics = () => {
       // Get bookings data
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select(`
-          *,
-          service:services (title, price_usdc),
-          reviews (rating)
-        `)
+        .select('*')
         .in('service_id', serviceIds);
 
       if (bookingsError) throw bookingsError;
 
-      // Get reviews data
+      // Get reviews data separately
       const { data: reviews, error: reviewsError } = await supabase
         .from('reviews')
         .select('rating, created_at')
@@ -64,7 +59,7 @@ export const CreatorAnalytics = () => {
       const totalBookings = bookings?.length || 0;
       const completedBookings = bookings?.filter(b => b.status === 'completed').length || 0;
       const avgRating = reviews?.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-      const activeServices = services?.filter(s => s).length || 0;
+      const activeServices = services?.length || 0;
       const completionRate = totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
 
       // Monthly earnings (last 6 months)

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ export const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // useEffect to get referral code from URL
   useState(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {

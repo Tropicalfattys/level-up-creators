@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, Filter, X, DollarSign, Clock, Star } from 'lucide-react';
+import { Search, Filter, DollarSign, Clock, Star } from 'lucide-react';
 
 interface SearchFilters {
   query: string;
@@ -32,9 +32,7 @@ interface Service {
     handle: string;
     avatar_url?: string;
   };
-  _count: {
-    bookings: number;
-  };
+  bookingCount: number;
   avgRating: number;
 }
 
@@ -50,7 +48,7 @@ export const AdvancedSearch = () => {
 
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: services, isLoading, refetch } = useQuery({
+  const { data: services, isLoading } = useQuery({
     queryKey: ['advanced-search', filters],
     queryFn: async (): Promise<Service[]> => {
       let query = supabase
@@ -65,9 +63,7 @@ export const AdvancedSearch = () => {
           creator:users!creator_id (
             handle,
             avatar_url
-          ),
-          bookings!inner (id),
-          reviews (rating)
+          )
         `)
         .eq('active', true);
 
@@ -110,18 +106,33 @@ export const AdvancedSearch = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Transform and filter by rating
-      return (data || [])
-        .map(service => ({
+      // Get bookings and reviews for each service
+      const servicesWithStats = await Promise.all((data || []).map(async (service) => {
+        // Get booking count
+        const { count: bookingCount } = await supabase
+          .from('bookings')
+          .select('*', { count: 'exact', head: true })
+          .eq('service_id', service.id);
+
+        // Get reviews for rating calculation
+        const { data: reviews } = await supabase
+          .from('reviews')
+          .select('rating')
+          .eq('service_id', service.id);
+
+        const avgRating = reviews && reviews.length > 0 
+          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+          : 0;
+
+        return {
           ...service,
-          _count: {
-            bookings: service.bookings?.length || 0
-          },
-          avgRating: service.reviews?.length > 0 
-            ? service.reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / service.reviews.length
-            : 0
-        }))
-        .filter(service => service.avgRating >= filters.minRating);
+          bookingCount: bookingCount || 0,
+          avgRating
+        };
+      }));
+
+      // Filter by rating
+      return servicesWithStats.filter(service => service.avgRating >= filters.minRating);
     },
     enabled: true
   });
@@ -355,7 +366,7 @@ export const AdvancedSearch = () => {
                             {service.avgRating.toFixed(1)}
                           </span>
                         )}
-                        <span>{service._count.bookings} bookings</span>
+                        <span>{service.bookingCount} bookings</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
