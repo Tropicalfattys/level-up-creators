@@ -16,10 +16,6 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
   console.log('PlanDisplay: Dynamic tiers data:', dynamicTiers);
   console.log('PlanDisplay: Loading state:', isLoading, 'Error:', error);
 
-  // Use dynamic tiers data
-  const tierInfo = dynamicTiers?.[tier];
-  console.log('PlanDisplay: Tier info for', tier, ':', tierInfo);
-
   if (isLoading) {
     return (
       <Card>
@@ -46,21 +42,25 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
         <CardHeader>
           <CardTitle className="capitalize text-red-600">Error Loading Plan</CardTitle>
           <CardDescription>
-            Unable to load pricing information for {tier} plan.
+            Unable to load pricing information for {tier} plan. Please try refreshing the page.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
+  // Use dynamic tiers data
+  const tierInfo = dynamicTiers?.[tier];
+  console.log('PlanDisplay: Tier info for', tier, ':', tierInfo);
+
   if (!tierInfo) {
     console.warn('PlanDisplay: No tier info found for:', tier, 'Available tiers:', Object.keys(dynamicTiers || {}));
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="capitalize text-red-600">Plan Not Found</CardTitle>
+          <CardTitle className="capitalize text-red-600">Plan Not Available</CardTitle>
           <CardDescription>
-            The {tier} plan is not currently available.
+            The {tier} plan is temporarily unavailable. Please try again later or contact support.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -77,17 +77,27 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
         <CardDescription className="flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
           {displayAmount === 0 ? 'FREE' : `${displayAmount} USDC`}
+          {tierInfo.price !== displayAmount && (
+            <Badge variant="secondary" className="text-xs">
+              Base: {tierInfo.price === 0 ? 'FREE' : `${tierInfo.price} USDC`}
+            </Badge>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
           {tierInfo.features?.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-sm">
-              <span className="w-2 h-2 bg-primary rounded-full"></span>
+              <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
               {feature}
             </li>
           ))}
         </ul>
+        {(!tierInfo.features || tierInfo.features.length === 0) && (
+          <p className="text-sm text-muted-foreground italic">
+            No features listed for this plan.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

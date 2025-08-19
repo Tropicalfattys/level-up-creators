@@ -31,20 +31,46 @@ export const usePricingTiers = () => {
       
       console.log('usePricingTiers: Raw data from database:', data);
       
-      // Convert the Json features to string[] safely
-      const convertedData = (data || []).map(tier => ({
-        ...tier,
-        features: Array.isArray(tier.features) ? tier.features as string[] : 
-                 typeof tier.features === 'string' ? [tier.features] :
-                 []
-      }));
+      // Convert the Json features to string[] safely with better error handling
+      const convertedData = (data || []).map(tier => {
+        let features: string[] = [];
+        
+        if (Array.isArray(tier.features)) {
+          features = tier.features as string[];
+        } else if (typeof tier.features === 'string') {
+          try {
+            const parsed = JSON.parse(tier.features);
+            features = Array.isArray(parsed) ? parsed : [tier.features];
+          } catch {
+            features = [tier.features];
+          }
+        } else if (tier.features && typeof tier.features === 'object') {
+          // Handle case where features might be stored as object
+          features = Object.values(tier.features).filter(f => typeof f === 'string') as string[];
+        }
+        
+        return {
+          ...tier,
+          features
+        };
+      });
       
       console.log('usePricingTiers: Converted data:', convertedData);
+      
+      // Ensure we have all expected tiers
+      const expectedTiers = ['basic', 'mid', 'pro'];
+      const foundTiers = convertedData.map(t => t.tier_name);
+      const missingTiers = expectedTiers.filter(t => !foundTiers.includes(t));
+      
+      if (missingTiers.length > 0) {
+        console.warn('usePricingTiers: Missing expected tiers:', missingTiers);
+      }
+      
       return convertedData;
     },
-    staleTime: 1 * 60 * 1000, // 1 minute - shorter for faster updates
+    staleTime: 1 * 60 * 1000, // 1 minute
     refetchOnWindowFocus: true, 
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds to catch admin changes
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds
   });
 };
 
@@ -55,7 +81,6 @@ export const useDynamicCreatorTiers = () => {
 
   // Convert to the format expected by the frontend components
   const creatorTiers = pricingTiers?.reduce((acc, tier) => {
-    // Ensure we're mapping to the correct tier names (basic, mid, pro)
     const tierName = tier.tier_name as 'basic' | 'mid' | 'pro';
     
     if (['basic', 'mid', 'pro'].includes(tierName)) {
@@ -64,6 +89,7 @@ export const useDynamicCreatorTiers = () => {
         displayName: tier.display_name,
         features: tier.features
       };
+      console.log(`useDynamicCreatorTiers: Added tier ${tierName}:`, acc[tierName]);
     } else {
       console.warn(`useDynamicCreatorTiers: Unknown tier_name: ${tier.tier_name}`);
     }
@@ -72,6 +98,16 @@ export const useDynamicCreatorTiers = () => {
   }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; features: string[] }>);
 
   console.log('useDynamicCreatorTiers: Final creator tiers object:', creatorTiers);
+  
+  // Validate that we have all expected tiers
+  if (creatorTiers) {
+    const expectedTiers: ('basic' | 'mid' | 'pro')[] = ['basic', 'mid', 'pro'];
+    const missingTiers = expectedTiers.filter(tier => !creatorTiers[tier]);
+    
+    if (missingTiers.length > 0) {
+      console.error('useDynamicCreatorTiers: Missing tiers in final object:', missingTiers);
+    }
+  }
 
   return {
     ...queryResult,
