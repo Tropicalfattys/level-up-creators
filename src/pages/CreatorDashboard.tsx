@@ -10,14 +10,15 @@ import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { CreatorAnalytics } from '@/components/creator/CreatorAnalytics';
-import { BarChart3, Package, Calendar, DollarSign } from 'lucide-react';
+import { BarChart3, Package, Calendar, DollarSign, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const CreatorDashboard = () => {
-  const { user, userProfile, userRole, loading } = useAuth();
+  const { user, userProfile, userRole, loading, refreshProfile } = useAuth();
 
   // Check if user has an approved creator profile
-  const { data: creatorProfile, isLoading: creatorLoading } = useQuery({
+  const { data: creatorProfile, isLoading: creatorLoading, refetch: refetchCreator } = useQuery({
     queryKey: ['creator-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -45,6 +46,16 @@ const CreatorDashboard = () => {
     approved: creatorProfile?.approved,
     loading: loading || creatorLoading
   });
+
+  // Auto-refresh profile if creator is approved but role is still client
+  useEffect(() => {
+    if (creatorProfile?.approved && userRole === 'client') {
+      console.log('Creator approved but role is client, refreshing profile...');
+      setTimeout(() => {
+        refreshProfile();
+      }, 1000);
+    }
+  }, [creatorProfile?.approved, userRole, refreshProfile]);
 
   // Show loading state while checking authentication
   if (loading || creatorLoading) {
@@ -79,14 +90,16 @@ const CreatorDashboard = () => {
     );
   }
 
-  // Determine creator access - user must be approved creator OR have creator role with approved profile
+  // Determine creator access - user must be approved creator AND have creator role
   const hasCreatorProfile = !!creatorProfile;
   const isApprovedCreator = creatorProfile?.approved === true;
-  const canAccessDashboard = isApprovedCreator && (userRole === 'creator' || userRole === 'admin');
+  const hasCreatorRole = userRole === 'creator' || userRole === 'admin';
+  const canAccessDashboard = isApprovedCreator && hasCreatorRole;
 
   console.log('Access check:', { 
     hasCreatorProfile, 
     isApprovedCreator, 
+    hasCreatorRole,
     canAccessDashboard,
     userRole 
   });
@@ -94,6 +107,7 @@ const CreatorDashboard = () => {
   // Check if user can access creator dashboard
   if (!canAccessDashboard) {
     const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
+    const needsRoleSync = isApprovedCreator && !hasCreatorRole;
     
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -103,7 +117,7 @@ const CreatorDashboard = () => {
             <CardDescription>
               {!hasCreatorProfile && 'You need to apply to become a creator to access this dashboard.'}
               {hasPendingApplication && 'Your creator application is pending approval.'}
-              {hasCreatorProfile && isApprovedCreator && userRole !== 'creator' && 'Your creator profile is approved but your account role needs to be updated.'}
+              {needsRoleSync && 'Your creator profile is approved! Refreshing your permissions...'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -122,13 +136,20 @@ const CreatorDashboard = () => {
                 </Button>
               </div>
             )}
-            {hasCreatorProfile && isApprovedCreator && userRole !== 'creator' && (
+            {needsRoleSync && (
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Please contact support or refresh your session. Your role should be updated automatically.
+                  Syncing your creator permissions...
                 </p>
-                <Button variant="outline" asChild className="w-full">
-                  <Link to="/">Return to Dashboard</Link>
+                <Button 
+                  onClick={async () => {
+                    await refreshProfile();
+                    await refetchCreator();
+                  }}
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Now
                 </Button>
               </div>
             )}

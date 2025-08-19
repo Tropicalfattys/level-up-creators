@@ -166,24 +166,11 @@ export const AdminCreators = () => {
         throw creatorError;
       }
 
-      // CRITICAL: Update user role when approving/declining
-      const newRole = approved ? 'creator' : 'client';
-      console.log('Updating user role to:', newRole);
-      
-      const { error: userError } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
-
-      if (userError) {
-        console.error('User role update error:', userError);
-        throw userError;
-      }
-
-      console.log('Successfully updated creator status and user role');
+      // The trigger will automatically handle the user role update
+      console.log('Successfully updated creator status - trigger will handle role update');
     },
     onSuccess: (_, { approved }) => {
-      toast.success(`Creator ${approved ? 'approved' : 'declined'} successfully! User role has been updated.`);
+      toast.success(`Creator ${approved ? 'approved' : 'declined'} successfully! User role will be updated automatically.`);
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
       // Also invalidate auth queries to refresh user data
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });

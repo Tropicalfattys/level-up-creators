@@ -23,6 +23,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   userProfile: UserProfile | null;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,7 +31,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   userRole: null,
-  userProfile: null
+  userProfile: null,
+  refreshProfile: async () => {}
 });
 
 export const useAuth = () => {
@@ -54,6 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -61,6 +64,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .maybeSingle();
       
       if (!error && data) {
+        console.log('User profile fetched:', data);
         setUserProfile(data);
         setUserRole(data.role || 'client');
       } else if (error) {
@@ -68,6 +72,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await fetchUserProfile(user.id);
     }
   };
 
@@ -117,7 +127,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       session, 
       loading, 
       userRole, 
-      userProfile 
+      userProfile,
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>
