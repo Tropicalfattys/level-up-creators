@@ -13,7 +13,7 @@ interface CreatorPaymentProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: (txHash: string, chain: string) => void;
-  tier: 'basic' | 'premium' | 'enterprise';
+  tier: 'basic' | 'mid' | 'pro';
 }
 
 export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: CreatorPaymentProps) => {
@@ -22,7 +22,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   
   const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
   
-  // Use dynamic pricing - no fallback to static pricing
+  // Use dynamic pricing
   const amount = dynamicTiers?.[tier]?.price || 0;
   const tierDisplayName = dynamicTiers?.[tier]?.displayName || tier;
 

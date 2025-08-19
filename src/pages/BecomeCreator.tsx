@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Check, Crown, Star, Zap, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { WalletConnect } from '@/components/payments/WalletConnect';
+import { CreatorPayment } from '@/components/creator/CreatorPayment';
+import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
 
 export default function BecomeCreator() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -22,61 +23,21 @@ export default function BecomeCreator() {
     category: '',
     introVideo: null as File | null
   });
+  const [showPayment, setShowPayment] = useState(false);
 
   const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const tiers = [
-    {
-      id: 'basic',
-      name: 'Starter',
-      price: 'Free',
-      priceAmount: 0,
-      description: 'Get started with basic features',
-      features: [
-        'Create up to 3 services',
-        'Basic profile listing',
-        'Standard support',
-        'Community access'
-      ],
-      icon: Star,
-      popular: false
-    },
-    {
-      id: 'mid',
-      name: 'Plus',
-      price: '$25 USDC',
-      priceAmount: 25,
-      description: 'Enhanced features for growing creators',
-      features: [
-        'Unlimited services',
-        'Priority listing',
-        'Analytics dashboard',
-        'Lower platform fees (12%)',
-        'Priority support'
-      ],
-      icon: Zap,
-      popular: true
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: '$50 USDC',
-      priceAmount: 50,
-      description: 'Premium features for top creators',
-      features: [
-        'Everything in Plus',
-        'Video intro uploads',
-        'Featured homepage placement',
-        'Custom branding',
-        'Lowest platform fees (10%)',
-        'Dedicated support'
-      ],
-      icon: Crown,
-      popular: false
-    }
-  ];
+  // Use dynamic pricing from database
+  const { data: dynamicTiers, isLoading: tiersLoading, error: tiersError } = useDynamicCreatorTiers();
+
+  // Define tier icons and popularity
+  const tierConfig = {
+    basic: { icon: Star, popular: false },
+    mid: { icon: Zap, popular: true },
+    pro: { icon: Crown, popular: false }
+  };
 
   const submitApplication = useMutation({
     mutationFn: async (data: typeof applicationData) => {
@@ -114,11 +75,11 @@ export default function BecomeCreator() {
       return;
     }
 
-    const selectedTierData = tiers.find(t => t.id === selectedTier);
+    const selectedTierData = dynamicTiers?.[selectedTier as keyof typeof dynamicTiers];
     
-    if (selectedTierData && selectedTierData.priceAmount > 0) {
+    if (selectedTierData && selectedTierData.price > 0) {
       // Paid tier - go to payment
-      setStep('payment');
+      setShowPayment(true);
     } else {
       // Free tier - submit directly
       submitApplication.mutate(applicationData);
@@ -127,8 +88,7 @@ export default function BecomeCreator() {
 
   const handlePaymentSuccess = (txHash: string, chain: string) => {
     toast.success('Payment confirmed! Submitting your application...');
-    // Here you would typically verify the transaction
-    // For now, we'll proceed with the application
+    setShowPayment(false);
     submitApplication.mutate(applicationData);
   };
 
@@ -148,6 +108,33 @@ export default function BecomeCreator() {
     );
   }
 
+  if (tiersLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading subscription plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (tiersError || !dynamicTiers) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-red-600">Error Loading Plans</h1>
+          <p className="text-muted-foreground mb-6">
+            Unable to load subscription plans. Please try again later.
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (step === 'selection') {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -159,19 +146,22 @@ export default function BecomeCreator() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {tiers.map((tier) => {
-            const Icon = tier.icon;
+          {Object.entries(dynamicTiers).map(([tierId, tierData]) => {
+            const config = tierConfig[tierId as keyof typeof tierConfig];
+            if (!config) return null;
+            
+            const Icon = config.icon;
             return (
               <Card 
-                key={tier.id}
+                key={tierId}
                 className={`relative cursor-pointer transition-all ${
-                  selectedTier === tier.id 
+                  selectedTier === tierId 
                     ? 'ring-2 ring-primary shadow-lg' 
                     : 'hover:shadow-md'
-                } ${tier.popular ? 'border-primary' : ''}`}
-                onClick={() => setSelectedTier(tier.id)}
+                } ${config.popular ? 'border-primary' : ''}`}
+                onClick={() => setSelectedTier(tierId)}
               >
-                {tier.popular && (
+                {config.popular && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     Most Popular
                   </Badge>
@@ -181,14 +171,20 @@ export default function BecomeCreator() {
                   <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                  <div className="text-3xl font-bold text-primary">{tier.price}</div>
-                  <CardDescription>{tier.description}</CardDescription>
+                  <CardTitle className="text-2xl">{tierData.displayName}</CardTitle>
+                  <div className="text-3xl font-bold text-primary">
+                    {tierData.price === 0 ? 'Free' : `$${tierData.price} USDC`}
+                  </div>
+                  <CardDescription>
+                    {tierId === 'basic' && 'Get started with basic features'}
+                    {tierId === 'mid' && 'Enhanced features for growing creators'}
+                    {tierId === 'pro' && 'Premium features for top creators'}
+                  </CardDescription>
                 </CardHeader>
 
                 <CardContent>
                   <ul className="space-y-3 mb-6">
-                    {tier.features.map((feature, idx) => (
+                    {tierData.features.map((feature, idx) => (
                       <li key={idx} className="flex items-center gap-3">
                         <Check className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
@@ -198,9 +194,9 @@ export default function BecomeCreator() {
 
                   <Button 
                     className="w-full"
-                    variant={selectedTier === tier.id ? 'default' : 'outline'}
+                    variant={selectedTier === tierId ? 'default' : 'outline'}
                   >
-                    {tier.price === 'Free' ? 'Get Started' : 'Choose Plan'}
+                    {tierData.price === 0 ? 'Get Started' : 'Choose Plan'}
                   </Button>
                 </CardContent>
               </Card>
@@ -320,27 +316,16 @@ export default function BecomeCreator() {
     );
   }
 
-  if (step === 'payment') {
-    const selectedTierData = tiers.find(t => t.id === selectedTier);
-    
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Complete Payment</h1>
-          <p className="text-muted-foreground">
-            Pay {selectedTierData?.price} to activate your {selectedTierData?.name} tier
-          </p>
-        </div>
-
-        <WalletConnect
-          amount={selectedTierData?.priceAmount || 0}
-          currency="USDC"
+  return (
+    <>
+      {showPayment && selectedTier && (
+        <CreatorPayment
+          isOpen={showPayment}
+          onClose={() => setShowPayment(false)}
           onPaymentSuccess={handlePaymentSuccess}
-          onCancel={() => setStep('application')}
+          tier={selectedTier as 'basic' | 'premium' | 'enterprise'}
         />
-      </div>
-    );
-  }
-
-  return null;
+      )}
+    </>
+  );
 }

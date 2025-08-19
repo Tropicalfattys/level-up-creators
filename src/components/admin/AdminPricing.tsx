@@ -68,10 +68,10 @@ export const AdminPricing = () => {
       // Invalidate all pricing-related queries to force refresh across the app
       queryClient.invalidateQueries({ queryKey: ['pricing-tiers'] });
       queryClient.invalidateQueries({ queryKey: ['debug-pricing-tiers'] });
-      // Force refetch to ensure immediate update
+      // Force immediate refetch to ensure changes show up instantly
       queryClient.refetchQueries({ queryKey: ['pricing-tiers'] });
       
-      toast.success('Pricing tier updated successfully - changes will reflect across the app');
+      toast.success('✅ Pricing updated! Changes are now live on the subscription page.');
       setEditingTiers({});
     },
     onError: (error) => {
@@ -87,11 +87,11 @@ export const AdminPricing = () => {
       // First, delete existing data
       await supabase.from('pricing_tiers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // Insert the correct pricing tiers
+      // Insert the correct pricing tiers that match the frontend expectations
       const correctTiers = [
         {
           tier_name: 'basic',
-          display_name: 'Basic Plan',
+          display_name: 'Starter',
           price_usdc: 0,
           features: [
             'Create up to 3 services',
@@ -102,28 +102,29 @@ export const AdminPricing = () => {
           active: true
         },
         {
-          tier_name: 'premium',
-          display_name: 'Premium Plan', 
-          price_usdc: 29,
+          tier_name: 'mid',
+          display_name: 'Plus', 
+          price_usdc: 25,
           features: [
-            'Create unlimited services',
-            'Priority listing placement',
-            'Advanced analytics',
-            'Priority support',
-            'Custom branding options'
+            'Unlimited services',
+            'Priority listing',
+            'Analytics dashboard',
+            'Lower platform fees (12%)',
+            'Priority support'
           ],
           active: true
         },
         {
-          tier_name: 'enterprise',
-          display_name: 'Enterprise Plan',
-          price_usdc: 99,
+          tier_name: 'pro',
+          display_name: 'Pro',
+          price_usdc: 50,
           features: [
-            'Everything in Premium',
-            'Dedicated account manager', 
-            'Custom integrations',
-            'White-label solutions',
-            'SLA guarantees'
+            'Everything in Plus',
+            'Video intro uploads',
+            'Featured homepage placement', 
+            'Custom branding',
+            'Lowest platform fees (10%)',
+            'Dedicated support'
           ],
           active: true
         }
@@ -139,7 +140,7 @@ export const AdminPricing = () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-tiers'] });
       queryClient.invalidateQueries({ queryKey: ['debug-pricing-tiers'] });
       queryClient.refetchQueries({ queryKey: ['pricing-tiers'] });
-      toast.success('Database seeded with correct pricing data!');
+      toast.success('✅ Database seeded with correct pricing data! Check the subscription page.');
     },
     onError: (error) => {
       console.error('Error seeding data:', error);
@@ -227,6 +228,13 @@ export const AdminPricing = () => {
     );
   }
 
+  // Tier name mapping for display
+  const tierNameMapping = {
+    basic: 'Starter (basic)',
+    mid: 'Plus (mid)', 
+    pro: 'Pro (pro)'
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -236,7 +244,7 @@ export const AdminPricing = () => {
             Creator Subscription Pricing Management
           </CardTitle>
           <CardDescription>
-            Manage subscription tier pricing for creator applications. Changes will be reflected immediately on the frontend.
+            Manage subscription tier pricing for creator applications. Changes are reflected immediately on the subscription page.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -255,7 +263,7 @@ export const AdminPricing = () => {
               disabled={seedCorrectDataMutation.isPending}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${seedCorrectDataMutation.isPending ? 'animate-spin' : ''}`} />
-              Seed Correct Data
+              Reset to Default Data
             </Button>
           </div>
 
@@ -274,7 +282,7 @@ export const AdminPricing = () => {
                   onClick={() => seedCorrectDataMutation.mutate()}
                   disabled={seedCorrectDataMutation.isPending}
                 >
-                  Seed Database with Correct Pricing Data
+                  Seed Database with Default Pricing Data
                 </Button>
               </CardContent>
             </Card>
@@ -282,6 +290,7 @@ export const AdminPricing = () => {
             <div className="grid gap-6">
               {pricingTiers.map((tier) => {
                 const currentFeatures = getCurrentValue(tier, 'features') as string[] || [];
+                const friendlyName = tierNameMapping[tier.tier_name as keyof typeof tierNameMapping] || tier.tier_name;
                 
                 return (
                   <Card key={tier.id} className="relative">
@@ -291,13 +300,15 @@ export const AdminPricing = () => {
                           <CardTitle className="text-lg">
                             {getCurrentValue(tier, 'display_name') as string} 
                             <span className="text-sm font-normal text-muted-foreground ml-2">
-                              ({tier.tier_name})
+                              ({friendlyName})
                             </span>
                           </CardTitle>
-                          <CardDescription>ID: {tier.id}</CardDescription>
+                          <CardDescription>
+                            Changes here update the live subscription page • ID: {tier.id}
+                          </CardDescription>
                         </div>
                         <Badge variant={tier.active ? "default" : "secondary"}>
-                          {getCurrentValue(tier, 'active') ? "Active" : "Inactive"}
+                          {getCurrentValue(tier, 'active') ? "Live" : "Hidden"}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -316,19 +327,19 @@ export const AdminPricing = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor={`display-${tier.id}`}>Display Name</Label>
+                          <Label htmlFor={`display-${tier.id}`}>Display Name (Shown on Subscription Page)</Label>
                           <Input
                             id={`display-${tier.id}`}
                             value={getCurrentValue(tier, 'display_name') as string}
                             onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
-                            placeholder="e.g., Basic Plan, Premium Plan"
+                            placeholder="e.g., Starter, Plus, Pro"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <Label>Features (Checkmark Text)</Label>
+                          <Label>Feature List (Checkmark Items on Subscription Page)</Label>
                           <Button
                             type="button"
                             variant="outline"
@@ -375,23 +386,24 @@ export const AdminPricing = () => {
                             checked={getCurrentValue(tier, 'active') as boolean}
                             onCheckedChange={(checked) => handleInputChange(tier.id, 'active', checked)}
                           />
-                          <Label htmlFor={`active-${tier.id}`}>Active</Label>
+                          <Label htmlFor={`active-${tier.id}`}>Show on Subscription Page</Label>
                         </div>
 
                         <Button
                           onClick={() => handleSave(tier)}
                           disabled={!hasChanges(tier.id) || updatePricingMutation.isPending}
                           size="sm"
+                          className="bg-green-600 hover:bg-green-700"
                         >
                           <Save className="h-4 w-4 mr-2" />
-                          {updatePricingMutation.isPending ? 'Saving...' : 'Save Changes'}
+                          {updatePricingMutation.isPending ? 'Saving...' : 'Save & Apply Changes'}
                         </Button>
                       </div>
 
                       {hasChanges(tier.id) && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <p className="text-sm text-yellow-800">
-                            You have unsaved changes. Click "Save Changes" to apply them across the app.
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-sm text-blue-800">
+                            💡 <strong>You have unsaved changes!</strong> Click "Save & Apply Changes" to update the live subscription page.
                           </p>
                         </div>
                       )}

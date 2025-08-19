@@ -53,12 +53,12 @@ export const useDynamicCreatorTiers = () => {
 
   console.log('useDynamicCreatorTiers: Processing pricing tiers:', pricingTiers);
 
-  // Convert to the format expected by the existing CREATOR_TIERS constant
+  // Convert to the format expected by the frontend components
   const creatorTiers = pricingTiers?.reduce((acc, tier) => {
-    // Ensure we're mapping to the correct tier names
-    const tierName = tier.tier_name as 'basic' | 'premium' | 'enterprise';
+    // Ensure we're mapping to the correct tier names (basic, mid, pro)
+    const tierName = tier.tier_name as 'basic' | 'mid' | 'pro';
     
-    if (['basic', 'premium', 'enterprise'].includes(tierName)) {
+    if (['basic', 'mid', 'pro'].includes(tierName)) {
       acc[tierName] = {
         price: tier.price_usdc,
         displayName: tier.display_name,
@@ -69,7 +69,7 @@ export const useDynamicCreatorTiers = () => {
     }
     
     return acc;
-  }, {} as Record<'basic' | 'premium' | 'enterprise', { price: number; displayName: string; features: string[] }>);
+  }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; features: string[] }>);
 
   console.log('useDynamicCreatorTiers: Final creator tiers object:', creatorTiers);
 

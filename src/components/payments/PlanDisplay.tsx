@@ -5,7 +5,7 @@ import { DollarSign } from 'lucide-react';
 import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
 
 interface PlanDisplayProps {
-  tier: 'basic' | 'premium' | 'enterprise';
+  tier: 'basic' | 'mid' | 'pro';
   amount: number;
 }
 
