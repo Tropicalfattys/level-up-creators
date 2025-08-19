@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +12,6 @@ import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { ChatList } from '@/components/messaging/ChatList';
 import { Package, Calendar, DollarSign, RefreshCw, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
 
 export default function CreatorDashboard() {
   const { user } = useAuth();
@@ -66,10 +66,10 @@ export default function CreatorDashboard() {
         return;
       }
 
-      // Fetch total earnings
+      // Fetch total earnings - using usdc_amount since creator_amount doesn't exist
       const { data: earnings, error: earningsError } = await supabase
         .from('bookings')
-        .select('creator_amount')
+        .select('usdc_amount')
         .eq('creator_id', creator.id)
         .in('status', ['accepted', 'released']);
 
@@ -78,7 +78,9 @@ export default function CreatorDashboard() {
         return;
       }
 
-      const totalEarnings = earnings?.reduce((acc, booking) => acc + (booking?.creator_amount || 0), 0) || 0;
+      // Calculate 85% of total earnings (platform takes 15%)
+      const totalGross = earnings?.reduce((acc, booking) => acc + (booking?.usdc_amount || 0), 0) || 0;
+      const totalEarnings = totalGross * 0.85;
 
       setStats({
         activeServices: services?.length || 0,
@@ -158,7 +160,7 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
-                    <p className="text-2xl font-bold">${stats.totalEarnings}</p>
+                    <p className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
                   </div>
                   <DollarSign className="h-8 w-8 text-yellow-500" />
                 </div>
@@ -219,4 +221,4 @@ export default function CreatorDashboard() {
       )}
     </div>
   );
-};
+}
