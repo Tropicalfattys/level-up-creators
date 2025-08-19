@@ -83,12 +83,12 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
     try {
       if (chainId === 'solana') {
         const validation = validateInput(walletAddressSchema.shape.solana, sanitizedAddress);
-        if (!validation.success) {
+        if (validation.success === false) {
           throw new Error('Invalid Solana wallet address format');
         }
       } else {
         const validation = validateInput(walletAddressSchema.shape.ethereum, sanitizedAddress);
-        if (!validation.success) {
+        if (validation.success === false) {
           throw new Error('Invalid Ethereum wallet address format');
         }
       }
