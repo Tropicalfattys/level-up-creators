@@ -8,7 +8,6 @@ import { TrendingUp, DollarSign, Users, Star, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays } from 'date-fns';
 
-// Explicit interface to prevent deep type instantiation
 interface AnalyticsData {
   totalEarnings: number;
   totalBookings: number;
@@ -24,22 +23,21 @@ interface AnalyticsData {
 export const CreatorAnalytics = () => {
   const { user } = useAuth();
 
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading } = useQuery({
     queryKey: ['creator-analytics', user?.id],
-    queryFn: async (): Promise<AnalyticsData> => {
+    queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Fetch services with explicit typing
+      // Use any to break type recursion
       const servicesResult = await supabase
         .from('services')
         .select('id, title, price_usdc')
         .eq('creator_id', user.id);
 
       if (servicesResult.error) throw servicesResult.error;
-      const services = servicesResult.data || [];
+      const services: any[] = servicesResult.data || [];
       const serviceIds = services.map(s => s.id);
 
-      // Fetch bookings with explicit typing
       let bookings: any[] = [];
       if (serviceIds.length > 0) {
         const bookingsResult = await supabase
@@ -51,7 +49,6 @@ export const CreatorAnalytics = () => {
         bookings = bookingsResult.data || [];
       }
 
-      // Fetch reviews with explicit typing
       let reviews: any[] = [];
       if (serviceIds.length > 0) {
         const reviewsResult = await supabase
@@ -63,16 +60,16 @@ export const CreatorAnalytics = () => {
         reviews = reviewsResult.data || [];
       }
 
-      // Calculate metrics with explicit typing
+      // Calculate metrics
       const completedBookings = bookings.filter(b => b.status === 'completed');
-      const totalEarnings: number = completedBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
-      const totalBookings: number = bookings.length;
-      const avgRating: number = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-      const activeServices: number = services.length;
-      const completionRate: number = totalBookings > 0 ? (completedBookings.length / totalBookings) * 100 : 0;
+      const totalEarnings = completedBookings.reduce((sum, b) => sum + (Number(b.usdc_amount) || 0), 0);
+      const totalBookings = bookings.length;
+      const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+      const activeServices = services.length;
+      const completionRate = totalBookings > 0 ? (completedBookings.length / totalBookings) * 100 : 0;
 
-      // Monthly earnings calculation
-      const monthlyEarnings: Array<{ month: string; earnings: number }> = [];
+      // Monthly earnings
+      const monthlyEarnings = [];
       for (let i = 5; i >= 0; i--) {
         const date = subDays(new Date(), i * 30);
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -91,8 +88,8 @@ export const CreatorAnalytics = () => {
         });
       }
 
-      // Service popularity calculation
-      const servicePopularity: Array<{ service: string; bookings: number }> = services.map(service => {
+      // Service popularity
+      const servicePopularity = services.map(service => {
         const serviceBookings = bookings.filter(b => b.service_id === service.id).length;
         return {
           service: service.title.length > 20 ? service.title.substring(0, 20) + '...' : service.title,
@@ -100,7 +97,7 @@ export const CreatorAnalytics = () => {
         };
       }).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
 
-      // Rating distribution calculation
+      // Rating distribution
       const ratingCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
       reviews.forEach(review => {
         const rating = Math.floor(review.rating);
@@ -109,13 +106,13 @@ export const CreatorAnalytics = () => {
         }
       });
       
-      const ratingDistribution: Array<{ rating: number; count: number }> = Object.entries(ratingCounts).map(([rating, count]) => ({
+      const ratingDistribution = Object.entries(ratingCounts).map(([rating, count]) => ({
         rating: parseInt(rating),
         count
       }));
 
-      // Recent activity calculation
-      const recentActivity: Array<{ date: string; bookings: number; earnings: number }> = [];
+      // Recent activity
+      const recentActivity = [];
       for (let i = 29; i >= 0; i--) {
         const date = subDays(new Date(), i);
         const dayBookings = bookings.filter(b => {
@@ -134,6 +131,7 @@ export const CreatorAnalytics = () => {
         });
       }
 
+      // Explicitly return typed object
       return {
         totalEarnings,
         totalBookings,
