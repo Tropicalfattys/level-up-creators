@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,26 +35,26 @@ export const AuthPage = () => {
   const validateForm = (isSignUp: boolean = false) => {
     const newErrors: Record<string, string> = {};
 
-    // Email validation
+    // Email validation with proper type checking
     const emailValidation = validateInput(emailSchema, email);
     if (!emailValidation.success) {
       newErrors.email = emailValidation.errors[0];
     }
 
-    // Password validation
+    // Password validation with proper type checking
     const passwordValidation = validateInput(passwordSchema, password);
     if (!passwordValidation.success) {
       newErrors.password = passwordValidation.errors[0];
     }
 
-    // Handle validation (sign up only)
+    // Handle validation (sign up only) with proper type checking
     if (isSignUp) {
       const handleValidation = validateInput(handleSchema, handle);
       if (!handleValidation.success) {
         newErrors.handle = handleValidation.errors[0];
       }
 
-      // Referral code validation (optional)
+      // Referral code validation (optional) with proper type checking
       if (referralCode) {
         const referralValidation = validateInput(referralCodeSchema, referralCode);
         if (!referralValidation.success) {
@@ -333,3 +334,4 @@ export const AuthPage = () => {
     </div>
   );
 };
+
