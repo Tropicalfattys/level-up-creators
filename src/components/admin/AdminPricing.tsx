@@ -26,21 +26,27 @@ export const AdminPricing = () => {
   const [editingTiers, setEditingTiers] = useState<Record<string, Partial<PricingTier>>>({});
   const queryClient = useQueryClient();
 
-  const { data: pricingTiers, isLoading } = useQuery({
+  const { data: pricingTiers, isLoading, error } = useQuery({
     queryKey: ['pricing-tiers'],
     queryFn: async (): Promise<PricingTier[]> => {
+      console.log('Fetching pricing tiers...');
       const { data, error } = await supabase
         .from('pricing_tiers')
         .select('*')
         .order('price_usdc', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching pricing tiers:', error);
+        throw error;
+      }
+      console.log('Fetched pricing tiers:', data);
       return data || [];
     }
   });
 
   const updatePricingMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<PricingTier> }) => {
+      console.log('Updating pricing tier:', id, updates);
       const { error } = await supabase
         .from('pricing_tiers')
         .update(updates)
@@ -93,7 +99,37 @@ export const AdminPricing = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2">Loading pricing tiers...</span>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-red-600">Error Loading Pricing Tiers</CardTitle>
+          <CardDescription>
+            Failed to load pricing configuration. Please check your database connection.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Error: {error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!pricingTiers || pricingTiers.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Pricing Tiers Found</CardTitle>
+          <CardDescription>
+            No pricing tiers are currently configured in the database.
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
@@ -111,7 +147,7 @@ export const AdminPricing = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            {pricingTiers?.map((tier) => (
+            {pricingTiers.map((tier) => (
               <Card key={tier.id} className="relative">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -145,6 +181,18 @@ export const AdminPricing = () => {
                         value={getCurrentValue(tier, 'display_name') as string}
                         onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Features</Label>
+                    <div className="space-y-2">
+                      {(tier.features || []).map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          <span className="w-2 h-2 bg-primary rounded-full"></span>
+                          <span>{feature}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
