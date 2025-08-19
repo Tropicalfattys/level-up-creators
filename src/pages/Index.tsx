@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +15,8 @@ import {
   MessageSquare,
   Calendar,
   Plus,
-  Clock
+  Clock,
+  Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -43,6 +45,8 @@ export default function Index() {
     enabled: !!user?.id
   });
 
+  console.log('Dashboard state:', { user: !!user, userRole, creatorProfile, approved: creatorProfile?.approved });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -67,6 +71,10 @@ export default function Index() {
     );
   }
 
+  // Determine if user should see creator features
+  const isApprovedCreator = userRole === 'creator' && creatorProfile?.approved;
+  const hasPendingApplication = creatorProfile && !creatorProfile.approved;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -76,7 +84,46 @@ export default function Index() {
         </p>
       </div>
 
-      {/* Creator Application CTA */}
+      {/* Creator Application Status Cards */}
+      {hasPendingApplication && (
+        <Card className="mb-8 border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Clock className="h-5 w-5" />
+              Creator Application Pending
+            </CardTitle>
+            <CardDescription className="text-orange-600">
+              Your creator application is under review. We'll notify you within 3 business days.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      {isApprovedCreator && (
+        <Card className="mb-8 border-green-200 bg-green-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <Crown className="h-5 w-5" />
+                  Creator Dashboard Active
+                </CardTitle>
+                <CardDescription className="text-green-600">
+                  You're approved! Access your full creator dashboard to manage services and bookings.
+                </CardDescription>
+              </div>
+              <Button asChild>
+                <Link to="/creator-dashboard">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Creator Dashboard
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Creator Application CTA - Only show if not applied yet */}
       {!creatorProfile && userRole !== 'admin' && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
@@ -101,25 +148,10 @@ export default function Index() {
         </Card>
       )}
 
-      {/* Creator Application Status */}
-      {creatorProfile && !creatorProfile.approved && (
-        <Card className="mb-8 border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-700">
-              <Clock className="h-5 w-5" />
-              Creator Application Pending
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              Your creator application is under review. We'll notify you within 3 business days.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          {userRole === 'creator' && creatorProfile?.approved && (
+          {isApprovedCreator && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
           {userRole === 'admin' && (
@@ -177,7 +209,7 @@ export default function Index() {
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <Link to="/settings">
-                    <Users className="h-4 w-4 mr-2" />
+                    <Settings className="h-4 w-4 mr-2" />
                     Profile Settings
                   </Link>
                 </Button>
@@ -186,6 +218,14 @@ export default function Index() {
                     <Link to="/become-creator">
                       <Crown className="h-4 w-4 mr-2" />
                       Become a Creator
+                    </Link>
+                  </Button>
+                )}
+                {isApprovedCreator && (
+                  <Button className="w-full justify-start" asChild>
+                    <Link to="/creator-dashboard">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Creator Dashboard
                     </Link>
                   </Button>
                 )}
@@ -205,7 +245,7 @@ export default function Index() {
           </div>
         </TabsContent>
 
-        {userRole === 'creator' && creatorProfile?.approved && (
+        {isApprovedCreator && (
           <TabsContent value="creator">
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -218,10 +258,11 @@ export default function Index() {
                 </Button>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-3 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Services</CardTitle>
+                    <CardDescription>Manage your service offerings</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button asChild className="w-full">
@@ -233,10 +274,23 @@ export default function Index() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Bookings</CardTitle>
+                    <CardDescription>Track active bookings</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button asChild className="w-full">
                       <Link to="/creator-dashboard">View Bookings</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Earnings</CardTitle>
+                    <CardDescription>Track your earnings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild className="w-full">
+                      <Link to="/creator-dashboard">View Earnings</Link>
                     </Button>
                   </CardContent>
                 </Card>
