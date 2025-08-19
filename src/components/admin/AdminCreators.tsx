@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,7 +150,9 @@ export const AdminCreators = () => {
 
   const updateCreatorStatus = useMutation({
     mutationFn: async ({ creatorId, userId, approved }: { creatorId: string; userId: string; approved: boolean }) => {
-      // Update creator approval status
+      console.log('Updating creator status:', { creatorId, userId, approved });
+      
+      // First update the creator approval status
       const { error: creatorError } = await supabase
         .from('creators')
         .update({ 
@@ -160,29 +161,33 @@ export const AdminCreators = () => {
         })
         .eq('id', creatorId);
 
-      if (creatorError) throw creatorError;
-
-      // CRITICAL FIX: Update user role to 'creator' when approved
-      if (approved) {
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ role: 'creator' })
-          .eq('id', userId);
-
-        if (userError) throw userError;
-      } else {
-        // If declining, set role back to 'client'
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ role: 'client' })
-          .eq('id', userId);
-
-        if (userError) throw userError;
+      if (creatorError) {
+        console.error('Creator update error:', creatorError);
+        throw creatorError;
       }
+
+      // CRITICAL: Update user role when approving/declining
+      const newRole = approved ? 'creator' : 'client';
+      console.log('Updating user role to:', newRole);
+      
+      const { error: userError } = await supabase
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (userError) {
+        console.error('User role update error:', userError);
+        throw userError;
+      }
+
+      console.log('Successfully updated creator status and user role');
     },
     onSuccess: (_, { approved }) => {
-      toast.success(`Creator ${approved ? 'approved' : 'declined'} successfully!`);
+      toast.success(`Creator ${approved ? 'approved' : 'declined'} successfully! User role has been updated.`);
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+      // Also invalidate auth queries to refresh user data
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
     },
     onError: (error) => {
       console.error('Update creator status error:', error);
