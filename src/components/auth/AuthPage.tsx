@@ -67,7 +67,7 @@ export const AuthPage = () => {
   };
 
   // handleSignIn function
-  const handleSignIn = async (e: React.FormEvent) => {
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -85,10 +85,10 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   // handleSignUp function
-  const handleSignUp = async (e: React.FormEvent) => {
+  async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!validateForm(true)) return;
 
@@ -105,10 +105,10 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   // handleSocialLogin function
-  const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
+  async function handleSocialLogin(provider: 'google' | 'github' | 'twitter') {
     setLoading(true);
     try {
       const { error } = await signInWithProvider(provider);
@@ -120,7 +120,7 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
