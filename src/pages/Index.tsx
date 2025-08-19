@@ -16,9 +16,12 @@ import {
   Calendar,
   Plus,
   Clock,
-  Settings
+  Settings,
+  Copy,
+  Gift
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Index() {
   const { user, userRole, loading } = useAuth();
@@ -37,6 +40,28 @@ export default function Index() {
       
       if (error) {
         console.error('Error fetching creator profile:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Get user profile for referral info
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
         return null;
       }
       
@@ -76,6 +101,14 @@ export default function Index() {
   const isApprovedCreator = creatorProfile?.approved === true;
   const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
   const canAccessCreatorTools = isApprovedCreator || (userRole === 'creator' && hasCreatorProfile);
+
+  const copyReferralLink = () => {
+    if (userProfile?.referral_code) {
+      const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
+      navigator.clipboard.writeText(referralUrl);
+      toast.success('Referral link copied to clipboard!');
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -156,6 +189,7 @@ export default function Index() {
           {canAccessCreatorTools && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
+          <TabsTrigger value="referrals">Referrals</TabsTrigger>
           {userRole === 'admin' && (
             <TabsTrigger value="admin">Admin Panel</TabsTrigger>
           )}
@@ -300,6 +334,80 @@ export default function Index() {
             </div>
           </TabsContent>
         )}
+
+        <TabsContent value="referrals" className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  Your Referral Program
+                </CardTitle>
+                <CardDescription>
+                  Earn credits by inviting friends to join CryptoTalent
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1">
+                      {userProfile?.referral_code || 'Loading...'}
+                    </code>
+                    <Button size="sm" variant="outline" onClick={copyReferralLink}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
+                    <p className="text-xs text-muted-foreground">Credits Earned</p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">Friends Referred</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>How It Works</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Badge variant="outline" className="mt-0.5">1</Badge>
+                  <div>
+                    <p className="font-medium">Share your code</p>
+                    <p className="text-sm text-muted-foreground">
+                      Send your referral link to friends
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Badge variant="outline" className="mt-0.5">2</Badge>
+                  <div>
+                    <p className="font-medium">They sign up</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your friend creates an account
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Badge variant="outline" className="mt-0.5">3</Badge>
+                  <div>
+                    <p className="font-medium">Earn rewards</p>
+                    <p className="text-sm text-muted-foreground">
+                      Get $5 credit when they make their first purchase
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {userRole === 'admin' && (
           <TabsContent value="admin">
