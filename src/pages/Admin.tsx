@@ -1,4 +1,4 @@
 
-import { AdminPanel } from '../pages/AdminPanel';
+import AdminPanel from '../pages/AdminPanel';
 
 export default AdminPanel;
