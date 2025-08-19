@@ -12,15 +12,19 @@ export interface AuthUser extends User {
   };
 }
 
-export const signUp = async (email: string, password: string, referralCode?: string) => {
+export const signUp = async (email: string, password: string, referralCode?: string, handle?: string) => {
   const redirectUrl = `${window.location.origin}/`;
+  
+  const metadata: any = {};
+  if (referralCode) metadata.referral_code = referralCode;
+  if (handle) metadata.handle = handle;
   
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: redirectUrl,
-      data: referralCode ? { referral_code: referralCode } : undefined
+      data: Object.keys(metadata).length > 0 ? metadata : undefined
     }
   });
   

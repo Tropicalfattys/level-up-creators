@@ -22,6 +22,8 @@ export type Database = {
           email: string | null
           handle: string | null
           id: string
+          referral_code: string | null
+          referral_credits: number | null
           role: string | null
           updated_at: string | null
         }
@@ -32,6 +34,8 @@ export type Database = {
           email?: string | null
           handle?: string | null
           id: string
+          referral_code?: string | null
+          referral_credits?: number | null
           role?: string | null
           updated_at?: string | null
         }
@@ -42,6 +46,8 @@ export type Database = {
           email?: string | null
           handle?: string | null
           id?: string
+          referral_code?: string | null
+          referral_credits?: number | null
           role?: string | null
           updated_at?: string | null
         }

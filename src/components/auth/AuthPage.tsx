@@ -19,6 +19,7 @@ export const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [handle, setHandle] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,26 @@ export const AuthPage = () => {
           return;
         }
 
-        const { error } = await signUp(email, password, referralCode);
+        if (!handle.trim()) {
+          toast({
+            title: "Error",
+            description: "Username is required",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Check if handle contains only valid characters (alphanumeric, underscore, dash)
+        if (!/^[a-zA-Z0-9_-]+$/.test(handle)) {
+          toast({
+            title: "Error",
+            description: "Username can only contain letters, numbers, underscores, and dashes",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const { error } = await signUp(email, password, referralCode, handle);
         if (error) {
           toast({
             title: "Sign Up Error", 
@@ -176,6 +196,23 @@ export const AuthPage = () => {
                 required
               />
             </div>
+
+            {mode === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="handle">Username</Label>
+                <Input
+                  id="handle"
+                  type="text"
+                  placeholder="Choose a username"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Letters, numbers, underscores and dashes only
+                </p>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

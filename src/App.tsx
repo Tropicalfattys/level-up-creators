@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
+import Admin from "./pages/Admin";
 import { AuthPage } from "./components/auth/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,11 @@ const App = () => (
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute requiredRole="admin">
+                  <Admin />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
