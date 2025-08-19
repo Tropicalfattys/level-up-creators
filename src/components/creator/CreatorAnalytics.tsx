@@ -28,7 +28,7 @@ export const CreatorAnalytics = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Use any to break type recursion
+      // Explicit field selection to prevent deep type instantiation
       const servicesResult = await supabase
         .from('services')
         .select('id, title, price_usdc')
@@ -40,9 +40,10 @@ export const CreatorAnalytics = () => {
 
       let bookings: any[] = [];
       if (serviceIds.length > 0) {
+        // Explicit field selection instead of '*' to prevent type recursion
         const bookingsResult = await supabase
           .from('bookings')
-          .select('*')
+          .select('id, service_id, status, usdc_amount, created_at')
           .in('service_id', serviceIds);
 
         if (bookingsResult.error) throw bookingsResult.error;
