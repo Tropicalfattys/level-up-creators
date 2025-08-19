@@ -22,18 +22,26 @@ export const AdminContacts = () => {
   const { data: contacts, isLoading } = useQuery({
     queryKey: ['admin-contacts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select(`
-          *,
-          responded_by_user:responded_by (
-            handle
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('contacts' as any)
+          .select(`
+            *,
+            responded_by_user:responded_by (
+              handle
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Contacts query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Contacts fetch error:', error);
+        return [];
+      }
     }
   });
 
@@ -42,7 +50,7 @@ export const AdminContacts = () => {
       const { data: user } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('contacts')
+        .from('contacts' as any)
         .update({ 
           status: 'responded',
           responded_by: user.user?.id,
@@ -65,7 +73,7 @@ export const AdminContacts = () => {
     }
   });
 
-  const filteredContacts = contacts?.filter(contact => {
+  const filteredContacts = contacts?.filter((contact: any) => {
     const matchesSearch = !searchTerm || 
       contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,7 +145,7 @@ export const AdminContacts = () => {
 
           {/* Contacts List */}
           <div className="space-y-4">
-            {filteredContacts?.map((contact) => (
+            {filteredContacts?.map((contact: any) => (
               <div key={contact.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
@@ -149,7 +157,7 @@ export const AdminContacts = () => {
                       From: {contact.name} ({contact.email})
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      "{contact.message.substring(0, 100)}..."
+                      "{contact.message?.substring(0, 100) || 'No message'}..."
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Received {new Date(contact.created_at).toLocaleString()}
@@ -192,8 +200,8 @@ export const AdminContacts = () => {
                             <div className="space-y-2 text-sm">
                               {contact.responded_by_user ? (
                                 <>
-                                  <p><strong>Responded By:</strong> {contact.responded_by_user.handle}</p>
-                                  <p><strong>Response Date:</strong> {new Date(contact.responded_at).toLocaleString()}</p>
+                                  <p><strong>Responded By:</strong> {contact.responded_by_user?.handle || 'Admin'}</p>
+                                  <p><strong>Response Date:</strong> {contact.responded_at ? new Date(contact.responded_at).toLocaleString() : 'N/A'}</p>
                                 </>
                               ) : (
                                 <p className="text-muted-foreground">Not yet responded</p>

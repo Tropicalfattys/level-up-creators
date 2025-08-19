@@ -16,24 +16,32 @@ export const AdminAuditLogs = () => {
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ['admin-audit-logs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select(`
-          *,
-          actor:actor_user_id (
-            handle,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('audit_logs' as any)
+          .select(`
+            *,
+            actor:actor_user_id (
+              handle,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(100);
+        
+        if (error) {
+          console.error('Audit logs query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Audit logs fetch error:', error);
+        return [];
+      }
     }
   });
 
-  const filteredLogs = auditLogs?.filter(log => {
+  const filteredLogs = auditLogs?.filter((log: any) => {
     const matchesSearch = !searchTerm || 
       log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.target_table?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,8 +73,8 @@ export const AdminAuditLogs = () => {
   };
 
   // Get unique tables and actions for filters
-  const uniqueTables = [...new Set(auditLogs?.map(log => log.target_table).filter(Boolean))];
-  const uniqueActions = [...new Set(auditLogs?.map(log => log.action).filter(Boolean))];
+  const uniqueTables = [...new Set(auditLogs?.map((log: any) => log.target_table).filter(Boolean))];
+  const uniqueActions = [...new Set(auditLogs?.map((log: any) => log.action).filter(Boolean))];
 
   if (isLoading) {
     return <div className="text-center py-8">Loading audit logs...</div>;
@@ -122,7 +130,7 @@ export const AdminAuditLogs = () => {
 
           {/* Audit Logs List */}
           <div className="space-y-3">
-            {filteredLogs?.map((log) => (
+            {filteredLogs?.map((log: any) => (
               <div key={log.id} className="flex items-start gap-4 p-4 border rounded-lg">
                 <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
                   {log.actor?.handle ? (
@@ -154,7 +162,7 @@ export const AdminAuditLogs = () => {
                       </span>
                     )}
                     <span className="text-sm text-muted-foreground">
-                      performed {log.action.toLowerCase()} on {log.target_table}
+                      performed {log.action?.toLowerCase() || 'action'} on {log.target_table}
                     </span>
                     {log.target_id && (
                       <span className="text-xs font-mono bg-muted px-2 py-1 rounded">

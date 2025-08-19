@@ -9,62 +9,83 @@ export const AdminAnalytics = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
-      const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes] = await Promise.all([
-        supabase.from('users').select('id, role, created_at'),
-        supabase.from('creators').select('id, approved, tier, created_at'),
-        supabase.from('bookings').select('id, status, usdc_amount, platform_fee, created_at'),
-        supabase.from('disputes').select('id, status, created_at'),
-        supabase.from('bookings').select('platform_fee').not('platform_fee', 'is', null)
-      ]);
+      try {
+        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes] = await Promise.all([
+          supabase.from('users' as any).select('id, role, created_at'),
+          supabase.from('creators' as any).select('id, approved, tier, created_at'),
+          supabase.from('bookings' as any).select('id, status, usdc_amount, platform_fee, created_at'),
+          supabase.from('disputes' as any).select('id, status, created_at'),
+          supabase.from('bookings' as any).select('platform_fee').not('platform_fee', 'is', null)
+        ]);
 
-      const users = usersRes.data || [];
-      const creators = creatorsRes.data || [];
-      const bookings = bookingsRes.data || [];
-      const disputes = disputesRes.data || [];
+        const users = usersRes.data || [];
+        const creators = creatorsRes.data || [];
+        const bookings = bookingsRes.data || [];
+        const disputes = disputesRes.data || [];
 
-      const totalRevenue = revenueRes.data?.reduce((sum, booking) => sum + (Number(booking.platform_fee) || 0), 0) || 0;
+        const totalRevenue = revenueRes.data?.reduce((sum: number, booking: any) => sum + (Number(booking.platform_fee) || 0), 0) || 0;
 
-      // Calculate growth data for the last 7 days
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return date.toISOString().split('T')[0];
-      }).reverse();
+        // Calculate growth data for the last 7 days
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return date.toISOString().split('T')[0];
+        }).reverse();
 
-      const dailyStats = last7Days.map(date => {
-        const dayUsers = users.filter(u => u.created_at?.startsWith(date)).length;
-        const dayBookings = bookings.filter(b => b.created_at?.startsWith(date)).length;
+        const dailyStats = last7Days.map(date => {
+          const dayUsers = users.filter((u: any) => u.created_at?.startsWith(date)).length;
+          const dayBookings = bookings.filter((b: any) => b.created_at?.startsWith(date)).length;
+          return {
+            date: date.slice(5), // Show MM-DD
+            users: dayUsers,
+            bookings: dayBookings
+          };
+        });
+
+        // Role distribution for pie chart
+        const roleDistribution = [
+          { name: 'Clients', value: users.filter((u: any) => u.role === 'client').length, color: '#8884d8' },
+          { name: 'Creators', value: users.filter((u: any) => u.role === 'creator').length, color: '#82ca9d' },
+          { name: 'Admins', value: users.filter((u: any) => u.role === 'admin').length, color: '#ffc658' }
+        ];
+
         return {
-          date: date.slice(5), // Show MM-DD
-          users: dayUsers,
-          bookings: dayBookings
+          totalUsers: users.length,
+          adminUsers: users.filter((u: any) => u.role === 'admin').length,
+          creatorUsers: users.filter((u: any) => u.role === 'creator').length,
+          clientUsers: users.filter((u: any) => u.role === 'client').length,
+          totalCreators: creators.length,
+          approvedCreators: creators.filter((c: any) => c.approved).length,
+          pendingCreators: creators.filter((c: any) => !c.approved).length,
+          totalBookings: bookings.length,
+          activeBookings: bookings.filter((b: any) => ['paid', 'in_progress', 'delivered'].includes(b.status)).length,
+          completedBookings: bookings.filter((b: any) => b.status === 'accepted').length,
+          totalDisputes: disputes.length,
+          openDisputes: disputes.filter((d: any) => d.status === 'open').length,
+          totalRevenue,
+          dailyStats,
+          roleDistribution: roleDistribution.filter(r => r.value > 0)
         };
-      });
-
-      // Role distribution for pie chart
-      const roleDistribution = [
-        { name: 'Clients', value: users.filter(u => u.role === 'client').length, color: '#8884d8' },
-        { name: 'Creators', value: users.filter(u => u.role === 'creator').length, color: '#82ca9d' },
-        { name: 'Admins', value: users.filter(u => u.role === 'admin').length, color: '#ffc658' }
-      ];
-
-      return {
-        totalUsers: users.length,
-        adminUsers: users.filter(u => u.role === 'admin').length,
-        creatorUsers: users.filter(u => u.role === 'creator').length,
-        clientUsers: users.filter(u => u.role === 'client').length,
-        totalCreators: creators.length,
-        approvedCreators: creators.filter(c => c.approved).length,
-        pendingCreators: creators.filter(c => !c.approved).length,
-        totalBookings: bookings.length,
-        activeBookings: bookings.filter(b => ['paid', 'in_progress', 'delivered'].includes(b.status)).length,
-        completedBookings: bookings.filter(b => b.status === 'accepted').length,
-        totalDisputes: disputes.length,
-        openDisputes: disputes.filter(d => d.status === 'open').length,
-        totalRevenue,
-        dailyStats,
-        roleDistribution: roleDistribution.filter(r => r.value > 0)
-      };
+      } catch (error) {
+        console.error('Analytics query error:', error);
+        return {
+          totalUsers: 0,
+          adminUsers: 0,
+          creatorUsers: 0,
+          clientUsers: 0,
+          totalCreators: 0,
+          approvedCreators: 0,
+          pendingCreators: 0,
+          totalBookings: 0,
+          activeBookings: 0,
+          completedBookings: 0,
+          totalDisputes: 0,
+          openDisputes: 0,
+          totalRevenue: 0,
+          dailyStats: [],
+          roleDistribution: []
+        };
+      }
     }
   });
 
