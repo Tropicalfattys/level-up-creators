@@ -5,5 +5,13 @@ import { Buffer } from 'buffer';
 if (typeof window !== 'undefined') {
   window.Buffer = Buffer;
   window.global = window.global || window;
-  window.process = window.process || { env: {} };
+  
+  // Type-safe process polyfill for browser environment
+  if (!window.process) {
+    (window as any).process = { 
+      env: {},
+      nextTick: (callback: Function) => setTimeout(callback, 0),
+      browser: true
+    };
+  }
 }
