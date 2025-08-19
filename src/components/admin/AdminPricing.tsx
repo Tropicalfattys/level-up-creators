@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Save, RefreshCw } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { DollarSign, Save, RefreshCw, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PricingTier {
@@ -80,6 +81,31 @@ export const AdminPricing = () => {
         [field]: value
       }
     }));
+  };
+
+  const handleFeatureChange = (tierId: string, featureIndex: number, value: string) => {
+    const currentTier = pricingTiers?.find(t => t.id === tierId);
+    const currentFeatures = getCurrentValue({ id: tierId } as PricingTier, 'features') as string[] || currentTier?.features || [];
+    const updatedFeatures = [...currentFeatures];
+    updatedFeatures[featureIndex] = value;
+    
+    handleInputChange(tierId, 'features', updatedFeatures);
+  };
+
+  const addFeature = (tierId: string) => {
+    const currentTier = pricingTiers?.find(t => t.id === tierId);
+    const currentFeatures = getCurrentValue({ id: tierId } as PricingTier, 'features') as string[] || currentTier?.features || [];
+    const updatedFeatures = [...currentFeatures, ''];
+    
+    handleInputChange(tierId, 'features', updatedFeatures);
+  };
+
+  const removeFeature = (tierId: string, featureIndex: number) => {
+    const currentTier = pricingTiers?.find(t => t.id === tierId);
+    const currentFeatures = getCurrentValue({ id: tierId } as PricingTier, 'features') as string[] || currentTier?.features || [];
+    const updatedFeatures = currentFeatures.filter((_, index) => index !== featureIndex);
+    
+    handleInputChange(tierId, 'features', updatedFeatures);
   };
 
   const handleSave = (tier: PricingTier) => {
@@ -154,85 +180,119 @@ export const AdminPricing = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            {pricingTiers.map((tier) => (
-              <Card key={tier.id} className="relative">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg capitalize">{tier.tier_name}</CardTitle>
-                      <CardDescription>{tier.display_name}</CardDescription>
+            {pricingTiers.map((tier) => {
+              const currentFeatures = getCurrentValue(tier, 'features') as string[] || [];
+              
+              return (
+                <Card key={tier.id} className="relative">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg capitalize">{tier.tier_name}</CardTitle>
+                        <CardDescription>{tier.display_name}</CardDescription>
+                      </div>
+                      <Badge variant={tier.active ? "default" : "secondary"}>
+                        {tier.active ? "Active" : "Inactive"}
+                      </Badge>
                     </div>
-                    <Badge variant={tier.active ? "default" : "secondary"}>
-                      {tier.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`price-${tier.id}`}>Price (USDC)</Label>
-                      <Input
-                        id={`price-${tier.id}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={getCurrentValue(tier, 'price_usdc') as number}
-                        onChange={(e) => handleInputChange(tier.id, 'price_usdc', parseFloat(e.target.value) || 0)}
-                        className="font-mono"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`display-${tier.id}`}>Display Name</Label>
-                      <Input
-                        id={`display-${tier.id}`}
-                        value={getCurrentValue(tier, 'display_name') as string}
-                        onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Features</Label>
-                    <div className="space-y-2">
-                      {(tier.features || []).map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <span className="w-2 h-2 bg-primary rounded-full"></span>
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`active-${tier.id}`}
-                        checked={getCurrentValue(tier, 'active') as boolean}
-                        onCheckedChange={(checked) => handleInputChange(tier.id, 'active', checked)}
-                      />
-                      <Label htmlFor={`active-${tier.id}`}>Active</Label>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`price-${tier.id}`}>Price (USDC)</Label>
+                        <Input
+                          id={`price-${tier.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={getCurrentValue(tier, 'price_usdc') as number}
+                          onChange={(e) => handleInputChange(tier.id, 'price_usdc', parseFloat(e.target.value) || 0)}
+                          className="font-mono"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`display-${tier.id}`}>Display Name</Label>
+                        <Input
+                          id={`display-${tier.id}`}
+                          value={getCurrentValue(tier, 'display_name') as string}
+                          onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
+                        />
+                      </div>
                     </div>
 
-                    <Button
-                      onClick={() => handleSave(tier)}
-                      disabled={!hasChanges(tier.id) || updatePricingMutation.isPending}
-                      size="sm"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {updatePricingMutation.isPending ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </div>
-
-                  {hasChanges(tier.id) && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-sm text-yellow-800">
-                        You have unsaved changes. Click "Save Changes" to apply them.
-                      </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Features (Checkmark Text)</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addFeature(tier.id)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Feature
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {currentFeatures.map((feature, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                            <Input
+                              value={feature}
+                              onChange={(e) => handleFeatureChange(tier.id, index, e.target.value)}
+                              placeholder="Enter feature description"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeFeature(tier.id, index)}
+                              className="flex-shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {currentFeatures.length === 0 && (
+                          <p className="text-sm text-muted-foreground italic">
+                            No features added yet. Click "Add Feature" to get started.
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id={`active-${tier.id}`}
+                          checked={getCurrentValue(tier, 'active') as boolean}
+                          onCheckedChange={(checked) => handleInputChange(tier.id, 'active', checked)}
+                        />
+                        <Label htmlFor={`active-${tier.id}`}>Active</Label>
+                      </div>
+
+                      <Button
+                        onClick={() => handleSave(tier)}
+                        disabled={!hasChanges(tier.id) || updatePricingMutation.isPending}
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {updatePricingMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+
+                    {hasChanges(tier.id) && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">
+                          You have unsaved changes. Click "Save Changes" to apply them.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
