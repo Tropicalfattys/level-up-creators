@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,7 @@ export const AuthPage = () => {
   };
 
   // handleSignIn function
-  async function handleSignIn(e: React.FormEvent) {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -84,10 +85,10 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   // handleSignUp function
-  async function handleSignUp(e: React.FormEvent) {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(true)) return;
 
@@ -104,10 +105,10 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   // handleSocialLogin function
-  async function handleSocialLogin(provider: 'google' | 'github' | 'twitter') {
+  const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
     setLoading(true);
     try {
       const { error } = await signInWithProvider(provider);
@@ -119,7 +120,7 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
