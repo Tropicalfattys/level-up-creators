@@ -40,7 +40,14 @@ export const AdminPricing = () => {
         throw error;
       }
       console.log('Fetched pricing tiers:', data);
-      return data || [];
+      
+      // Convert the Json features to string[] safely
+      const convertedData = (data || []).map(tier => ({
+        ...tier,
+        features: Array.isArray(tier.features) ? tier.features as string[] : []
+      }));
+      
+      return convertedData;
     }
   });
 

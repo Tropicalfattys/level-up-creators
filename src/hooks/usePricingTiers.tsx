@@ -24,7 +24,14 @@ export const usePricingTiers = () => {
         .order('price_usdc', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      
+      // Convert the Json features to string[] safely
+      const convertedData = (data || []).map(tier => ({
+        ...tier,
+        features: Array.isArray(tier.features) ? tier.features as string[] : []
+      }));
+      
+      return convertedData;
     }
   });
 };
