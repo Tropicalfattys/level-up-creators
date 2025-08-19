@@ -5,38 +5,118 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Users, Star, Package } from 'lucide-react';
-import {
-  AnalyticsData,
-  fetchCreatorServices,
-  fetchCreatorBookings,
-  fetchCreatorReviews,
-  calculateMonthlyEarnings,
-  calculateServicePopularity,
-  calculateRatingDistribution,
-  calculateRecentActivity
-} from '@/utils/creatorAnalyticsUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { format, subDays } from 'date-fns';
 
 export const CreatorAnalytics = () => {
   const { user } = useAuth();
 
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading } = useQuery({
     queryKey: ['creator-analytics', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Fetch data
-      const services = await fetchCreatorServices(user.id);
-      const serviceIds = services.map(s => s.id);
-      const bookings = await fetchCreatorBookings(serviceIds);
-      const reviews = await fetchCreatorReviews(serviceIds);
+      // Fetch services
+      const { data: services, error: servicesError } = await supabase
+        .from('services')
+        .select('id, title, price_usdc')
+        .eq('creator_id', user.id);
 
-      // Calculate metrics
-      const totalEarnings = bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.usdc_amount || 0), 0);
-      const totalBookings = bookings.length;
-      const completedBookings = bookings.filter(b => b.status === 'completed').length;
-      const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
-      const activeServices = services.length;
+      if (servicesError) throw servicesError;
+      const servicesList = services || [];
+      const serviceIds = servicesList.map(s => s.id);
+
+      // Fetch bookings
+      let bookingsList = [];
+      if (serviceIds.length > 0) {
+        const { data: bookings, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('*')
+          .in('service_id', serviceIds);
+
+        if (bookingsError) throw bookingsError;
+        bookingsList = bookings || [];
+      }
+
+      // Fetch reviews
+      let reviewsList = [];
+      if (serviceIds.length > 0) {
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('rating, created_at')
+          .in('service_id', serviceIds);
+
+        if (reviewsError) throw reviewsError;
+        reviewsList = reviews || [];
+      }
+
+      // Calculate basic metrics
+      const totalEarnings = bookingsList.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.usdc_amount || 0), 0);
+      const totalBookings = bookingsList.length;
+      const completedBookings = bookingsList.filter(b => b.status === 'completed').length;
+      const avgRating = reviewsList.length > 0 ? reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length : 0;
+      const activeServices = servicesList.length;
       const completionRate = totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
+
+      // Calculate monthly earnings
+      const monthlyEarnings = [];
+      for (let i = 5; i >= 0; i--) {
+        const date = subDays(new Date(), i * 30);
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        const monthBookings = bookingsList.filter(b => {
+          const bookingDate = new Date(b.created_at);
+          return bookingDate >= monthStart && bookingDate <= monthEnd && b.status === 'completed';
+        });
+        
+        const earnings = monthBookings.reduce((sum, b) => sum + (b.usdc_amount || 0), 0);
+        
+        monthlyEarnings.push({
+          month: format(date, 'MMM yyyy'),
+          earnings
+        });
+      }
+
+      // Calculate service popularity
+      const servicePopularity = servicesList.map(service => {
+        const serviceBookings = bookingsList.filter(b => b.service_id === service.id).length;
+        return {
+          service: service.title.length > 20 ? service.title.substring(0, 20) + '...' : service.title,
+          bookings: serviceBookings
+        };
+      }).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
+
+      // Calculate rating distribution
+      const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      reviewsList.forEach(review => {
+        ratingCounts[Math.floor(review.rating) as keyof typeof ratingCounts]++;
+      });
+      
+      const ratingDistribution = Object.entries(ratingCounts).map(([rating, count]) => ({
+        rating: parseInt(rating),
+        count
+      }));
+
+      // Calculate recent activity
+      const recentActivity = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = subDays(new Date(), i);
+        const dayBookings = bookingsList.filter(b => {
+          const bookingDate = new Date(b.created_at);
+          return format(bookingDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        });
+        
+        const dayEarnings = dayBookings
+          .filter(b => b.status === 'completed')
+          .reduce((sum, b) => sum + (b.usdc_amount || 0), 0);
+        
+        recentActivity.push({
+          date: format(date, 'MMM dd'),
+          bookings: dayBookings.length,
+          earnings: dayEarnings
+        });
+      }
 
       return {
         totalEarnings,
@@ -44,10 +124,10 @@ export const CreatorAnalytics = () => {
         avgRating,
         activeServices,
         completionRate,
-        monthlyEarnings: calculateMonthlyEarnings(bookings),
-        servicePopularity: calculateServicePopularity(services, bookings),
-        ratingDistribution: calculateRatingDistribution(reviews),
-        recentActivity: calculateRecentActivity(bookings)
+        monthlyEarnings,
+        servicePopularity,
+        ratingDistribution,
+        recentActivity
       };
     },
     enabled: !!user?.id
