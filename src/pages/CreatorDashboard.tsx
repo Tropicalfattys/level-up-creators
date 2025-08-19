@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
+import { CreatorAnalytics } from '@/components/creator/CreatorAnalytics';
 import { BarChart3, Package, Calendar, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -157,8 +158,12 @@ const CreatorDashboard = () => {
         </div>
 
         {/* Dashboard Tabs */}
-        <Tabs defaultValue="services" className="space-y-6">
+        <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="services" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Services
@@ -171,11 +176,11 @@ const CreatorDashboard = () => {
               <DollarSign className="h-4 w-4" />
               Earnings
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <CreatorAnalytics />
+          </TabsContent>
 
           <TabsContent value="services">
             <CreatorServices />
@@ -187,26 +192,6 @@ const CreatorDashboard = () => {
 
           <TabsContent value="earnings">
             <EarningsTracker />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics</CardTitle>
-                <CardDescription>
-                  Performance insights and metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Analytics Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    Advanced analytics and performance metrics will be available here.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
