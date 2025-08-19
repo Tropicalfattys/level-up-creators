@@ -10,10 +10,15 @@ interface PlanDisplayProps {
 }
 
 export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
-  const { data: dynamicTiers, isLoading } = useDynamicCreatorTiers();
+  const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
   
-  // Use dynamic tiers - no fallback to static tiers
+  console.log('PlanDisplay: Rendering for tier:', tier, 'with amount:', amount);
+  console.log('PlanDisplay: Dynamic tiers data:', dynamicTiers);
+  console.log('PlanDisplay: Loading state:', isLoading, 'Error:', error);
+
+  // Use dynamic tiers data
   const tierInfo = dynamicTiers?.[tier];
+  console.log('PlanDisplay: Tier info for', tier, ':', tierInfo);
 
   if (isLoading) {
     return (
@@ -34,7 +39,22 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
     );
   }
 
+  if (error) {
+    console.error('PlanDisplay: Error loading pricing data:', error);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="capitalize text-red-600">Error Loading Plan</CardTitle>
+          <CardDescription>
+            Unable to load pricing information for {tier} plan.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   if (!tierInfo) {
+    console.warn('PlanDisplay: No tier info found for:', tier, 'Available tiers:', Object.keys(dynamicTiers || {}));
     return (
       <Card>
         <CardHeader>
@@ -47,13 +67,16 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
     );
   }
 
+  // Use the price from tierInfo, but override with amount if different (for consistency)
+  const displayAmount = amount !== undefined ? amount : tierInfo.price;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="capitalize">{tierInfo.displayName}</CardTitle>
         <CardDescription className="flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
-          {amount === 0 ? 'FREE' : `${amount} USDC`}
+          {displayAmount === 0 ? 'FREE' : `${displayAmount} USDC`}
         </CardDescription>
       </CardHeader>
       <CardContent>
