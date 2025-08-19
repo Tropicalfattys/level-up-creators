@@ -155,7 +155,7 @@ export const showErrorToast = (error: AppError | Error | string) => {
 export const logError = (error: Error | AppError, context?: string) => {
   const errorData = {
     message: error.message,
-    stack: error.stack,
+    stack: error instanceof Error ? error.stack : undefined,
     timestamp: new Date().toISOString(),
     context,
     ...(('code' in error) && { code: error.code }),
