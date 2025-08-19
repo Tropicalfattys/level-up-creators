@@ -18,7 +18,8 @@ import {
   Clock,
   Settings,
   Copy,
-  Gift
+  Gift,
+  Share2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -102,11 +103,46 @@ export default function Index() {
   const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
   const canAccessCreatorTools = isApprovedCreator || (userRole === 'creator' && hasCreatorProfile);
 
+  const copyReferralCode = () => {
+    if (userProfile?.referral_code) {
+      navigator.clipboard.writeText(userProfile.referral_code);
+      toast.success('Referral code copied to clipboard!');
+    }
+  };
+
   const copyReferralLink = () => {
     if (userProfile?.referral_code) {
       const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
       navigator.clipboard.writeText(referralUrl);
       toast.success('Referral link copied to clipboard!');
+    }
+  };
+
+  const shareOnSocial = (platform: string) => {
+    if (!userProfile?.referral_code) return;
+    
+    const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
+    const message = "Join CryptoTalent and get access to amazing crypto services!";
+    
+    let shareUrl = '';
+    
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(referralUrl)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralUrl)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`;
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400');
     }
   };
 
@@ -221,12 +257,12 @@ export default function Index() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Earnings</CardTitle>
+                <CardTitle className="text-sm font-medium">Credits</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$0.00</div>
-                <p className="text-xs text-muted-foreground">Total earned</p>
+                <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
+                <p className="text-xs text-muted-foreground">Referral credits</p>
               </CardContent>
             </Card>
           </div>
@@ -344,7 +380,7 @@ export default function Index() {
                   Your Referral Program
                 </CardTitle>
                 <CardDescription>
-                  Earn credits by inviting friends to join CryptoTalent
+                  Earn $1 credit for every successful referral that signs up and makes their first purchase
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -354,11 +390,27 @@ export default function Index() {
                     <code className="bg-muted px-3 py-2 rounded text-sm flex-1">
                       {userProfile?.referral_code || 'Loading...'}
                     </code>
+                    <Button size="sm" variant="outline" onClick={copyReferralCode}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Your referral link:</p>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-muted px-3 py-2 rounded text-sm flex-1 truncate">
+                      {userProfile?.referral_code ? 
+                        `${window.location.origin}/auth?ref=${userProfile.referral_code}` : 
+                        'Loading...'
+                      }
+                    </div>
                     <Button size="sm" variant="outline" onClick={copyReferralLink}>
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
@@ -367,6 +419,24 @@ export default function Index() {
                   <div>
                     <div className="text-2xl font-bold">0</div>
                     <p className="text-xs text-muted-foreground">Friends Referred</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Share on social media:</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('twitter')}>
+                      Twitter
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('facebook')}>
+                      Facebook
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('linkedin')}>
+                      LinkedIn
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('telegram')}>
+                      Telegram
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -380,9 +450,9 @@ export default function Index() {
                 <div className="flex items-start gap-3">
                   <Badge variant="outline" className="mt-0.5">1</Badge>
                   <div>
-                    <p className="font-medium">Share your code</p>
+                    <p className="font-medium">Share your code or link</p>
                     <p className="text-sm text-muted-foreground">
-                      Send your referral link to friends
+                      Send your referral code or link to friends
                     </p>
                   </div>
                 </div>
@@ -391,16 +461,25 @@ export default function Index() {
                   <div>
                     <p className="font-medium">They sign up</p>
                     <p className="text-sm text-muted-foreground">
-                      Your friend creates an account
+                      Your friend creates an account using your referral
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Badge variant="outline" className="mt-0.5">3</Badge>
                   <div>
-                    <p className="font-medium">Earn rewards</p>
+                    <p className="font-medium">Earn $1 credit</p>
                     <p className="text-sm text-muted-foreground">
-                      Get $5 credit when they make their first purchase
+                      Get $1 credit when they make their first purchase
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Badge variant="outline" className="mt-0.5">4</Badge>
+                  <div>
+                    <p className="font-medium">Use your credits</p>
+                    <p className="text-sm text-muted-foreground">
+                      Apply credits to any service on the platform
                     </p>
                   </div>
                 </div>
