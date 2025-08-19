@@ -1,6 +1,7 @@
 
 import { z } from 'zod';
 import { validateInput, sanitizeString } from './validation';
+import { PLATFORM_WALLETS } from './contracts';
 
 // Enhanced wallet address schemas with stricter validation
 export const walletAddressSchemas = {
@@ -63,14 +64,9 @@ export const validateWalletAddress = (
   }
 };
 
+// Use hardcoded platform wallet addresses
 export const getEscrowAddress = (chain: string): string => {
-  const escrowAddresses = {
-    ethereum: '0x4DEe7D9fa0E3e232AF7EfDF809E1fA5AdF4af61B',
-    base: '0x4DEe7D9fa0E3e232AF7EfDF809E1fA5AdF4af61B',
-    solana: 'FeByoSMhWJpo4f6M333RvHAe7ssvDGkioGVJTNyN3ihg'
-  };
-  
-  return escrowAddresses[chain as keyof typeof escrowAddresses] || '';
+  return PLATFORM_WALLETS[chain as keyof typeof PLATFORM_WALLETS] || '';
 };
 
 // Security utility for transaction hash validation

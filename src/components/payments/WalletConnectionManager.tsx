@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { validateWalletAddress } from '@/lib/walletValidation';
+import { processEthereumPayment, processSolanaPayment } from '@/lib/payments';
 import { showErrorToast, RateLimitError } from '@/lib/errorHandler';
 import { createRateLimiter } from '@/lib/validation';
 
@@ -66,7 +66,6 @@ export const WalletConnectionManager = ({
   setIsProcessing
 }: WalletConnectionManagerProps) => {
   const [selectedChain, setSelectedChain] = useState<'ethereum' | 'base' | 'solana' | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
 
   const handleConnect = async (chainId: 'ethereum' | 'base' | 'solana') => {
     if (!paymentLimiter('user')) {
@@ -81,119 +80,26 @@ export const WalletConnectionManager = ({
       return;
     }
 
-    setIsConnecting(true);
+    setIsProcessing(true);
     setSelectedChain(chainId);
 
     try {
-      let walletAddress: string;
-
+      let result;
+      
       if (chainId === 'solana') {
-        if (!(window as any).solana?.isPhantom) {
-          toast.error('Phantom wallet not detected', {
-            description: 'Please install Phantom wallet to continue.',
-            action: {
-              label: 'Install Phantom',
-              onClick: () => window.open('https://phantom.app/', '_blank')
-            }
-          });
-          return;
-        }
-
-        const resp = await (window as any).solana.connect({ onlyIfTrusted: false });
-        walletAddress = resp.publicKey.toString();
+        result = await processSolanaPayment(amount);
       } else {
-        if (!(window as any).ethereum) {
-          toast.error('MetaMask not detected', {
-            description: 'Please install MetaMask to continue.',
-            action: {
-              label: 'Install MetaMask',
-              onClick: () => window.open('https://metamask.io/', '_blank')
-            }
-          });
-          return;
-        }
-
-        const accounts = await (window as any).ethereum.request({ 
-          method: 'eth_requestAccounts' 
-        });
-
-        if (!accounts?.length) {
-          throw new Error('No wallet accounts found');
-        }
-
-        walletAddress = accounts[0];
-
-        // Handle Base network switching
-        if (chainId === 'base') {
-          try {
-            await (window as any).ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x2105' }],
-            });
-          } catch (switchError: any) {
-            if (switchError.code === 4902) {
-              await (window as any).ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: '0x2105',
-                  chainName: 'Base',
-                  rpcUrls: ['https://mainnet.base.org'],
-                  blockExplorerUrls: ['https://basescan.org']
-                }]
-              });
-            } else {
-              throw switchError;
-            }
-          }
-        }
-      }
-
-      // Validate wallet address
-      const validation = validateWalletAddress(walletAddress, chainId);
-      if (!validation.isValid) {
-        throw new Error(validation.error || 'Invalid wallet address');
-      }
-
-      toast.success(`Connected: ${walletAddress.slice(0, 8)}...${walletAddress.slice(-4)}`);
-      await processPayment(chainId, validation.address!);
-    } catch (error: any) {
-      console.error('Wallet connection error:', error);
-      
-      if (error.code === 4001) {
-        toast.error('Connection cancelled by user');
-      } else if (error.code === -32002) {
-        toast.error('Check wallet for pending connection request');
-      } else {
-        showErrorToast(error);
-      }
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const processPayment = async (chain: string, walletAddress: string) => {
-    setIsProcessing(true);
-    
-    try {
-      const processingTime = Math.random() * 2000 + 2000;
-      await new Promise(resolve => setTimeout(resolve, processingTime));
-      
-      const timestamp = Date.now().toString(16);
-      const random = Math.random().toString(16).slice(2, 18);
-      const mockTxHash = `0x${timestamp}${random}`.slice(0, 66);
-      
-      if (!/^0x[a-fA-F0-9]{64}$/.test(mockTxHash)) {
-        throw new Error('Invalid transaction hash generated');
+        result = await processEthereumPayment(amount, chainId);
       }
 
       toast.success('Payment successful!', {
-        description: `Transaction completed on ${chain}`,
+        description: `Transaction completed on ${result.chain}`,
       });
 
-      onPaymentSuccess(mockTxHash, chain);
-    } catch (error) {
+      onPaymentSuccess(result.txHash, result.chain);
+    } catch (error: any) {
       console.error('Payment error:', error);
-      showErrorToast(error as Error);
+      showErrorToast(error);
     } finally {
       setIsProcessing(false);
     }
@@ -209,7 +115,7 @@ export const WalletConnectionManager = ({
             variant={selectedChain === chain.id ? "default" : "outline"}
             className="h-auto p-4 justify-start"
             onClick={() => handleConnect(chain.id)}
-            disabled={isConnecting || !securityWarningAccepted || isProcessing}
+            disabled={isProcessing || !securityWarningAccepted}
           >
             <div className="flex items-center gap-3 w-full">
               <div className="text-2xl">{chain.icon}</div>

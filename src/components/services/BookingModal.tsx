@@ -43,6 +43,11 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Platform takes 15%, client pays full service amount
+  const totalAmount = service.price_usdc;
+  const platformFee = service.price_usdc * 0.15;
+  const creatorAmount = service.price_usdc * 0.85;
+
   const createBooking = useMutation({
     mutationFn: async ({ txHash, chain }: { txHash: string; chain: string }) => {
       if (!user) throw new Error('User not authenticated');
@@ -56,7 +61,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
         service_id: service.id,
         client_id: user.id,
         creator_id: service.creator_id,
-        usdc_amount: service.price_usdc,
+        usdc_amount: totalAmount, // Full amount paid by client
         status: 'paid',
         chain,
         tx_hash: txHash,
@@ -176,16 +181,20 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Service Price</span>
-                    <span>{service.price_usdc} USDC</span>
+                    <span>{service.price_usdc.toFixed(2)} USDC</span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
+                  <div className="flex justify-between text-muted-foreground text-xs">
                     <span>Platform Fee (15%)</span>
-                    <span>{(service.price_usdc * 0.15).toFixed(2)} USDC</span>
+                    <span>{platformFee.toFixed(2)} USDC</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground text-xs">
+                    <span>Creator Receives</span>
+                    <span>{creatorAmount.toFixed(2)} USDC</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-medium">
-                    <span>Total</span>
-                    <span>{(service.price_usdc * 1.15).toFixed(2)} USDC</span>
+                    <span>You Pay</span>
+                    <span>{totalAmount.toFixed(2)} USDC</span>
                   </div>
                 </div>
               </div>
@@ -203,7 +212,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
 
           {step === 'payment' && (
             <WalletConnect
-              amount={Number((service.price_usdc * 1.15).toFixed(2))}
+              amount={totalAmount}
               currency="USDC"
               onPaymentSuccess={handlePaymentSuccess}
               onCancel={() => setStep('review')}

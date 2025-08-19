@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Wallet, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { validateWalletAddress, validateTransactionHash } from '@/lib/walletValidation';
+import { processEthereumPayment, processSolanaPayment } from '@/lib/payments';
 import { showErrorToast } from '@/lib/errorHandler';
 
 interface WalletConnectProps {
@@ -17,7 +17,6 @@ interface WalletConnectProps {
 
 export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: WalletConnectProps) => {
   const [selectedChain, setSelectedChain] = useState<'ethereum' | 'base' | 'solana' | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const chainOptions = [
@@ -26,15 +25,15 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
       name: 'Ethereum',
       wallet: 'MetaMask',
       icon: '🦊',
-      fees: 'High fees',
+      fees: 'High fees (~$15-50)',
       color: 'bg-blue-500'
     },
     {
       id: 'base' as const,
       name: 'Base',
-      wallet: 'MetaMask',
+      wallet: 'MetaMask', 
       icon: '🔵',
-      fees: 'Low fees',
+      fees: 'Low fees (~$0.10-1)',
       color: 'bg-blue-600'
     },
     {
@@ -42,81 +41,32 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
       name: 'Solana',
       wallet: 'Phantom',
       icon: '👻',
-      fees: 'Very low fees',
+      fees: 'Very low fees (~$0.01)',
       color: 'bg-purple-600'
     }
   ];
 
-  const handleConnect = async (chainId: 'ethereum' | 'base' | 'solana') => {
-    setIsConnecting(true);
+  const handlePayment = async (chainId: 'ethereum' | 'base' | 'solana') => {
+    setIsProcessing(true);
     setSelectedChain(chainId);
 
     try {
-      let walletAddress: string;
-
+      let result;
+      
       if (chainId === 'solana') {
-        if (!(window as any).solana?.isPhantom) {
-          toast.error('Phantom wallet not found. Please install Phantom.');
-          window.open('https://phantom.app/', '_blank');
-          return;
-        }
-
-        const resp = await (window as any).solana.connect();
-        walletAddress = resp.publicKey.toString();
+        result = await processSolanaPayment(amount);
       } else {
-        if (!(window as any).ethereum) {
-          toast.error('MetaMask not found. Please install MetaMask.');
-          window.open('https://metamask.io/', '_blank');
-          return;
-        }
-
-        const accounts = await (window as any).ethereum.request({ 
-          method: 'eth_requestAccounts' 
-        });
-
-        if (!accounts?.length) {
-          throw new Error('No wallet accounts found');
-        }
-
-        walletAddress = accounts[0];
+        result = await processEthereumPayment(amount, chainId);
       }
 
-      // Validate wallet address using the new utility
-      const validation = validateWalletAddress(walletAddress, chainId);
-      if (!validation.isValid) {
-        throw new Error(validation.error || 'Invalid wallet address');
-      }
-
-      toast.success(`Connected to wallet: ${walletAddress.slice(0, 8)}...`);
-      await processPayment(chainId, validation.address!);
-    } catch (error) {
-      console.error('Wallet connection error:', error);
-      showErrorToast(error as Error);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const processPayment = async (chain: string, walletAddress: string) => {
-    setIsProcessing(true);
-    
-    try {
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast.success('Payment successful!', {
+        description: `Transaction: ${result.txHash.slice(0, 10)}...`
+      });
       
-      // Generate mock transaction hash
-      const mockTxHash = '0x' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
-      
-      // Validate the generated transaction hash
-      if (!validateTransactionHash(mockTxHash, chain)) {
-        throw new Error('Invalid transaction hash generated');
-      }
-      
-      toast.success('Payment successful!');
-      onPaymentSuccess(mockTxHash, chain);
-    } catch (error) {
+      onPaymentSuccess(result.txHash, result.chain);
+    } catch (error: any) {
       console.error('Payment error:', error);
-      showErrorToast(error as Error);
+      showErrorToast(error);
     } finally {
       setIsProcessing(false);
     }
@@ -161,8 +111,8 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
               key={chain.id}
               variant={selectedChain === chain.id ? "default" : "outline"}
               className="h-auto p-4 justify-start"
-              onClick={() => handleConnect(chain.id)}
-              disabled={isConnecting}
+              onClick={() => handlePayment(chain.id)}
+              disabled={isProcessing}
             >
               <div className="flex items-center gap-3 w-full">
                 <div className="text-2xl">{chain.icon}</div>

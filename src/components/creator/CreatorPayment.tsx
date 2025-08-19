@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { WalletConnectionManager } from '@/components/payments/WalletConnectionManager';
 import { SecurityWarning } from '@/components/payments/SecurityWarning';
 import { PlanDisplay } from '@/components/payments/PlanDisplay';
+import { CREATOR_TIERS } from '@/lib/contracts';
 
 interface CreatorPaymentProps {
   isOpen: boolean;
@@ -15,17 +16,11 @@ interface CreatorPaymentProps {
   tier: 'basic' | 'premium' | 'enterprise';
 }
 
-const tierPrices = {
-  basic: 0,
-  premium: 25,
-  enterprise: 100
-};
-
 export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: CreatorPaymentProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [securityWarningAccepted, setSecurityWarningAccepted] = useState(false);
 
-  const amount = tierPrices[tier];
+  const amount = CREATOR_TIERS[tier].price;
 
   if (isProcessing) {
     return (
