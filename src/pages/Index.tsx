@@ -71,9 +71,11 @@ export default function Index() {
     );
   }
 
-  // Determine if user should see creator features
-  const isApprovedCreator = userRole === 'creator' && creatorProfile?.approved;
-  const hasPendingApplication = creatorProfile && !creatorProfile.approved;
+  // Determine creator status - check if user has an approved creator profile OR is creator role
+  const hasCreatorProfile = !!creatorProfile;
+  const isApprovedCreator = creatorProfile?.approved === true;
+  const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
+  const canAccessCreatorTools = isApprovedCreator || (userRole === 'creator' && hasCreatorProfile);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -123,8 +125,8 @@ export default function Index() {
         </Card>
       )}
 
-      {/* Creator Application CTA - Only show if not applied yet */}
-      {!creatorProfile && userRole !== 'admin' && (
+      {/* Creator Application CTA - Only show if not applied yet and not admin */}
+      {!hasCreatorProfile && userRole !== 'admin' && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -151,7 +153,7 @@ export default function Index() {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          {isApprovedCreator && (
+          {canAccessCreatorTools && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
           {userRole === 'admin' && (
@@ -213,7 +215,7 @@ export default function Index() {
                     Profile Settings
                   </Link>
                 </Button>
-                {!creatorProfile && (
+                {!hasCreatorProfile && userRole !== 'admin' && (
                   <Button variant="outline" className="w-full justify-start" asChild>
                     <Link to="/become-creator">
                       <Crown className="h-4 w-4 mr-2" />
@@ -221,7 +223,7 @@ export default function Index() {
                     </Link>
                   </Button>
                 )}
-                {isApprovedCreator && (
+                {canAccessCreatorTools && (
                   <Button className="w-full justify-start" asChild>
                     <Link to="/creator-dashboard">
                       <TrendingUp className="h-4 w-4 mr-2" />
@@ -245,7 +247,7 @@ export default function Index() {
           </div>
         </TabsContent>
 
-        {isApprovedCreator && (
+        {canAccessCreatorTools && (
           <TabsContent value="creator">
             <div className="space-y-6">
               <div className="flex justify-between items-center">
