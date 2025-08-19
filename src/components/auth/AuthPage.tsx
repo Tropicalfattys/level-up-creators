@@ -9,20 +9,43 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { signUp, signIn, signInWithProvider } from '@/lib/auth';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Shield } from 'lucide-react';
+import { 
+  validateInput, 
+  emailSchema, 
+  passwordSchema, 
+  handleSchema, 
+  referralCodeSchema,
+  sanitizeString,
+  createRateLimiter
+} from '@/lib/validation';
+import { 
+  handleSupabaseError, 
+  showErrorToast, 
+  ValidationError, 
+  RateLimitError 
+} from '@/lib/errorHandler';
+
+// Rate limiters for different actions
+const signInLimiter = createRateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 minutes
+const signUpLimiter = createRateLimiter(3, 60 * 60 * 1000); // 3 attempts per hour
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [handle, setHandle] = useState('');
-  const [referralCode, setReferralCode] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    handle: '',
+    referralCode: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -35,97 +58,139 @@ export const AuthPage = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    const ref = searchParams.get('ref');
+    const ref = sanitizeString(searchParams.get('ref') || '');
     if (ref) {
-      setReferralCode(ref);
+      setFormData(prev => ({ ...prev, referralCode: ref }));
     }
   }, [searchParams]);
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    // Email validation
+    const emailResult = validateInput(emailSchema, formData.email);
+    if (!emailResult.success) {
+      errors.email = emailResult.errors[0];
+    }
+
+    // Password validation
+    const passwordResult = validateInput(passwordSchema, formData.password);
+    if (!passwordResult.success) {
+      errors.password = passwordResult.errors[0];
+    }
+
+    if (mode === 'signup') {
+      // Handle validation
+      const handleResult = validateInput(handleSchema, formData.handle);
+      if (!handleResult.success) {
+        errors.handle = handleResult.errors[0];
+      }
+
+      // Password confirmation
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+
+      // Referral code validation (optional)
+      if (formData.referralCode) {
+        const referralResult = validateInput(referralCodeSchema, formData.referralCode);
+        if (!referralResult.success) {
+          errors.referralCode = 'Invalid referral code format';
+        }
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    const sanitizedValue = sanitizeString(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    // Clear validation error for this field
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    // Check rate limits
+    const clientIP = 'user'; // In production, you'd get the actual IP
+    const limiter = mode === 'signin' ? signInLimiter : signUpLimiter;
+    
+    if (!limiter(clientIP)) {
+      showErrorToast(new RateLimitError());
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'signup') {
-        if (password !== confirmPassword) {
-          toast({
-            title: "Error",
-            description: "Passwords do not match",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (!handle.trim()) {
-          toast({
-            title: "Error",
-            description: "Username is required",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Check if handle contains only valid characters (alphanumeric, underscore, dash)
-        if (!/^[a-zA-Z0-9_-]+$/.test(handle)) {
-          toast({
-            title: "Error",
-            description: "Username can only contain letters, numbers, underscores, and dashes",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const { error } = await signUp(email, password, referralCode, handle);
+        const { error } = await signUp(
+          formData.email, 
+          formData.password, 
+          formData.referralCode || undefined, 
+          formData.handle
+        );
+        
         if (error) {
-          toast({
-            title: "Sign Up Error", 
-            description: error.message,
-            variant: "destructive"
-          });
+          const appError = handleSupabaseError(error);
+          showErrorToast(appError);
         } else {
           toast({
             title: "Success",
             description: "Please check your email to confirm your account"
           });
+          // Clear form
+          setFormData({
+            email: '',
+            password: '',
+            confirmPassword: '',
+            handle: '',
+            referralCode: ''
+          });
         }
       } else {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(formData.email, formData.password);
         if (error) {
-          toast({
-            title: "Sign In Error",
-            description: error.message,
-            variant: "destructive"
-          });
+          const appError = handleSupabaseError(error);
+          showErrorToast(appError);
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+      showErrorToast(error as Error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
+    if (!signInLimiter('social')) {
+      showErrorToast(new RateLimitError());
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await signInWithProvider(provider);
       if (error) {
-        toast({
-          title: "Authentication Error",
-          description: error.message,
-          variant: "destructive"
-        });
+        const appError = handleSupabaseError(error);
+        showErrorToast(appError);
       }
     } catch (error) {
-      toast({
-        title: "Error", 
-        description: "Failed to authenticate with provider",
-        variant: "destructive"
-      });
+      showErrorToast(error as Error);
     } finally {
       setLoading(false);
     }
@@ -135,7 +200,8 @@ export const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">
+          <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
+            <Shield className="h-5 w-5" />
             {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </CardTitle>
           <CardDescription className="text-center">
@@ -191,10 +257,15 @@ export const AuthPage = () => {
                 id="email"
                 type="email"
                 placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                disabled={loading}
                 required
+                className={validationErrors.email ? 'border-red-500' : ''}
               />
+              {validationErrors.email && (
+                <p className="text-sm text-red-500">{validationErrors.email}</p>
+              )}
             </div>
 
             {mode === 'signup' && (
@@ -204,13 +275,19 @@ export const AuthPage = () => {
                   id="handle"
                   type="text"
                   placeholder="Choose a username"
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
+                  value={formData.handle}
+                  onChange={(e) => handleInputChange('handle', e.target.value)}
+                  disabled={loading}
                   required
+                  className={validationErrors.handle ? 'border-red-500' : ''}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Letters, numbers, underscores and dashes only
-                </p>
+                {validationErrors.handle ? (
+                  <p className="text-sm text-red-500">{validationErrors.handle}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    3-30 characters, letters, numbers, underscores and dashes only
+                  </p>
+                )}
               </div>
             )}
             
@@ -221,9 +298,11 @@ export const AuthPage = () => {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  disabled={loading}
                   required
+                  className={validationErrors.password ? 'border-red-500' : ''}
                 />
                 <Button
                   type="button"
@@ -231,24 +310,50 @@ export const AuthPage = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {validationErrors.password && (
+                <p className="text-sm text-red-500">{validationErrors.password}</p>
+              )}
+              {mode === 'signup' && !validationErrors.password && (
+                <p className="text-xs text-muted-foreground">
+                  At least 8 characters with uppercase, lowercase, and number
+                </p>
+              )}
             </div>
 
             {mode === 'signup' && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm your password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      disabled={loading}
+                      required
+                      className={validationErrors.confirmPassword ? 'border-red-500' : ''}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={loading}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {validationErrors.confirmPassword && (
+                    <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -257,9 +362,14 @@ export const AuthPage = () => {
                     id="referralCode"
                     type="text"
                     placeholder="Enter referral code"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value)}
+                    value={formData.referralCode}
+                    onChange={(e) => handleInputChange('referralCode', e.target.value)}
+                    disabled={loading}
+                    className={validationErrors.referralCode ? 'border-red-500' : ''}
                   />
+                  {validationErrors.referralCode && (
+                    <p className="text-sm text-red-500">{validationErrors.referralCode}</p>
+                  )}
                 </div>
               </>
             )}
@@ -277,6 +387,7 @@ export const AuthPage = () => {
                   variant="link"
                   className="p-0 h-auto"
                   onClick={() => setMode('signup')}
+                  disabled={loading}
                 >
                   Sign up
                 </Button>
@@ -288,6 +399,7 @@ export const AuthPage = () => {
                   variant="link"
                   className="p-0 h-auto"
                   onClick={() => setMode('signin')}
+                  disabled={loading}
                 >
                   Sign in
                 </Button>
