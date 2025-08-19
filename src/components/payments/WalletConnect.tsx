@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Wallet, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { validateWalletAddress, validateTransactionHash } from '@/lib/walletValidation';
+import { showErrorToast } from '@/lib/errorHandler';
 
 interface WalletConnectProps {
   amount: number;
@@ -50,21 +52,18 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
     setSelectedChain(chainId);
 
     try {
+      let walletAddress: string;
+
       if (chainId === 'solana') {
-        // Phantom wallet connection
-        if (!(window as any).solana) {
+        if (!(window as any).solana?.isPhantom) {
           toast.error('Phantom wallet not found. Please install Phantom.');
           window.open('https://phantom.app/', '_blank');
           return;
         }
 
         const resp = await (window as any).solana.connect();
-        toast.success(`Connected to Phantom: ${resp.publicKey.toString().slice(0, 8)}...`);
-        
-        // Simulate payment processing
-        await processPayment(chainId, resp.publicKey.toString());
+        walletAddress = resp.publicKey.toString();
       } else {
-        // MetaMask connection
         if (!(window as any).ethereum) {
           toast.error('MetaMask not found. Please install MetaMask.');
           window.open('https://metamask.io/', '_blank');
@@ -74,14 +73,25 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
         const accounts = await (window as any).ethereum.request({ 
           method: 'eth_requestAccounts' 
         });
-        toast.success(`Connected to MetaMask: ${accounts[0].slice(0, 8)}...`);
-        
-        // Simulate payment processing
-        await processPayment(chainId, accounts[0]);
+
+        if (!accounts?.length) {
+          throw new Error('No wallet accounts found');
+        }
+
+        walletAddress = accounts[0];
       }
+
+      // Validate wallet address using the new utility
+      const validation = validateWalletAddress(walletAddress, chainId);
+      if (!validation.isValid) {
+        throw new Error(validation.error || 'Invalid wallet address');
+      }
+
+      toast.success(`Connected to wallet: ${walletAddress.slice(0, 8)}...`);
+      await processPayment(chainId, validation.address!);
     } catch (error) {
       console.error('Wallet connection error:', error);
-      toast.error('Failed to connect wallet. Please try again.');
+      showErrorToast(error as Error);
     } finally {
       setIsConnecting(false);
     }
@@ -97,11 +107,16 @@ export const WalletConnect = ({ amount, currency, onPaymentSuccess, onCancel }: 
       // Generate mock transaction hash
       const mockTxHash = '0x' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
       
+      // Validate the generated transaction hash
+      if (!validateTransactionHash(mockTxHash, chain)) {
+        throw new Error('Invalid transaction hash generated');
+      }
+      
       toast.success('Payment successful!');
       onPaymentSuccess(mockTxHash, chain);
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
+      showErrorToast(error as Error);
     } finally {
       setIsProcessing(false);
     }
