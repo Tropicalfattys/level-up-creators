@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Paperclip } from 'lucide-react';
+import { Send, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { MessageAttachments } from './MessageAttachments';
+import { Link } from 'react-router-dom';
+import { useBookingChat } from '@/hooks/useBookingChat';
 
 interface Message {
   id: string;
@@ -38,6 +40,9 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Use the booking chat hook for real-time updates
+  const { isConnected } = useBookingChat({ bookingId, userId: user?.id });
+
   const { data: messages, isLoading } = useQuery({
     queryKey: ['booking-messages', bookingId],
     queryFn: async (): Promise<Message[]> => {
@@ -52,8 +57,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
       if (error) throw error;
       return data || [];
-    },
-    refetchInterval: 3000 // Poll for new messages
+    }
   });
 
   const sendMessage = useMutation({
@@ -105,29 +109,6 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Set up real-time subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('booking-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `booking_id=eq.${bookingId}`
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [bookingId, queryClient]);
-
   if (isLoading) {
     return <div className="text-center py-4">Loading messages...</div>;
   }
@@ -135,8 +116,20 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   return (
     <Card className="h-96 flex flex-col">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Chat with @{otherUserHandle}</CardTitle>
-        <CardDescription>Discuss project details and deliverables</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Chat with @{otherUserHandle}</CardTitle>
+            <CardDescription>Discuss project details and deliverables</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <Link to={`/chat/${bookingId}`}>
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0">
