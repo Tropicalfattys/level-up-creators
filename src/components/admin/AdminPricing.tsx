@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Save, RefreshCw, Plus, X, Database } from 'lucide-react';
+import { DollarSign, Save, RefreshCw, Plus, X, Database, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PricingDebug } from '@/components/debug/PricingDebug';
 
@@ -65,10 +65,8 @@ export const AdminPricing = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // Invalidate all pricing-related queries to force refresh across the app
       queryClient.invalidateQueries({ queryKey: ['pricing-tiers'] });
       queryClient.invalidateQueries({ queryKey: ['debug-pricing-tiers'] });
-      // Force immediate refetch to ensure changes show up instantly
       queryClient.refetchQueries({ queryKey: ['pricing-tiers'] });
       
       toast.success('✅ Pricing updated! Changes are now live on the subscription page.');
@@ -228,7 +226,12 @@ export const AdminPricing = () => {
     );
   }
 
-  // Tier name mapping for display
+  // Check for tier name issues
+  const expectedTierNames = ['basic', 'mid', 'pro'];
+  const actualTierNames = pricingTiers?.map(t => t.tier_name) || [];
+  const hasIncorrectTierNames = actualTierNames.some(name => !expectedTierNames.includes(name));
+  const missingTierNames = expectedTierNames.filter(name => !actualTierNames.includes(name));
+
   const tierNameMapping = {
     basic: 'Starter (basic)',
     mid: 'Plus (mid)', 
@@ -248,6 +251,63 @@ export const AdminPricing = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Enhanced status warning for tier name issues */}
+          {(hasIncorrectTierNames || missingTierNames.length > 0) && (
+            <Card className="border-red-200 bg-red-50 mb-6">
+              <CardHeader>
+                <CardTitle className="text-red-800 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  ⚠️ Subscription Page Issue Detected
+                </CardTitle>
+                <CardDescription className="text-red-700">
+                  The subscription page is not showing all 3 plans due to incorrect tier names in the database.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {hasIncorrectTierNames && (
+                  <div className="bg-white border border-red-200 rounded-lg p-3">
+                    <h4 className="font-semibold text-red-800 mb-2">Incorrect Tier Names Found:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {actualTierNames.filter(name => !expectedTierNames.includes(name)).map(name => (
+                        <Badge key={name} variant="destructive" className="text-xs">
+                          ❌ {name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {missingTierNames.length > 0 && (
+                  <div className="bg-white border border-red-200 rounded-lg p-3">
+                    <h4 className="font-semibold text-red-800 mb-2">Missing Required Tiers:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {missingTierNames.map(name => (
+                        <Badge key={name} variant="outline" className="text-xs border-red-300">
+                          ❌ {name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <h4 className="font-semibold text-green-800 mb-2">✅ Quick Fix Available:</h4>
+                  <p className="text-sm text-green-700 mb-3">
+                    Click the "Reset to Default Data" button below to automatically fix all tier names and restore the 3 subscription plans.
+                  </p>
+                  <Button
+                    onClick={() => seedCorrectDataMutation.mutate()}
+                    disabled={seedCorrectDataMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${seedCorrectDataMutation.isPending ? 'animate-spin' : ''}`} />
+                    {seedCorrectDataMutation.isPending ? 'Fixing Database...' : '🔧 Reset to Default Data (Recommended)'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex gap-4 mb-6">
             <Button
               variant="outline"
@@ -258,12 +318,16 @@ export const AdminPricing = () => {
             </Button>
             
             <Button
-              variant="secondary"
+              variant={hasIncorrectTierNames || missingTierNames.length > 0 ? "default" : "secondary"}
               onClick={() => seedCorrectDataMutation.mutate()}
               disabled={seedCorrectDataMutation.isPending}
+              className={hasIncorrectTierNames || missingTierNames.length > 0 ? "bg-green-600 hover:bg-green-700" : ""}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${seedCorrectDataMutation.isPending ? 'animate-spin' : ''}`} />
-              Reset to Default Data
+              {hasIncorrectTierNames || missingTierNames.length > 0 
+                ? (seedCorrectDataMutation.isPending ? 'Fixing...' : '🔧 Fix Subscription Plans') 
+                : (seedCorrectDataMutation.isPending ? 'Resetting...' : 'Reset to Default Data')
+              }
             </Button>
           </div>
 
@@ -291,16 +355,18 @@ export const AdminPricing = () => {
               {pricingTiers.map((tier) => {
                 const currentFeatures = getCurrentValue(tier, 'features') as string[] || [];
                 const friendlyName = tierNameMapping[tier.tier_name as keyof typeof tierNameMapping] || tier.tier_name;
+                const hasWrongName = !expectedTierNames.includes(tier.tier_name);
                 
                 return (
-                  <Card key={tier.id} className="relative">
+                  <Card key={tier.id} className={`relative ${hasWrongName ? 'border-red-200 bg-red-50' : ''}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle className="text-lg">
                             {getCurrentValue(tier, 'display_name') as string} 
-                            <span className="text-sm font-normal text-muted-foreground ml-2">
+                            <span className={`text-sm font-normal ml-2 ${hasWrongName ? 'text-red-600' : 'text-muted-foreground'}`}>
                               ({friendlyName})
+                              {hasWrongName && <span className="text-red-600 ml-1">⚠️ Wrong tier name!</span>}
                             </span>
                           </CardTitle>
                           <CardDescription>

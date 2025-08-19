@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Crown, Star, Zap, Upload, RefreshCw } from 'lucide-react';
+import { Check, Crown, Star, Zap, Upload, RefreshCw, AlertTriangle, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CreatorPayment } from '@/components/creator/CreatorPayment';
@@ -77,10 +77,8 @@ export default function BecomeCreator() {
     const selectedTierData = dynamicTiers?.[selectedTier as keyof typeof dynamicTiers];
     
     if (selectedTierData && selectedTierData.price > 0) {
-      // Paid tier - go to payment
       setShowPayment(true);
     } else {
-      // Free tier - submit directly
       submitApplication.mutate(applicationData);
     }
   };
@@ -136,19 +134,130 @@ export default function BecomeCreator() {
     );
   }
 
+  // Enhanced error state for missing tiers
   if (!dynamicTiers || Object.keys(dynamicTiers).length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4 text-yellow-600">No Plans Available</h1>
-          <p className="text-muted-foreground mb-6">
-            No subscription plans are currently available. Please contact support.
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </div>
+        <Card className="max-w-2xl mx-auto border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-800 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Subscription Plans Need Configuration
+            </CardTitle>
+            <CardDescription>
+              The subscription plans are not properly configured in the database.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white rounded-lg p-4 border border-yellow-200">
+              <h3 className="font-semibold mb-2">What happened?</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                The database contains unexpected pricing tier names that don't match the frontend expectations.
+              </p>
+              
+              <h3 className="font-semibold mb-2">Quick Fix (Admin Only):</h3>
+              <ol className="text-sm space-y-1 text-muted-foreground">
+                <li>1. Go to the Admin Panel</li>
+                <li>2. Navigate to the Pricing section</li>
+                <li>3. Click "Reset to Default Data" button</li>
+                <li>4. Refresh this page</li>
+              </ol>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+                className="flex-1"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry Loading
+              </Button>
+              {userProfile?.role === 'admin' && (
+                <Button 
+                  onClick={() => navigate('/admin')}
+                  className="flex-1"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Go to Admin Panel
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Enhanced missing tiers detection
+  const availableTierCount = Object.keys(dynamicTiers).length;
+  const expectedTiers = ['basic', 'mid', 'pro'];
+  const missingTiers = expectedTiers.filter(tier => !dynamicTiers[tier as keyof typeof dynamicTiers]);
+  
+  if (availableTierCount < 3 || missingTiers.length > 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-2xl mx-auto border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="text-orange-800 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Incomplete Subscription Plans
+            </CardTitle>
+            <CardDescription>
+              Only {availableTierCount} of 3 expected plans are available.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white rounded-lg p-4 border border-orange-200">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h4 className="font-semibold text-green-700">Available Plans:</h4>
+                  <ul className="mt-1 space-y-1">
+                    {Object.keys(dynamicTiers).map(tier => (
+                      <li key={tier} className="text-green-600">✓ {tier}</li>
+                    ))}
+                  </ul>
+                </div>
+                {missingTiers.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-red-700">Missing Plans:</h4>
+                    <ul className="mt-1 space-y-1">
+                      {missingTiers.map(tier => (
+                        <li key={tier} className="text-red-600">✗ {tier}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-orange-200">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Admin action required:</strong> Use the Admin Panel's "Reset to Default Data" button to fix this.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+                className="flex-1"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+              {userProfile?.role === 'admin' && (
+                <Button 
+                  onClick={() => navigate('/admin')}
+                  className="flex-1"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Fix in Admin Panel
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -17,7 +17,7 @@ export const usePricingTiers = () => {
   return useQuery({
     queryKey: ['pricing-tiers'],
     queryFn: async (): Promise<PricingTier[]> => {
-      console.log('usePricingTiers: Fetching pricing tiers from database...');
+      console.log('📊 usePricingTiers: Fetching pricing tiers from database...');
       const { data, error } = await supabase
         .from('pricing_tiers')
         .select('*')
@@ -25,11 +25,12 @@ export const usePricingTiers = () => {
         .order('price_usdc', { ascending: true });
 
       if (error) {
-        console.error('usePricingTiers: Error fetching pricing tiers:', error);
+        console.error('❌ usePricingTiers: Error fetching pricing tiers:', error);
         throw error;
       }
       
-      console.log('usePricingTiers: Raw data from database:', data);
+      console.log('📦 usePricingTiers: Raw data from database:', data);
+      console.log('🔍 usePricingTiers: Tier names found:', data?.map(t => t.tier_name) || []);
       
       // Convert the Json features to string[] safely with better error handling
       const convertedData = (data || []).map(tier => {
@@ -45,7 +46,6 @@ export const usePricingTiers = () => {
             features = [tier.features];
           }
         } else if (tier.features && typeof tier.features === 'object') {
-          // Handle case where features might be stored as object
           features = Object.values(tier.features).filter(f => typeof f === 'string') as string[];
         }
         
@@ -55,22 +55,24 @@ export const usePricingTiers = () => {
         };
       });
       
-      console.log('usePricingTiers: Converted data:', convertedData);
+      console.log('✅ usePricingTiers: Converted data:', convertedData);
       return convertedData;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false, // Reduce unnecessary refetches
-    refetchInterval: false, // Don't auto-refetch unless needed
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 };
 
 export const useDynamicCreatorTiers = () => {
   const { data: pricingTiers, ...queryResult } = usePricingTiers();
 
-  console.log('useDynamicCreatorTiers: Processing pricing tiers:', pricingTiers);
+  console.log('🎯 useDynamicCreatorTiers: Processing pricing tiers:', pricingTiers);
 
   // Convert to the format expected by the frontend components
   const creatorTiers = pricingTiers?.reduce((acc, tier) => {
+    console.log(`🔍 useDynamicCreatorTiers: Processing tier "${tier.tier_name}"`);
+    
     const tierName = tier.tier_name as 'basic' | 'mid' | 'pro';
     
     // Only process the expected tier names
@@ -80,27 +82,33 @@ export const useDynamicCreatorTiers = () => {
         displayName: tier.display_name,
         features: tier.features
       };
-      console.log(`useDynamicCreatorTiers: Added tier ${tierName}:`, acc[tierName]);
+      console.log(`✅ useDynamicCreatorTiers: Added tier ${tierName}:`, acc[tierName]);
     } else {
-      console.warn(`useDynamicCreatorTiers: Unexpected tier_name found: ${tier.tier_name} - skipping`);
+      console.warn(`⚠️ useDynamicCreatorTiers: UNEXPECTED tier_name found: "${tier.tier_name}" - this is why only basic plan shows!`);
+      console.warn(`💡 useDynamicCreatorTiers: Expected tier names are: basic, mid, pro`);
+      console.warn(`🔧 useDynamicCreatorTiers: Go to Admin Panel > Pricing and click "Reset to Default Data"`);
     }
     
     return acc;
   }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; features: string[] }>);
 
-  console.log('useDynamicCreatorTiers: Final creator tiers object:', creatorTiers);
+  console.log('🎯 useDynamicCreatorTiers: Final creator tiers object:', creatorTiers);
   
-  // Validate that we have all expected tiers
+  // Enhanced validation that shows exactly what's missing and why
   if (creatorTiers) {
     const expectedTiers: ('basic' | 'mid' | 'pro')[] = ['basic', 'mid', 'pro'];
     const foundTiers = Object.keys(creatorTiers) as ('basic' | 'mid' | 'pro')[];
     const missingTiers = expectedTiers.filter(tier => !foundTiers.includes(tier));
     
     if (missingTiers.length > 0) {
-      console.error('useDynamicCreatorTiers: Missing expected tiers:', missingTiers);
+      console.error('❌ useDynamicCreatorTiers: Missing expected tiers:', missingTiers);
+      console.error('📋 useDynamicCreatorTiers: Available tiers in database:', pricingTiers?.map(t => t.tier_name));
+      console.error('🔧 useDynamicCreatorTiers: ACTION REQUIRED: Use Admin Panel to fix database tiers');
     } else {
-      console.log('useDynamicCreatorTiers: ✅ All expected tiers found successfully!');
+      console.log('🎉 useDynamicCreatorTiers: ✅ All expected tiers found successfully!');
     }
+  } else {
+    console.error('💥 useDynamicCreatorTiers: No tiers processed at all - check database connection');
   }
 
   return {
