@@ -45,49 +45,47 @@ export const EarningsTracker = () => {
           services (title),
           client:users!bookings_client_id_fkey (handle)
         `)
-        .eq('creator_id', user.id);
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const totalEarnings = bookings
-        ?.filter(b => ['accepted', 'released'].includes(b.status))
-        ?.reduce((sum, b) => sum + (b.usdc_amount || 0), 0) || 0;
+      // Calculate total earnings from completed bookings
+      const completedBookings = bookings?.filter(b => ['accepted', 'released'].includes(b.status)) || [];
+      const totalEarnings = completedBookings.reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0);
 
-      const monthlyEarnings = bookings
-        ?.filter(b => 
-          ['accepted', 'released'].includes(b.status) && 
-          new Date(b.accepted_at || b.created_at) >= thisMonth
-        )
-        ?.reduce((sum, b) => sum + (b.usdc_amount || 0), 0) || 0;
+      // Calculate this month's earnings
+      const monthlyEarnings = completedBookings
+        .filter(b => new Date(b.accepted_at || b.created_at) >= thisMonth)
+        .reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0);
 
+      // Calculate pending earnings from active bookings
       const pendingEarnings = bookings
         ?.filter(b => ['paid', 'in_progress', 'delivered'].includes(b.status))
-        ?.reduce((sum, b) => sum + (b.usdc_amount || 0), 0) || 0;
+        ?.reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0) || 0;
 
-      const completedBookings = bookings
-        ?.filter(b => ['accepted', 'released'].includes(b.status))
-        ?.length || 0;
+      const completedBookingsCount = completedBookings.length;
 
-      const recentEarnings = bookings
-        ?.filter(b => ['accepted', 'released'].includes(b.status))
-        ?.slice(0, 5)
-        ?.map(b => ({
+      // Get recent earnings for display
+      const recentEarnings = completedBookings
+        .slice(0, 5)
+        .map(b => ({
           id: b.id,
-          amount: b.usdc_amount || 0,
+          amount: Number(b.usdc_amount || 0),
           service_title: b.services?.title || 'Unknown Service',
           client_handle: b.client?.handle || 'Unknown',
           completed_at: b.accepted_at || b.created_at,
           status: b.status
-        })) || [];
+        }));
 
       return {
         totalEarnings,
         monthlyEarnings,
         pendingEarnings,
-        completedBookings,
+        completedBookings: completedBookingsCount,
         recentEarnings
       };
     },
@@ -187,7 +185,7 @@ export const EarningsTracker = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">${earning.amount} USDC</div>
+                    <div className="font-semibold">${earning.amount.toFixed(2)} USDC</div>
                     <Badge variant="outline" className="text-xs">
                       {earning.status}
                     </Badge>

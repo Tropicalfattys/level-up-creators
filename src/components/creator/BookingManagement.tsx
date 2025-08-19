@@ -1,13 +1,15 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface BookingWithDetails {
   id: string;
@@ -19,15 +21,16 @@ interface BookingWithDetails {
   release_at?: string;
   services: {
     title: string;
-  };
+  } | null;
   client: {
     handle: string;
     avatar_url?: string;
-  };
+  } | null;
 }
 
 export const BookingManagement = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -50,6 +53,36 @@ export const BookingManagement = () => {
     enabled: !!user
   });
 
+  const updateBookingStatus = useMutation({
+    mutationFn: async ({ bookingId, status, deliveredAt }: { 
+      bookingId: string; 
+      status: string; 
+      deliveredAt?: string; 
+    }) => {
+      const updateData: any = { status };
+      if (deliveredAt) {
+        updateData.delivered_at = deliveredAt;
+      }
+
+      const { error } = await supabase
+        .from('bookings')
+        .update(updateData)
+        .eq('id', bookingId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+      const statusText = status === 'in_progress' ? 'started' : 
+                        status === 'delivered' ? 'delivered' : 'updated';
+      toast.success(`Booking ${statusText} successfully!`);
+    },
+    onError: (error) => {
+      console.error('Update booking error:', error);
+      toast.error('Failed to update booking status');
+    }
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
@@ -65,21 +98,45 @@ export const BookingManagement = () => {
     switch (booking.status) {
       case 'paid':
         return (
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => updateBookingStatus.mutate({ 
+              bookingId: booking.id, 
+              status: 'in_progress' 
+            })}
+            disabled={updateBookingStatus.isPending}
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
             Start Work
           </Button>
         );
       case 'in_progress':
         return (
-          <Button size="sm">
+          <Button 
+            size="sm"
+            onClick={() => updateBookingStatus.mutate({ 
+              bookingId: booking.id, 
+              status: 'delivered',
+              deliveredAt: new Date().toISOString()
+            })}
+            disabled={updateBookingStatus.isPending}
+          >
             <Upload className="h-3 w-3 mr-1" />
-            Upload Deliverable
+            Mark as Delivered
           </Button>
         );
       case 'delivered':
         return (
           <div className="text-sm text-muted-foreground">
             Waiting for client review
+          </div>
+        );
+      case 'accepted':
+      case 'released':
+        return (
+          <div className="text-sm text-green-600 font-medium">
+            Completed
           </div>
         );
       default:
@@ -121,10 +178,10 @@ export const BookingManagement = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{booking.services?.title}</CardTitle>
+                      <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Client: @{booking.client?.handle}
+                        Client: @{booking.client?.handle || 'Unknown'}
                       </CardDescription>
                     </div>
                     <div className="text-right">
