@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { WalletConnectionManager } from '@/components/payments/WalletConnectionManager';
 import { SecurityWarning } from '@/components/payments/SecurityWarning';
 import { PlanDisplay } from '@/components/payments/PlanDisplay';
-import { CREATOR_TIERS } from '@/lib/contracts';
+import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
+import { STATIC_CREATOR_TIERS } from '@/lib/contracts';
 
 interface CreatorPaymentProps {
   isOpen: boolean;
@@ -19,8 +20,12 @@ interface CreatorPaymentProps {
 export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: CreatorPaymentProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [securityWarningAccepted, setSecurityWarningAccepted] = useState(false);
-
-  const amount = CREATOR_TIERS[tier].price;
+  
+  const { data: dynamicTiers, isLoading } = useDynamicCreatorTiers();
+  
+  // Use dynamic pricing if available, fallback to static pricing
+  const tiers = dynamicTiers || STATIC_CREATOR_TIERS;
+  const amount = tiers[tier]?.price || 0;
 
   if (isProcessing) {
     return (
@@ -49,15 +54,15 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
     );
   }
 
-  // For basic tier (free), skip payment
-  if (tier === 'basic') {
+  // For basic tier or free tiers, skip payment
+  if (amount === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Basic Plan</DialogTitle>
+            <DialogTitle>Confirm {tiers[tier]?.displayName || 'Basic'} Plan</DialogTitle>
             <DialogDescription>
-              The basic plan is free! Click confirm to proceed with your creator application.
+              This plan is free! Click confirm to proceed with your creator application.
             </DialogDescription>
           </DialogHeader>
           <PlanDisplay tier={tier} amount={amount} />
@@ -68,6 +73,19 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             <Button onClick={() => onPaymentSuccess('free', 'none')} className="flex-1">
               Confirm Application
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading pricing information...</p>
           </div>
         </DialogContent>
       </Dialog>

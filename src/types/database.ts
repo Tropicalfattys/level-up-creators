@@ -1,4 +1,3 @@
-
 // Temporary type definitions until Supabase types regenerate
 export interface Dispute {
   id: string;
@@ -123,4 +122,15 @@ export interface DisputeWithRelations extends Dispute {
     creator: User;
   };
   resolved_by_user?: User;
+}
+
+export interface PricingTier {
+  id: string;
+  tier_name: string;
+  price_usdc: number;
+  display_name: string;
+  features: string[];
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }

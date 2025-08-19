@@ -318,6 +318,39 @@ export type Database = {
           },
         ]
       }
+      pricing_tiers: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string
+          features: Json
+          id: string
+          price_usdc: number
+          tier_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_name: string
+          features?: Json
+          id?: string
+          price_usdc?: number
+          tier_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          features?: Json
+          id?: string
+          price_usdc?: number
+          tier_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string | null

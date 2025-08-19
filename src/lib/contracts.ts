@@ -1,4 +1,3 @@
-
 // USDC Contract Addresses and Platform Configuration
 export const USDC_CONTRACTS = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -14,11 +13,14 @@ export const PLATFORM_WALLETS = {
 } as const;
 
 // Creator Tier Pricing
-export const CREATOR_TIERS = {
-  basic: { name: 'Basic (Free)', price: 0, features: ['Basic listing', 'Admin approval required'] },
-  premium: { name: 'Premium', price: 25, features: ['Priority placement', 'Enhanced profile'] },
-  enterprise: { name: 'Enterprise', price: 50, features: ['Featured listing', 'Video intro', 'Priority support'] }
-} as const;
+export const STATIC_CREATOR_TIERS = {
+  basic: { price: 0, displayName: 'Basic (Free)', features: ['Basic listing', 'Admin approval required'] },
+  premium: { price: 25, displayName: 'Premium', features: ['Priority placement', 'Enhanced profile'] },
+  enterprise: { price: 50, displayName: 'Enterprise', features: ['Featured listing', 'Video intro', 'Priority support'] }
+};
+
+// Export static tiers as CREATOR_TIERS for backward compatibility
+export const CREATOR_TIERS = STATIC_CREATOR_TIERS;
 
 // Standard ERC-20 ABI for USDC transfers
 export const USDC_ABI = [
