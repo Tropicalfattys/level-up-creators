@@ -12,122 +12,192 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Shield, Users, Search, CheckCircle, XCircle, Clock, Star, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Temporary type definitions until Supabase types are regenerated
+interface CreatorData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  approved: boolean;
+  approved_at: string | null;
+  headline: string | null;
+  tier: string;
+  priority_score: number;
+  intro_video_url: string | null;
+  users: {
+    id: string;
+    handle: string;
+    email: string;
+    avatar_url: string | null;
+    created_at: string;
+  } | null;
+  services: Array<{
+    id: string;
+    title: string;
+    active: boolean;
+  }>;
+}
+
+interface AdminNoteData {
+  id: string;
+  user_id: string;
+  admin_id: string;
+  note: string;
+  created_at: string;
+  admin: {
+    handle: string;
+  } | null;
+}
+
 export const AdminCreators = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+  const [selectedCreator, setSelectedCreator] = useState<CreatorData | null>(null);
   const [adminNote, setAdminNote] = useState('');
   const queryClient = useQueryClient();
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['admin-creators'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('creators')
-        .select(`
-          *,
-          users!creators_user_id_fkey (
-            id,
-            handle,
-            email,
-            avatar_url,
-            created_at
-          ),
-          services (
-            id,
-            title,
-            active
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+    queryFn: async (): Promise<CreatorData[]> => {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('creators')
+          .select(`
+            *,
+            users!creators_user_id_fkey (
+              id,
+              handle,
+              email,
+              avatar_url,
+              created_at
+            ),
+            services (
+              id,
+              title,
+              active
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Creators query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Creators fetch error:', error);
+        return [];
+      }
     }
   });
 
   const { data: adminNotes } = useQuery({
     queryKey: ['admin-notes', selectedCreator?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<AdminNoteData[]> => {
       if (!selectedCreator?.id) return [];
       
-      const { data, error } = await supabase
-        .from('admin_notes')
-        .select(`
-          *,
-          admin:admin_id (handle)
-        `)
-        .eq('user_id', selectedCreator.user_id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await (supabase as any)
+          .from('admin_notes')
+          .select(`
+            *,
+            admin:admin_id (handle)
+          `)
+          .eq('user_id', selectedCreator.user_id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Admin notes query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Admin notes fetch error:', error);
+        return [];
+      }
     },
     enabled: !!selectedCreator?.id
   });
 
   const approveCreator = useMutation({
     mutationFn: async (creatorId: string) => {
-      const { error } = await supabase
-        .from('creators')
-        .update({ 
-          approved: true, 
-          approved_at: new Date().toISOString() 
-        })
-        .eq('id', creatorId);
-      
-      if (error) throw error;
+      try {
+        const { error } = await (supabase as any)
+          .from('creators')
+          .update({ 
+            approved: true, 
+            approved_at: new Date().toISOString() 
+          })
+          .eq('id', creatorId);
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Approve creator error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
       toast.success('Creator approved successfully');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Approve creator mutation error:', error);
       toast.error('Failed to approve creator');
     }
   });
 
   const rejectCreator = useMutation({
     mutationFn: async (creatorId: string) => {
-      const { error } = await supabase
-        .from('creators')
-        .update({ approved: false })
-        .eq('id', creatorId);
-      
-      if (error) throw error;
+      try {
+        const { error } = await (supabase as any)
+          .from('creators')
+          .update({ approved: false })
+          .eq('id', creatorId);
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Reject creator error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
       toast.success('Creator rejected');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Reject creator mutation error:', error);
       toast.error('Failed to reject creator');
     }
   });
 
   const addAdminNote = useMutation({
     mutationFn: async ({ userId, note }: { userId: string; note: string }) => {
-      const { error } = await supabase
-        .from('admin_notes')
-        .insert({
-          user_id: userId,
-          admin_id: (await supabase.auth.getUser()).data.user?.id,
-          note
-        });
-      
-      if (error) throw error;
+      try {
+        const { error } = await (supabase as any)
+          .from('admin_notes')
+          .insert({
+            user_id: userId,
+            admin_id: (await supabase.auth.getUser()).data.user?.id,
+            note
+          });
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Add admin note error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-notes'] });
       setAdminNote('');
       toast.success('Admin note added');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Add admin note mutation error:', error);
       toast.error('Failed to add admin note');
     }
   });
 
-  const filteredCreators = creators?.filter(creator => {
+  const filteredCreators = creators?.filter((creator: CreatorData) => {
     const user = creator.users;
     const matchesSearch = !searchTerm || 
       user?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,14 +265,14 @@ export const AdminCreators = () => {
 
           {/* Creators List */}
           <div className="space-y-4">
-            {filteredCreators?.map((creator) => (
+            {filteredCreators?.map((creator: CreatorData) => (
               <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
                     {creator.users?.avatar_url ? (
                       <img 
                         src={creator.users.avatar_url} 
-                        alt={creator.users.handle} 
+                        alt={creator.users.handle || 'User'} 
                         className="w-12 h-12 rounded-full"
                       />
                     ) : (
@@ -297,7 +367,7 @@ export const AdminCreators = () => {
                         <div>
                           <h4 className="font-medium mb-2">Admin Notes</h4>
                           <div className="space-y-2 mb-3">
-                            {adminNotes?.map((note) => (
+                            {adminNotes?.map((note: AdminNoteData) => (
                               <div key={note.id} className="p-2 bg-muted rounded text-sm">
                                 <p>{note.note}</p>
                                 <p className="text-xs text-muted-foreground mt-1">
