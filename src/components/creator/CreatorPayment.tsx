@@ -13,7 +13,7 @@ interface CreatorPaymentProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: (txHash: string, chain: string) => void;
-  tier: 'basic' | 'mid' | 'pro';
+  tier: 'basic' | 'mid' | 'pro'; // Updated to match new tier structure
 }
 
 export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: CreatorPaymentProps) => {

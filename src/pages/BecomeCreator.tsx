@@ -323,7 +323,7 @@ export default function BecomeCreator() {
           isOpen={showPayment}
           onClose={() => setShowPayment(false)}
           onPaymentSuccess={handlePaymentSuccess}
-          tier={selectedTier as 'basic' | 'premium' | 'enterprise'}
+          tier={selectedTier as 'basic' | 'mid' | 'pro'} // Updated type casting
         />
       )}
     </>
