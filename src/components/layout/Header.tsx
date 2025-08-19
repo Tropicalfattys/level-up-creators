@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
-import { LogOut, User, Settings, DollarSign, Menu } from 'lucide-react';
+import { LogOut, User, Settings, DollarSign, Menu, Shield } from 'lucide-react';
 
 export const Header = () => {
   const { user, userRole, userProfile } = useAuth();
@@ -14,14 +14,6 @@ export const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
-  };
-
-  const getDashboardLink = () => {
-    switch (userRole) {
-      case 'admin': return '/admin';
-      case 'creator': return '/creator-dashboard';
-      default: return '/dashboard';
-    }
   };
 
   return (
@@ -85,23 +77,50 @@ export const Header = () => {
                     <p className="w-full truncate text-sm text-muted-foreground">
                       {user.email}
                     </p>
+                    {userRole && (
+                      <p className="text-xs text-primary font-medium capitalize">
+                        {userRole}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
+                
+                {/* Regular Dashboard for all users */}
+                <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                   <User className="mr-2 h-4 w-4" />
                   Dashboard
                 </DropdownMenuItem>
+
+                {/* Admin Dashboard - only for admins */}
+                {userRole === 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Dashboard
+                  </DropdownMenuItem>
+                )}
+
+                {/* Creator Dashboard - only for creators */}
+                {userRole === 'creator' && (
+                  <DropdownMenuItem onClick={() => navigate('/creator-dashboard')}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Creator Dashboard
+                  </DropdownMenuItem>
+                )}
+
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                {userRole !== 'creator' && (
+
+                {/* Become Creator option for non-creators */}
+                {userRole !== 'creator' && userRole !== 'admin' && (
                   <DropdownMenuItem onClick={() => navigate('/become-creator')}>
                     <DollarSign className="mr-2 h-4 w-4" />
                     Become a Creator
                   </DropdownMenuItem>
                 )}
+
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
