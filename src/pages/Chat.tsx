@@ -33,8 +33,8 @@ export default function Chat() {
             handle,
             avatar_url
           ),
-          creator_data:creators!bookings_creator_id_fkey (
-            users!creators_user_id_fkey (
+          creator_profile:creators!bookings_creator_id_fkey (
+            user_profile:users!creators_user_id_fkey (
               handle,
               avatar_url
             )
@@ -117,7 +117,7 @@ export default function Chat() {
   };
 
   const isClient = user?.id === booking.client_id;
-  const otherUser = isClient ? booking.creator_data?.users : booking.client;
+  const otherUser = isClient ? booking.creator_profile?.user_profile : booking.client;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

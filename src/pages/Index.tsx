@@ -1,562 +1,469 @@
-
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DollarSign, 
+  TrendingUp, 
   Users, 
   Star, 
-  Crown, 
-  TrendingUp,
-  MessageSquare,
   Calendar,
+  MessageSquare,
+  BookOpen,
+  Target,
+  Award,
+  ChevronRight,
   Plus,
-  Clock,
-  Settings,
-  Copy,
-  Gift,
-  Share2,
+  Zap,
+  Trophy,
+  CheckCircle,
   Package
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { UserBookings } from '@/components/bookings/UserBookings';
 
+interface DashboardStats {
+  totalEarnings: number;
+  activeBookings: number;
+  completedServices: number;
+  rating: number;
+  reviewCount: number;
+}
+
+interface RecentActivity {
+  id: string;
+  type: 'booking' | 'message' | 'review' | 'payment';
+  title: string;
+  description: string;
+  timestamp: string;
+  status?: string;
+}
+
 export default function Index() {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, userProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Check if user has a creator profile
-  const { data: creatorProfile } = useQuery({
-    queryKey: ['creator-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching creator profile:', error);
-        return null;
+  // Stats Query
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard-stats', user?.id, userRole],
+    queryFn: async (): Promise<DashboardStats> => {
+      if (!user?.id) {
+        return {
+          totalEarnings: 0,
+          activeBookings: 0,
+          completedServices: 0,
+          rating: 0,
+          reviewCount: 0
+        };
       }
-      
-      return data;
+
+      if (userRole === 'creator') {
+        // Creator stats
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('usdc_amount, status')
+          .eq('creator_id', user.id);
+
+        const { data: creator } = await supabase
+          .from('creators')
+          .select('rating, review_count')
+          .eq('user_id', user.id)
+          .single();
+
+        const totalEarnings = bookings?.reduce((sum, booking) => 
+          booking.status === 'released' ? sum + Number(booking.usdc_amount) : sum, 0) || 0;
+        
+        const activeBookings = bookings?.filter(b => 
+          ['paid', 'in_progress', 'delivered'].includes(b.status)).length || 0;
+        
+        const completedServices = bookings?.filter(b => 
+          ['accepted', 'released'].includes(b.status)).length || 0;
+
+        return {
+          totalEarnings,
+          activeBookings,
+          completedServices,
+          rating: creator?.rating || 0,
+          reviewCount: creator?.review_count || 0
+        };
+      } else {
+        // Client stats
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('usdc_amount, status')
+          .eq('client_id', user.id);
+
+        const totalSpent = bookings?.reduce((sum, booking) => 
+          sum + Number(booking.usdc_amount), 0) || 0;
+        
+        const activeBookings = bookings?.filter(b => 
+          ['paid', 'in_progress', 'delivered'].includes(b.status)).length || 0;
+        
+        const completedServices = bookings?.filter(b => 
+          ['accepted', 'released'].includes(b.status)).length || 0;
+
+        return {
+          totalEarnings: totalSpent,
+          activeBookings,
+          completedServices,
+          rating: 0,
+          reviewCount: 0
+        };
+      }
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!userRole
   });
 
-  // Get user profile for referral info
-  const { data: userProfile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id
-  });
+  // Recent Activity Query
+  const { data: recentActivity, isLoading: activityLoading } = useQuery({
+    queryKey: ['recent-activity', user?.id, userRole],
+    queryFn: async (): Promise<RecentActivity[]> => {
+      if (!user?.id) return [];
 
-  // Get user booking stats
-  const { data: bookingStats } = useQuery({
-    queryKey: ['user-booking-stats', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return { totalBookings: 0, activeBookings: 0 };
-      
-      const { data, error } = await supabase
+      const activities: RecentActivity[] = [];
+
+      // Get recent bookings
+      const { data: bookings } = await supabase
         .from('bookings')
-        .select('status')
-        .eq('client_id', user.id);
-      
-      if (error) {
-        console.error('Error fetching booking stats:', error);
-        return { totalBookings: 0, activeBookings: 0 };
-      }
-      
-      const totalBookings = data?.length || 0;
-      const activeBookings = data?.filter(b => 
-        ['paid', 'in_progress', 'delivered'].includes(b.status)
-      ).length || 0;
-      
-      return { totalBookings, activeBookings };
+        .select(`
+          id, status, usdc_amount, created_at, updated_at,
+          services (title)
+        `)
+        .or(`client_id.eq.${user.id},creator_id.eq.${user.id}`)
+        .order('updated_at', { ascending: false })
+        .limit(5);
+
+      bookings?.forEach(booking => {
+        activities.push({
+          id: booking.id,
+          type: 'booking',
+          title: booking.services?.title || 'Service Booking',
+          description: `$${booking.usdc_amount} USDC - ${booking.status}`,
+          timestamp: booking.updated_at || booking.created_at,
+          status: booking.status
+        });
+      });
+
+      // Get recent messages
+      const { data: messages } = await supabase
+        .from('messages')
+        .select(`
+          id, body, created_at,
+          bookings (
+            services (title)
+          )
+        `)
+        .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      messages?.forEach(message => {
+        activities.push({
+          id: message.id,
+          type: 'message',
+          title: 'New Message',
+          description: message.body.substring(0, 50) + '...',
+          timestamp: message.created_at
+        });
+      });
+
+      return activities.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      ).slice(0, 8);
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!userRole
   });
 
-  console.log('Dashboard state:', { user: !!user, userRole, creatorProfile, approved: creatorProfile?.approved });
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': case 'in_progress': return 'bg-blue-500';
+      case 'delivered': return 'bg-purple-500';
+      case 'accepted': case 'released': return 'bg-green-500';
+      case 'disputed': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
 
-  if (!user) {
+  const StatCard = ({ icon: Icon, label, value, trend, color = "text-primary" }: {
+    icon: any;
+    label: string;
+    value: string | number;
+    trend?: string;
+    color?: string;
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p className={`text-2xl font-bold ${color}`}>{value}</p>
+            {trend && (
+              <p className="text-xs text-muted-foreground mt-1">{trend}</p>
+            )}
+          </div>
+          <Icon className="h-8 w-8 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const QuickActionCard = ({ icon: Icon, title, description, href, color = "text-primary" }: {
+    icon: any;
+    title: string;
+    description: string;
+    href: string;
+    color?: string;
+  }) => (
+    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className={`p-2 rounded-lg bg-primary/10`}>
+            <Icon className={`h-6 w-6 ${color}`} />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold mb-1">{title}</h3>
+            <p className="text-sm text-muted-foreground mb-3">{description}</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to={href}>
+                Get Started <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (statsLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Welcome to CryptoTalent</h1>
-          <p className="text-muted-foreground mb-6">
-            Please sign in to access your dashboard
-          </p>
-          <Button asChild>
-            <Link to="/auth">Sign In</Link>
-          </Button>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Determine creator status - check if user has an approved creator profile OR is creator role
-  const hasCreatorProfile = !!creatorProfile;
-  const isApprovedCreator = creatorProfile?.approved === true;
-  const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
-  const canAccessCreatorTools = isApprovedCreator || (userRole === 'creator' && hasCreatorProfile);
-
-  const copyReferralCode = () => {
-    if (userProfile?.referral_code) {
-      navigator.clipboard.writeText(userProfile.referral_code);
-      toast.success('Referral code copied to clipboard!');
-    }
-  };
-
-  const copyReferralLink = () => {
-    if (userProfile?.referral_code) {
-      const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
-      navigator.clipboard.writeText(referralUrl);
-      toast.success('Referral link copied to clipboard!');
-    }
-  };
-
-  const shareOnSocial = (platform: string) => {
-    if (!userProfile?.referral_code) return;
-    
-    const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
-    const message = "Join CryptoTalent and get access to amazing crypto services!";
-    
-    let shareUrl = '';
-    
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'telegram':
-        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`;
-        break;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's what's happening with your account.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">
+              {getGreeting()}, {userProfile?.handle || 'there'}!
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Welcome to your {userRole === 'creator' ? 'creator' : 'client'} dashboard
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge variant={userRole === 'creator' ? 'default' : 'secondary'}>
+              {userRole === 'creator' ? 'Creator' : 'Client'}
+            </Badge>
+            <Avatar>
+              <AvatarImage src={userProfile?.avatar_url || ''} />
+              <AvatarFallback>
+                {userProfile?.handle?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
       </div>
 
-      {/* Creator Application Status Cards */}
-      {hasPendingApplication && (
-        <Card className="mb-8 border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-700">
-              <Clock className="h-5 w-5" />
-              Creator Application Pending
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              Your creator application is under review. We'll notify you within 3 business days.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
-      {isApprovedCreator && (
-        <Card className="mb-8 border-green-200 bg-green-50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-green-700">
-                  <Crown className="h-5 w-5" />
-                  Creator Dashboard Active
-                </CardTitle>
-                <CardDescription className="text-green-600">
-                  You're approved! Access your full creator dashboard to manage services and bookings.
-                </CardDescription>
-              </div>
-              <Button asChild>
-                <Link to="/creator-dashboard">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Creator Dashboard
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Creator Application CTA - Only show if not applied yet and not admin */}
-      {!hasCreatorProfile && userRole !== 'admin' && (
-        <Card className="mb-8 border-primary/20 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-primary" />
-                  Become a Creator
-                </CardTitle>
-                <CardDescription>
-                  Start earning by offering your expertise to the crypto community
-                </CardDescription>
-              </div>
-              <Button asChild>
-                <Link to="/become-creator">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Apply Now
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-          {canAccessCreatorTools && (
-            <TabsTrigger value="creator">Creator Tools</TabsTrigger>
-          )}
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          {userRole === 'admin' && (
-            <TabsTrigger value="admin">Admin Panel</TabsTrigger>
-          )}
+          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Profile</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{userRole || 'Client'}</div>
-                <p className="text-xs text-muted-foreground">Your current role</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{bookingStats?.totalBookings || 0}</div>
-                <p className="text-xs text-muted-foreground">Services booked</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{bookingStats?.activeBookings || 0}</div>
-                <p className="text-xs text-muted-foreground">In progress</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Credits</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                <p className="text-xs text-muted-foreground">Referral credits</p>
-              </CardContent>
-            </Card>
+          {/* Stats Grid */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              icon={DollarSign}
+              label={userRole === 'creator' ? 'Total Earnings' : 'Total Spent'}
+              value={`$${stats?.totalEarnings?.toFixed(2) || '0.00'}`}
+              color="text-green-600"
+            />
+            <StatCard
+              icon={Package}
+              label="Active Bookings"
+              value={stats?.activeBookings || 0}
+              color="text-blue-600"
+            />
+            <StatCard
+              icon={CheckCircle}
+              label="Completed Services"
+              value={stats?.completedServices || 0}
+              color="text-purple-600"
+            />
+            {userRole === 'creator' && (
+              <StatCard
+                icon={Star}
+                label="Rating"
+                value={`${stats?.rating?.toFixed(1) || '0.0'} (${stats?.reviewCount || 0})`}
+                color="text-yellow-600"
+              />
+            )}
+            {userRole === 'client' && (
+              <StatCard
+                icon={Trophy}
+                label="Referral Credits"
+                value={`$${userProfile?.referral_credits || 0}`}
+                color="text-orange-600"
+              />
+            )}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/browse">
-                    <Star className="h-4 w-4 mr-2" />
-                    Browse Services
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Profile Settings
-                  </Link>
-                </Button>
-                {!hasCreatorProfile && userRole !== 'admin' && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <Link to="/become-creator">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Become a Creator
-                    </Link>
-                  </Button>
-                )}
-                {canAccessCreatorTools && (
-                  <Button className="w-full justify-start" asChild>
-                    <Link to="/creator-dashboard">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Creator Dashboard
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-sm">
-                  {bookingStats?.totalBookings && bookingStats.totalBookings > 0 
-                    ? `You have ${bookingStats.activeBookings} active bookings`
-                    : 'No recent activity to show'
-                  }
-                </p>
-                {bookingStats?.activeBookings && bookingStats.activeBookings > 0 && (
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link to="#" onClick={() => document.querySelector('[value="bookings"]')?.click()}>
-                      View Bookings
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+          {/* Quick Actions */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Quick Actions</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {userRole === 'creator' ? (
+                <>
+                  <QuickActionCard
+                    icon={Plus}
+                    title="Create New Service"
+                    description="Add a new service to your profile and start earning"
+                    href="/services"
+                  />
+                  <QuickActionCard
+                    icon={MessageSquare}
+                    title="View Messages"
+                    description="Check and respond to client messages"
+                    href="/creator-dashboard"
+                  />
+                  <QuickActionCard
+                    icon={TrendingUp}
+                    title="Creator Dashboard"
+                    description="View detailed analytics and manage your business"
+                    href="/creator-dashboard"
+                  />
+                </>
+              ) : (
+                <>
+                  <QuickActionCard
+                    icon={BookOpen}
+                    title="Browse Services"
+                    description="Discover and book services from crypto experts"
+                    href="/browse"
+                  />
+                  <QuickActionCard
+                    icon={Users}
+                    title="Become a Creator"
+                    description="Share your expertise and start earning"
+                    href="/become-creator"
+                  />
+                  <QuickActionCard
+                    icon={Target}
+                    title="Find by Category"
+                    description="Explore services in specific categories"
+                    href="/categories"
+                  />
+                </>
+              )}
+            </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="bookings">
+        <TabsContent value="bookings" className="space-y-6">
           <UserBookings />
         </TabsContent>
 
-        {canAccessCreatorTools && (
-          <TabsContent value="creator">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Creator Tools</h2>
-                <Button asChild>
-                  <Link to="/creator-dashboard">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Full Dashboard
-                  </Link>
-                </Button>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Services</CardTitle>
-                    <CardDescription>Manage your service offerings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/services">Manage Services</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Bookings</CardTitle>
-                    <CardDescription>Track active bookings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Bookings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Earnings</CardTitle>
-                    <CardDescription>Track your earnings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Earnings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-        )}
-
-        <TabsContent value="referrals" className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  Your Referral Program
-                </CardTitle>
-                <CardDescription>
-                  Earn $1 credit for every successful referral that signs up and makes their first purchase
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
-                  <div className="flex items-center gap-2">
-                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1">
-                      {userProfile?.referral_code || 'Loading...'}
-                    </code>
-                    <Button size="sm" variant="outline" onClick={copyReferralCode}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+        <TabsContent value="activity" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest actions and updates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activityLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading recent activity...
                 </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral link:</p>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-muted px-3 py-2 rounded text-sm flex-1 truncate">
-                      {userProfile?.referral_code ? 
-                        `${window.location.origin}/auth?ref=${userProfile.referral_code}` : 
-                        'Loading...'
-                      }
+              ) : recentActivity && recentActivity.length > 0 ? (
+                <div className="space-y-4">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                      <div className={`p-2 rounded-full ${
+                        activity.type === 'booking' ? 'bg-blue-100' :
+                        activity.type === 'message' ? 'bg-green-100' :
+                        activity.type === 'review' ? 'bg-yellow-100' :
+                        'bg-purple-100'
+                      }`}>
+                        {activity.type === 'booking' && <Package className="h-4 w-4" />}
+                        {activity.type === 'message' && <MessageSquare className="h-4 w-4" />}
+                        {activity.type === 'review' && <Star className="h-4 w-4" />}
+                        {activity.type === 'payment' && <DollarSign className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{activity.title}</h4>
+                          {activity.status && (
+                            <Badge className={getStatusColor(activity.status)}>
+                              {activity.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {activity.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {format(new Date(activity.timestamp), 'MMM d, yyyy h:mm a')}
+                        </p>
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={copyReferralLink}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                    <p className="text-xs text-muted-foreground">Credits Earned</p>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">Friends Referred</p>
-                  </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No recent activity</h3>
+                  <p className="text-muted-foreground">
+                    Your recent bookings, messages, and updates will appear here.
+                  </p>
                 </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Share on social media:</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('twitter')}>
-                      Twitter
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('facebook')}>
-                      Facebook
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('linkedin')}>
-                      LinkedIn
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('telegram')}>
-                      Telegram
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">1</Badge>
-                  <div>
-                    <p className="font-medium">Share your code or link</p>
-                    <p className="text-sm text-muted-foreground">
-                      Send your referral code or link to friends
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">2</Badge>
-                  <div>
-                    <p className="font-medium">They sign up</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your friend creates an account using your referral
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">3</Badge>
-                  <div>
-                    <p className="font-medium">Earn $1 credit</p>
-                    <p className="text-sm text-muted-foreground">
-                      Get $1 credit when they make their first purchase
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">4</Badge>
-                  <div>
-                    <p className="font-medium">Use your credits</p>
-                    <p className="text-sm text-muted-foreground">
-                      Apply credits to any service on the platform
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
-
-        {userRole === 'admin' && (
-          <TabsContent value="admin">
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Tools</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link to="/admin">Admin Panel</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
+
+      {/* Quick Access Footer */}
+      <div className="mt-12 p-6 bg-muted/50 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold mb-1">Need Help?</h3>
+            <p className="text-sm text-muted-foreground">
+              Contact our support team or check out our help center
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/contact">Contact Support</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/how-it-works">How It Works</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

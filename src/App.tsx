@@ -13,7 +13,7 @@ import Browse from "./pages/Browse";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import Chat from "./pages/Chat";
 import BecomeCreator from "./pages/BecomeCreator";
-import AuthPage from "./components/auth/AuthPage";
+import { AuthPage } from "./components/auth/AuthPage";
 import Services from "./pages/Services";
 import Settings from "./pages/Settings";
 import Contact from "./pages/Contact";

@@ -28,9 +28,9 @@ export const UserBookings = () => {
             description,
             category
           ),
-          creators!bookings_creator_id_fkey (
+          creator_profile:creators!bookings_creator_id_fkey (
             id,
-            users!creators_user_id_fkey (
+            user_profile:users!creators_user_id_fkey (
               handle,
               avatar_url
             )
@@ -121,7 +121,7 @@ export const UserBookings = () => {
                 <div className="flex-1">
                   <CardTitle className="text-lg">{booking.services?.title}</CardTitle>
                   <CardDescription className="mt-1">
-                    with @{booking.creators?.users?.handle} • 
+                    with @{booking.creator_profile?.user_profile?.handle} • 
                     Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
                   </CardDescription>
                 </div>
