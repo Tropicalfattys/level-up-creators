@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Search, Filter, DollarSign, Clock, Star } from 'lucide-react';
+import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
 
 interface SearchFilters {
   query: string;
@@ -45,6 +45,7 @@ export const AdvancedSearch = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['advanced-search', filters],
@@ -334,7 +335,12 @@ export const AdvancedSearch = () => {
                       )}
                       <span className="text-sm font-medium">@{service.creator.handle}</span>
                     </div>
-                    <Button size="sm">View Details</Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => setSelectedServiceId(service.id)}
+                    >
+                      View Details
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -352,6 +358,15 @@ export const AdvancedSearch = () => {
           </Card>
         )}
       </div>
+
+      {/* Service Detail Modal */}
+      {selectedServiceId && (
+        <ServiceDetailModal
+          serviceId={selectedServiceId}
+          isOpen={!!selectedServiceId}
+          onClose={() => setSelectedServiceId(null)}
+        />
+      )}
     </div>
   );
 };
