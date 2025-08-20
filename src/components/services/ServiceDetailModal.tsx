@@ -9,26 +9,6 @@ import { Separator } from '@/components/ui/separator';
 import { Clock, DollarSign, User, Star } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 
-interface ServiceWithCreator {
-  id: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category: string;
-  creator_id: string;
-  creators: {
-    id: string;
-    user_id: string;
-    rating: number;
-    review_count: number;
-    users: {
-      handle: string;
-      avatar_url: string | null;
-    };
-  };
-}
-
 interface ServiceDetailModalProps {
   serviceId: string;
   isOpen: boolean;
@@ -40,38 +20,49 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
   
   const { data: serviceData, isLoading } = useQuery({
     queryKey: ['service-detail', serviceId],
-    queryFn: async (): Promise<ServiceWithCreator | null> => {
-      const { data, error } = await supabase
+    queryFn: async () => {
+      // First fetch the service
+      const { data: service, error: serviceError } = await supabase
         .from('services')
-        .select(`
-          id,
-          title,
-          description,
-          price_usdc,
-          delivery_days,
-          category,
-          creator_id,
-          creators!services_creator_id_fkey(
-            id,
-            user_id,
-            rating,
-            review_count,
-            users!creators_user_id_fkey(
-              handle,
-              avatar_url
-            )
-          )
-        `)
+        .select('*')
         .eq('id', serviceId)
         .eq('active', true)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching service:', error);
-        throw error;
+      if (serviceError) {
+        console.error('Error fetching service:', serviceError);
+        throw serviceError;
       }
-      
-      return data;
+
+      if (!service) {
+        return null;
+      }
+
+      // Then fetch the creator with user info
+      const { data: creator, error: creatorError } = await supabase
+        .from('creators')
+        .select(`
+          id,
+          user_id,
+          rating,
+          review_count,
+          users (
+            handle,
+            avatar_url
+          )
+        `)
+        .eq('id', service.creator_id)
+        .maybeSingle();
+
+      if (creatorError) {
+        console.error('Error fetching creator:', creatorError);
+        throw creatorError;
+      }
+
+      return {
+        service,
+        creator
+      };
     },
     enabled: !!serviceId && isOpen
   });
@@ -86,7 +77,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
     );
   }
 
-  if (!serviceData || !serviceData.creators) {
+  if (!serviceData || !serviceData.service || !serviceData.creator) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
@@ -96,23 +87,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
     );
   }
 
-  const service = {
-    id: serviceData.id,
-    title: serviceData.title,
-    description: serviceData.description,
-    price_usdc: serviceData.price_usdc,
-    delivery_days: serviceData.delivery_days,
-    category: serviceData.category,
-    creator_id: serviceData.creator_id
-  };
-
-  const creator = {
-    id: serviceData.creators.id,
-    user_id: serviceData.creators.user_id,
-    users: serviceData.creators.users,
-    rating: serviceData.creators.rating,
-    review_count: serviceData.creators.review_count
-  };
+  const { service, creator } = serviceData;
 
   return (
     <>
@@ -129,7 +104,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
             {/* Creator Info */}
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                {creator.users.avatar_url ? (
+                {creator.users?.avatar_url ? (
                   <img
                     src={creator.users.avatar_url}
                     alt={creator.users.handle}
@@ -142,14 +117,14 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold">@{creator.users.handle}</h3>
+                <h3 className="font-semibold">@{creator.users?.handle}</h3>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span>{creator.rating.toFixed(1)}</span>
+                    <span>{creator.rating?.toFixed(1) || '0.0'}</span>
                   </div>
                   <span>•</span>
-                  <span>{creator.review_count} reviews</span>
+                  <span>{creator.review_count || 0} reviews</span>
                 </div>
               </div>
               <Badge variant="outline">{service.category}</Badge>
@@ -207,7 +182,11 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
       {showBookingModal && (
         <BookingModal
           service={service}
-          creator={creator}
+          creator={{
+            id: creator.id,
+            user_id: creator.user_id,
+            users: creator.users
+          }}
           isOpen={showBookingModal}
           onClose={() => {
             setShowBookingModal(false);
