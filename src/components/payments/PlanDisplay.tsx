@@ -12,10 +12,6 @@ interface PlanDisplayProps {
 export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
   const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
   
-  console.log('PlanDisplay: Rendering for tier:', tier, 'with amount:', amount);
-  console.log('PlanDisplay: Dynamic tiers data:', dynamicTiers);
-  console.log('PlanDisplay: Loading state:', isLoading, 'Error:', error);
-
   if (isLoading) {
     return (
       <Card>
@@ -36,38 +32,33 @@ export const PlanDisplay = ({ tier, amount }: PlanDisplayProps) => {
   }
 
   if (error) {
-    console.error('PlanDisplay: Error loading pricing data:', error);
     return (
       <Card>
         <CardHeader>
           <CardTitle className="capitalize text-red-600">Error Loading Plan</CardTitle>
           <CardDescription>
-            Unable to load pricing information for {tier} plan. Please try refreshing the page.
+            Unable to load pricing information. Please try refreshing the page.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  // Use dynamic tiers data
   const tierInfo = dynamicTiers?.[tier];
-  console.log('PlanDisplay: Tier info for', tier, ':', tierInfo);
 
   if (!tierInfo) {
-    console.warn('PlanDisplay: No tier info found for:', tier, 'Available tiers:', Object.keys(dynamicTiers || {}));
     return (
       <Card>
         <CardHeader>
           <CardTitle className="capitalize text-red-600">Plan Not Available</CardTitle>
           <CardDescription>
-            The {tier} plan is temporarily unavailable. Please try again later or contact support.
+            The {tier} plan is temporarily unavailable. Please try again later.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  // Use the price from tierInfo, but override with amount if different (for consistency)
   const displayAmount = amount !== undefined ? amount : tierInfo.price;
 
   return (
