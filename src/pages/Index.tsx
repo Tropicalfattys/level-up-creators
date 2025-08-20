@@ -19,10 +19,12 @@ import {
   Settings,
   Copy,
   Gift,
-  Share2
+  Share2,
+  Package
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { UserBookings } from '@/components/bookings/UserBookings';
 
 export default function Index() {
   const { user, userRole, loading } = useAuth();
@@ -67,6 +69,32 @@ export default function Index() {
       }
       
       return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Get user booking stats
+  const { data: bookingStats } = useQuery({
+    queryKey: ['user-booking-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { totalBookings: 0, activeBookings: 0 };
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('status')
+        .eq('client_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching booking stats:', error);
+        return { totalBookings: 0, activeBookings: 0 };
+      }
+      
+      const totalBookings = data?.length || 0;
+      const activeBookings = data?.filter(b => 
+        ['paid', 'in_progress', 'delivered'].includes(b.status)
+      ).length || 0;
+      
+      return { totalBookings, activeBookings };
     },
     enabled: !!user?.id
   });
@@ -222,6 +250,7 @@ export default function Index() {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="bookings">My Bookings</TabsTrigger>
           {canAccessCreatorTools && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
@@ -232,7 +261,7 @@ export default function Index() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Profile</CardTitle>
@@ -246,12 +275,23 @@ export default function Index() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Activity</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{bookingStats?.totalBookings || 0}</div>
+                <p className="text-xs text-muted-foreground">Services booked</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Recent bookings</p>
+                <div className="text-2xl font-bold">{bookingStats?.activeBookings || 0}</div>
+                <p className="text-xs text-muted-foreground">In progress</p>
               </CardContent>
             </Card>
 
@@ -310,11 +350,25 @@ export default function Index() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-sm">
-                  No recent activity to show
+                  {bookingStats?.totalBookings && bookingStats.totalBookings > 0 
+                    ? `You have ${bookingStats.activeBookings} active bookings`
+                    : 'No recent activity to show'
+                  }
                 </p>
+                {bookingStats?.activeBookings && bookingStats.activeBookings > 0 && (
+                  <Button variant="outline" size="sm" className="mt-3" asChild>
+                    <Link to="#" onClick={() => document.querySelector('[value="bookings"]')?.click()}>
+                      View Bookings
+                    </Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="bookings">
+          <UserBookings />
         </TabsContent>
 
         {canAccessCreatorTools && (

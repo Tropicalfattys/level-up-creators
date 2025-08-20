@@ -18,25 +18,29 @@ interface ServiceDetailModalProps {
 export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetailModalProps) => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   
-  const { data: serviceData, isLoading } = useQuery({
+  const { data: serviceData, isLoading, error } = useQuery({
     queryKey: ['service-detail', serviceId],
     queryFn: async () => {
+      console.log('Fetching service detail for:', serviceId);
+      
       // First fetch the service
       const { data: service, error: serviceError } = await supabase
         .from('services')
         .select('*')
         .eq('id', serviceId)
         .eq('active', true)
-        .maybeSingle();
+        .single();
 
       if (serviceError) {
         console.error('Error fetching service:', serviceError);
-        throw serviceError;
+        throw new Error(`Service not found: ${serviceError.message}`);
       }
 
       if (!service) {
-        return null;
+        throw new Error('Service not found');
       }
+
+      console.log('Service found:', service);
 
       // Then fetch the creator with user info
       const { data: creator, error: creatorError } = await supabase
@@ -46,18 +50,21 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
           user_id,
           rating,
           review_count,
-          users (
+          users!creators_user_id_fkey (
+            id,
             handle,
             avatar_url
           )
         `)
         .eq('id', service.creator_id)
-        .maybeSingle();
+        .single();
 
       if (creatorError) {
         console.error('Error fetching creator:', creatorError);
-        throw creatorError;
+        throw new Error(`Creator not found: ${creatorError.message}`);
       }
+
+      console.log('Creator found:', creator);
 
       return {
         service,
@@ -71,17 +78,30 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+            <DialogDescription>Loading service details...</DialogDescription>
+          </DialogHeader>
           <div className="text-center py-8">Loading service details...</div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  if (!serviceData || !serviceData.service || !serviceData.creator) {
+  if (error || !serviceData) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
-          <div className="text-center py-8">Service not found</div>
+          <DialogHeader>
+            <DialogTitle>Service Not Found</DialogTitle>
+            <DialogDescription>The requested service could not be found.</DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              {error?.message || 'Service not found'}
+            </p>
+            <Button onClick={onClose} className="mt-4">Close</Button>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -182,11 +202,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
       {showBookingModal && (
         <BookingModal
           service={service}
-          creator={{
-            id: creator.id,
-            user_id: creator.user_id,
-            users: creator.users
-          }}
+          creator={creator}
           isOpen={showBookingModal}
           onClose={() => {
             setShowBookingModal(false);
