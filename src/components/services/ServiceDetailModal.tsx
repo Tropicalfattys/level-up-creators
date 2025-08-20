@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Clock, DollarSign, User, Star } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 
-interface Service {
+interface ServiceWithCreator {
   id: string;
   title: string;
   description: string;
@@ -17,17 +17,16 @@ interface Service {
   delivery_days: number;
   category: string;
   creator_id: string;
-}
-
-interface Creator {
-  id: string;
-  user_id: string;
-  users: {
-    handle: string;
-    avatar_url: string;
+  creators: {
+    id: string;
+    user_id: string;
+    rating: number;
+    review_count: number;
+    users: {
+      handle: string;
+      avatar_url: string | null;
+    };
   };
-  rating: number;
-  review_count: number;
 }
 
 interface ServiceDetailModalProps {
@@ -41,17 +40,23 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
   
   const { data: serviceData, isLoading } = useQuery({
     queryKey: ['service-detail', serviceId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ServiceWithCreator | null> => {
       const { data, error } = await supabase
         .from('services')
         .select(`
-          *,
-          creators!inner(
+          id,
+          title,
+          description,
+          price_usdc,
+          delivery_days,
+          category,
+          creator_id,
+          creators!services_creator_id_fkey(
             id,
             user_id,
             rating,
             review_count,
-            users!inner(
+            users!creators_user_id_fkey(
               handle,
               avatar_url
             )
@@ -59,9 +64,13 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
         `)
         .eq('id', serviceId)
         .eq('active', true)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching service:', error);
+        throw error;
+      }
+      
       return data;
     },
     enabled: !!serviceId && isOpen
@@ -77,7 +86,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
     );
   }
 
-  if (!serviceData) {
+  if (!serviceData || !serviceData.creators) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
@@ -87,8 +96,23 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
     );
   }
 
-  const service = serviceData as Service;
-  const creator = serviceData.creators as Creator;
+  const service = {
+    id: serviceData.id,
+    title: serviceData.title,
+    description: serviceData.description,
+    price_usdc: serviceData.price_usdc,
+    delivery_days: serviceData.delivery_days,
+    category: serviceData.category,
+    creator_id: serviceData.creator_id
+  };
+
+  const creator = {
+    id: serviceData.creators.id,
+    user_id: serviceData.creators.user_id,
+    users: serviceData.creators.users,
+    rating: serviceData.creators.rating,
+    review_count: serviceData.creators.review_count
+  };
 
   return (
     <>
