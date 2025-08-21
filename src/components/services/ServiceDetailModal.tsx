@@ -42,7 +42,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
 
       console.log('Service found:', service);
 
-      // Then fetch the creator info
+      // Then fetch the creator info using the creator_id (which now properly references creators table)
       const { data: creator, error: creatorError } = await supabase
         .from('creators')
         .select('id, user_id, rating, review_count')
@@ -78,7 +78,14 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
         }
       };
     },
-    enabled: !!serviceId && isOpen
+    enabled: !!serviceId && isOpen,
+    retry: (failureCount, error) => {
+      // Don't retry if it's a "not found" error
+      if (error?.message?.includes('not found')) {
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 
   if (isLoading) {
@@ -89,7 +96,10 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
             <DialogTitle>Loading...</DialogTitle>
             <DialogDescription>Loading service details...</DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">Loading service details...</div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading service details...</p>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -104,10 +114,10 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
             <DialogDescription>The requested service could not be found.</DialogDescription>
           </DialogHeader>
           <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              {error?.message || 'Service not found'}
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Service not found or may have been removed.'}
             </p>
-            <Button onClick={onClose} className="mt-4">Close</Button>
+            <Button onClick={onClose} variant="outline">Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -119,7 +129,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
   return (
     <>
       <Dialog open={isOpen && !showBookingModal} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">{service.title}</DialogTitle>
             <DialogDescription>
@@ -135,7 +145,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
                   <img
                     src={creator.users.avatar_url}
                     alt={creator.users.handle}
-                    className="w-12 h-12 rounded-full"
+                    className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
@@ -144,7 +154,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold">@{creator.users?.handle}</h3>
+                <h3 className="font-semibold">@{creator.users?.handle || 'Creator'}</h3>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -154,7 +164,9 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
                   <span>{creator.review_count || 0} reviews</span>
                 </div>
               </div>
-              <Badge variant="outline">{service.category}</Badge>
+              {service.category && (
+                <Badge variant="outline">{service.category}</Badge>
+              )}
             </div>
 
             <Separator />
@@ -163,7 +175,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
             <div>
               <h4 className="font-semibold mb-3">About This Service</h4>
               <p className="text-muted-foreground leading-relaxed">
-                {service.description}
+                {service.description || 'No description provided for this service.'}
               </p>
             </div>
 
@@ -182,7 +194,7 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
                 <Clock className="h-4 w-4 text-blue-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Delivery</p>
-                  <p className="font-semibold">{service.delivery_days} days</p>
+                  <p className="font-semibold">{service.delivery_days || 3} days</p>
                 </div>
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,11 +23,15 @@ import {
   Zap,
   Trophy,
   CheckCircle,
-  Package
+  Package,
+  Settings,
+  Gift
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { UserBookings } from '@/components/bookings/UserBookings';
+import { ReferralSystem } from '@/components/referrals/ReferralSystem';
+import { CreatorServices } from '@/components/creator/CreatorServices';
 
 interface DashboardStats {
   totalEarnings: number;
@@ -258,6 +263,26 @@ export default function Index() {
     );
   }
 
+  // Determine which tabs to show based on user role
+  const getTabsList = () => {
+    const baseTabs = [
+      { value: 'overview', label: 'Overview' },
+      { value: 'bookings', label: 'My Bookings' },
+    ];
+
+    if (userRole === 'creator') {
+      baseTabs.push({ value: 'creator-tools', label: 'Creator Tools' });
+    }
+
+    baseTabs.push(
+      { value: 'referrals', label: 'Referrals' },
+      { value: 'settings', label: 'Profile Settings' },
+      { value: 'activity', label: 'Recent Activity' }
+    );
+
+    return baseTabs;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
@@ -286,10 +311,12 @@ export default function Index() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          {getTabsList().map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -384,6 +411,108 @@ export default function Index() {
 
         <TabsContent value="bookings" className="space-y-6">
           <UserBookings />
+        </TabsContent>
+
+        {userRole === 'creator' && (
+          <TabsContent value="creator-tools" className="space-y-6">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Creator Tools</h2>
+                <p className="text-muted-foreground">
+                  Manage your services, bookings, and creator profile
+                </p>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <QuickActionCard
+                  icon={Plus}
+                  title="Add New Service"
+                  description="Create and publish new services"
+                  href="/services"
+                />
+                <QuickActionCard
+                  icon={Package}
+                  title="Manage Services"
+                  description="Edit your existing services"
+                  href="/services"
+                />
+                <QuickActionCard
+                  icon={TrendingUp}
+                  title="Analytics Dashboard"
+                  description="View performance metrics"
+                  href="/creator-dashboard"
+                />
+                <QuickActionCard
+                  icon={MessageSquare}
+                  title="Client Communications"
+                  description="Manage client messages and bookings"
+                  href="/creator-dashboard"
+                />
+                <QuickActionCard
+                  icon={Settings}
+                  title="Creator Profile"
+                  description="Update your creator profile and settings"
+                  href="/settings"
+                />
+                <QuickActionCard
+                  icon={DollarSign}
+                  title="Earnings & Payouts"
+                  description="Track earnings and payout settings"
+                  href="/creator-dashboard"
+                />
+              </div>
+
+              <CreatorServices />
+            </div>
+          </TabsContent>
+        )}
+
+        <TabsContent value="referrals" className="space-y-6">
+          <ReferralSystem />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Profile Settings
+              </CardTitle>
+              <CardDescription>
+                Manage your account settings and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <QuickActionCard
+                  icon={Settings}
+                  title="Account Settings"
+                  description="Update your profile, email, and password"
+                  href="/settings"
+                />
+                <QuickActionCard
+                  icon={DollarSign}
+                  title="Payment Settings"
+                  description="Manage payout addresses and preferences"
+                  href="/settings"
+                />
+                {userRole === 'creator' && (
+                  <QuickActionCard
+                    icon={Award}
+                    title="Creator Profile"
+                    description="Update your creator bio, portfolio, and services"
+                    href="/settings"
+                  />
+                )}
+                <QuickActionCard
+                  icon={Gift}
+                  title="Referral Settings"
+                  description="Manage your referral code and credits"
+                  href="/settings"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">
