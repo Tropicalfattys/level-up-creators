@@ -27,13 +27,6 @@ export const UserBookings = () => {
             title,
             description,
             category
-          ),
-          creator_profile:creators!bookings_creator_id_fkey (
-            id,
-            user_profile:users!creators_user_id_fkey (
-              handle,
-              avatar_url
-            )
           )
         `)
         .eq('client_id', user.id)
@@ -44,7 +37,31 @@ export const UserBookings = () => {
         throw error;
       }
 
-      return data || [];
+      // Now fetch creator info separately for each booking
+      const bookingsWithCreators = await Promise.all(
+        (data || []).map(async (booking) => {
+          const { data: creator, error: creatorError } = await supabase
+            .from('creators')
+            .select(`
+              id,
+              users!creators_user_id_fkey (
+                handle,
+                avatar_url
+              )
+            `)
+            .eq('id', booking.creator_id)
+            .single();
+
+          if (creatorError) {
+            console.error('Error fetching creator:', creatorError);
+            return { ...booking, creator: null };
+          }
+
+          return { ...booking, creator };
+        })
+      );
+
+      return bookingsWithCreators;
     },
     enabled: !!user?.id
   });
@@ -121,7 +138,7 @@ export const UserBookings = () => {
                 <div className="flex-1">
                   <CardTitle className="text-lg">{booking.services?.title}</CardTitle>
                   <CardDescription className="mt-1">
-                    with @{booking.creator_profile?.user_profile?.handle} • 
+                    with @{booking.creator?.users?.handle || 'Creator'} • 
                     Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
                   </CardDescription>
                 </div>

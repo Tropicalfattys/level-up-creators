@@ -7,7 +7,7 @@ import { BookingChatWrapper } from '@/components/messaging/BookingChatWrapper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Package, DollarSign, Clock, User } from 'lucide-react';
+import { ArrowLeft, Package, DollarSign, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Chat() {
@@ -28,16 +28,6 @@ export default function Chat() {
             title,
             description,
             category
-          ),
-          client:users!bookings_client_id_fkey (
-            handle,
-            avatar_url
-          ),
-          creator_profile:creators!bookings_creator_id_fkey (
-            user_profile:users!creators_user_id_fkey (
-              handle,
-              avatar_url
-            )
           )
         `)
         .eq('id', bookingId)
@@ -48,7 +38,38 @@ export default function Chat() {
         throw error;
       }
 
-      return data;
+      // Fetch client info
+      const { data: client, error: clientError } = await supabase
+        .from('users')
+        .select('handle, avatar_url')
+        .eq('id', data.client_id)
+        .single();
+
+      if (clientError) {
+        console.error('Error fetching client:', clientError);
+      }
+
+      // Fetch creator info
+      const { data: creator, error: creatorError } = await supabase
+        .from('creators')
+        .select(`
+          users!creators_user_id_fkey (
+            handle,
+            avatar_url
+          )
+        `)
+        .eq('id', data.creator_id)
+        .single();
+
+      if (creatorError) {
+        console.error('Error fetching creator:', creatorError);
+      }
+
+      return {
+        ...data,
+        client: client || null,
+        creator: creator || null
+      };
     },
     enabled: !!bookingId
   });
@@ -117,7 +138,7 @@ export default function Chat() {
   };
 
   const isClient = user?.id === booking.client_id;
-  const otherUser = isClient ? booking.creator_profile?.user_profile : booking.client;
+  const otherUser = isClient ? booking.creator?.users : booking.client;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -139,7 +160,7 @@ export default function Chat() {
               </CardTitle>
               <CardDescription className="mt-1">
                 Booking created {format(new Date(booking.created_at), 'MMM d, yyyy')} • 
-                Chatting with @{otherUser?.handle}
+                Chatting with @{otherUser?.handle || 'User'}
               </CardDescription>
             </div>
             {getStatusBadge(booking.status)}
