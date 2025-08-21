@@ -38,9 +38,23 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
     setShowBookingModal(false);
   };
 
+  // Transform the service data to match what BookingModal expects
+  const bookingService = {
+    id: service.id,
+    title: service.title,
+    description: service.description,
+    category: service.category,
+    price_usdc: service.price_usdc,
+    delivery_days: service.delivery_days,
+    creator_id: service.creator.handle, // Transform nested creator to creator_id
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
   // Mock creator data structure for BookingModal
   const creatorData = {
-    id: service.creator.handle, // Using handle as fallback ID
+    id: service.creator.handle,
     user_id: service.creator.handle,
     users: {
       handle: service.creator.handle,
@@ -119,7 +133,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
       {/* Booking Modal */}
       {showBookingModal && (
         <BookingModal
-          service={service}
+          service={bookingService}
           creator={creatorData}
           isOpen={showBookingModal}
           onClose={handleBookingClose}
