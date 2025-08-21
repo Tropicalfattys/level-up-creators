@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Clock, DollarSign, User, Star } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 
+// Use the same interface structure as AdvancedSearch
 interface ServiceDetailModalProps {
   service: {
     id: string;
