@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Search, Filter, DollarSign, Clock, Star } from 'lucide-react';
+import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
 
 interface SearchFilters {
   query: string;
@@ -45,6 +45,8 @@ export const AdvancedSearch = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['advanced-search', filters],
@@ -137,6 +139,16 @@ export const AdvancedSearch = () => {
       minRating: 0,
       sortBy: 'relevance'
     });
+  };
+
+  const handleViewDetails = (service: Service) => {
+    setSelectedService(service);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedService(null);
   };
 
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
@@ -334,7 +346,9 @@ export const AdvancedSearch = () => {
                       )}
                       <span className="text-sm font-medium">@{service.creator.handle}</span>
                     </div>
-                    <Button size="sm">View Details</Button>
+                    <Button size="sm" onClick={() => handleViewDetails(service)}>
+                      View Details
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -352,6 +366,13 @@ export const AdvancedSearch = () => {
           </Card>
         )}
       </div>
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal
+        service={selectedService}
+        isOpen={showDetailModal}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };
