@@ -42,20 +42,10 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
 
       console.log('Service found:', service);
 
-      // Then fetch the creator with user info
+      // Then fetch the creator info
       const { data: creator, error: creatorError } = await supabase
         .from('creators')
-        .select(`
-          id,
-          user_id,
-          rating,
-          review_count,
-          users!creators_user_id_fkey (
-            id,
-            handle,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, rating, review_count')
         .eq('id', service.creator_id)
         .single();
 
@@ -66,9 +56,26 @@ export const ServiceDetailModal = ({ serviceId, isOpen, onClose }: ServiceDetail
 
       console.log('Creator found:', creator);
 
+      // Finally fetch the user info for the creator
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, handle, avatar_url')
+        .eq('id', creator.user_id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        throw new Error(`User not found: ${userError.message}`);
+      }
+
+      console.log('User found:', user);
+
       return {
         service,
-        creator
+        creator: {
+          ...creator,
+          users: user
+        }
       };
     },
     enabled: !!serviceId && isOpen
