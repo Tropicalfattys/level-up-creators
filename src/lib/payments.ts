@@ -127,8 +127,8 @@ export const processSolanaPayment = async (amount: number): Promise<PaymentResul
     
     const fromPubkey = new PublicKey(walletAddress);
 
-    // Create connection to Solana mainnet
-    const connection = new Connection('https://api.mainnet-beta.solana.com');
+    // Create connection to Solana mainnet using a more reliable RPC endpoint
+    const connection = new Connection('https://rpc.ankr.com/solana');
     
     // USDC mint and platform wallet public keys
     const usdcMint = new PublicKey(USDC_CONTRACTS.solana);
