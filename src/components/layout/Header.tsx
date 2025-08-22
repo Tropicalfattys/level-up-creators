@@ -39,9 +39,9 @@ export const Header = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-3">
           <img 
-            src="/lovable-uploads/821135d2-fa89-4790-9af0-e6234e3a62fc.png" 
+            src="/lovable-uploads/a78181a3-f679-433a-93ca-e839266d55d5.png" 
             alt="LeveledUP Logo" 
-            className="h-8 w-8"
+            className="h-10 w-10 object-contain"
           />
           <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
             LeveledUP
