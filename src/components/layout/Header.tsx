@@ -19,8 +19,15 @@ export const Header = () => {
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold text-foreground">
-          cryptocreators
+        <Link to="/" className="flex items-center space-x-3">
+          <img 
+            src="/placeholder.svg" 
+            alt="LeveledUP Logo" 
+            className="h-8 w-8"
+          />
+          <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] bg-clip-text text-transparent">
+            LeveledUP
+          </span>
         </Link>
         
         <nav className="hidden md:flex items-center space-x-8">
@@ -32,28 +39,25 @@ export const Header = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-popover border-border">
               <DropdownMenuItem>
-                <Link to="/browse?category=crypto" className="w-full">Crypto Traders</Link>
+                <Link to="/browse?category=ama" className="w-full">Host an AMA</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link to="/browse?category=nft" className="w-full">NFT Creators</Link>
+                <Link to="/browse?category=twitter" className="w-full">Tweet Campaigns</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link to="/browse?category=defi" className="w-full">DeFi Experts</Link>
+                <Link to="/browse?category=video" className="w-full">Promo Videos</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link to="/browse?category=tutorials" className="w-full">Product Tutorials</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Link to="/for-kids" className="text-foreground/80 hover:text-foreground transition-colors">
-            For kids
-          </Link>
-          <Link to="/for-business" className="text-foreground/80 hover:text-foreground transition-colors">
-            For business
-          </Link>
           <Link to="/how-it-works" className="text-foreground/80 hover:text-foreground transition-colors">
             How it works
           </Link>
-          <Link to="/join-as-talent" className="text-foreground/80 hover:text-foreground transition-colors">
-            Join as talent
+          <Link to="/become-creator" className="text-foreground/80 hover:text-foreground transition-colors">
+            Become a creator
           </Link>
         </nav>
 
@@ -86,13 +90,16 @@ export const Header = () => {
                 </div>
                 <DropdownMenuSeparator className="bg-border" />
                 
-                {/* Regular Dashboard for all users */}
                 <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                   <User className="mr-2 h-4 w-4" />
                   Dashboard
                 </DropdownMenuItem>
 
-                {/* Admin Dashboard - only for admins */}
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+
                 {userRole === 'admin' && (
                   <DropdownMenuItem onClick={() => navigate('/admin')}>
                     <Shield className="mr-2 h-4 w-4" />
@@ -100,7 +107,6 @@ export const Header = () => {
                   </DropdownMenuItem>
                 )}
 
-                {/* Creator Dashboard - only for creators */}
                 {userRole === 'creator' && (
                   <DropdownMenuItem onClick={() => navigate('/creator-dashboard')}>
                     <DollarSign className="mr-2 h-4 w-4" />
@@ -108,12 +114,6 @@ export const Header = () => {
                   </DropdownMenuItem>
                 )}
 
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-
-                {/* Become Creator option for non-creators */}
                 {userRole !== 'creator' && userRole !== 'admin' && (
                   <DropdownMenuItem onClick={() => navigate('/become-creator')}>
                     <DollarSign className="mr-2 h-4 w-4" />
@@ -134,7 +134,7 @@ export const Header = () => {
                 Sign In
               </Button>
               <Button onClick={() => navigate('/auth?mode=signup')} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                Sign Up
+                Create Account
               </Button>
             </div>
           )}
