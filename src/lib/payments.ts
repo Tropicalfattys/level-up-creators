@@ -1,4 +1,3 @@
-
 import { ethers } from 'ethers';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { createTransferInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -127,8 +126,8 @@ export const processSolanaPayment = async (amount: number): Promise<PaymentResul
     
     const fromPubkey = new PublicKey(walletAddress);
 
-    // Create connection to Solana mainnet using a reliable free RPC endpoint
-    const connection = new Connection('https://solana-api.projectserum.com');
+    // Create connection to Solana mainnet using the official free RPC endpoint
+    const connection = new Connection('https://api.mainnet-beta.solana.com');
     
     // USDC mint and platform wallet public keys
     const usdcMint = new PublicKey(USDC_CONTRACTS.solana);
