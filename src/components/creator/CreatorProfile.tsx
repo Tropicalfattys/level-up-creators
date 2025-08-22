@@ -59,44 +59,43 @@ export const CreatorProfile = () => {
     queryFn: async (): Promise<CreatorProfileData | null> => {
       if (!handle) return null;
 
-      const { data, error } = await supabase
-        .from('creators')
-        .select(`
-          id,
-          user_id,
-          headline,
-          category,
-          rating,
-          review_count,
-          tier,
-          created_at,
-          users!creators_user_id_fkey (
-            handle,
-            avatar_url,
-            bio
-          )
-        `)
-        .eq('users.handle', handle)
-        .eq('approved', true)
-        .single();
+      // First get the user by handle
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, handle, avatar_url, bio')
+        .eq('handle', handle)
+        .maybeSingle();
 
-      if (error || !data) {
-        console.error('Error fetching creator:', error);
+      if (userError || !userData) {
+        console.error('Error fetching user:', userError);
+        return null;
+      }
+
+      // Then get the creator profile for this user
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('creators')
+        .select('id, user_id, headline, category, rating, review_count, tier, created_at')
+        .eq('user_id', userData.id)
+        .eq('approved', true)
+        .maybeSingle();
+
+      if (creatorError || !creatorData) {
+        console.error('Error fetching creator:', creatorError);
         return null;
       }
 
       return {
-        id: data.id,
-        user_id: data.user_id,
-        handle: data.users?.handle || handle,
-        avatar_url: data.users?.avatar_url,
-        headline: data.headline,
-        bio: data.users?.bio,
-        category: data.category,
-        rating: Number(data.rating) || 0,
-        review_count: data.review_count || 0,
-        created_at: data.created_at,
-        tier: data.tier
+        id: creatorData.id,
+        user_id: creatorData.user_id,
+        handle: userData.handle,
+        avatar_url: userData.avatar_url,
+        headline: creatorData.headline,
+        bio: userData.bio,
+        category: creatorData.category,
+        rating: Number(creatorData.rating) || 0,
+        review_count: creatorData.review_count || 0,
+        created_at: creatorData.created_at,
+        tier: creatorData.tier
       };
     },
     enabled: !!handle
