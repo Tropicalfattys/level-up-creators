@@ -1,0 +1,288 @@
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Star, Clock, DollarSign, Package, Filter, Search } from 'lucide-react';
+
+interface Creator {
+  id: string;
+  handle: string;
+  avatar_url?: string;
+  headline?: string;
+  category?: string;
+  rating: number;
+  review_count: number;
+  avg_delivery_days: number;
+  avg_price: number;
+  service_count: number;
+}
+
+interface CreatorExplorerProps {
+  selectedCategory?: string;
+}
+
+export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(selectedCategory || '');
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const categories = [
+    'ama', 'twitter', 'video', 'tutorials', 'reviews', 'spaces',
+    'instagram', 'facebook', 'marketing', 'branding', 'discord',
+    'blogs', 'reddit', 'memes'
+  ];
+
+  const { data: creators, isLoading } = useQuery({
+    queryKey: ['creators-explore', searchQuery, categoryFilter, priceRange],
+    queryFn: async (): Promise<Creator[]> => {
+      // Mock data for now since we don't have real creators yet
+      return [
+        {
+          id: '1',
+          handle: 'cryptoking',
+          avatar_url: undefined,
+          headline: 'Top AMA Host & Twitter Influencer',
+          category: 'ama',
+          rating: 4.9,
+          review_count: 127,
+          avg_delivery_days: 2,
+          avg_price: 150,
+          service_count: 5
+        },
+        {
+          id: '2',
+          handle: 'nftqueen',
+          avatar_url: undefined,
+          headline: 'NFT Marketing & Video Creator',
+          category: 'video',
+          rating: 4.8,
+          review_count: 89,
+          avg_delivery_days: 3,
+          avg_price: 200,
+          service_count: 8
+        },
+        {
+          id: '3',
+          handle: 'defiexpert',
+          avatar_url: undefined,
+          headline: 'DeFi Educator & Content Creator',
+          category: 'tutorials',
+          rating: 4.7,
+          review_count: 156,
+          avg_delivery_days: 1,
+          avg_price: 75,
+          service_count: 12
+        }
+      ].filter(creator => {
+        const matchesSearch = !searchQuery || 
+          creator.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          creator.headline?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesCategory = !categoryFilter || creator.category === categoryFilter;
+        
+        const matchesPrice = creator.avg_price >= priceRange[0] && creator.avg_price <= priceRange[1];
+        
+        return matchesSearch && matchesCategory && matchesPrice;
+      });
+    }
+  });
+
+  const categoryIcons = [
+    { name: 'AMA', category: 'ama', icon: '🎤' },
+    { name: 'Twitter', category: 'twitter', icon: '🐦' },
+    { name: 'Videos', category: 'video', icon: '🎥' },
+    { name: 'Tutorials', category: 'tutorials', icon: '📚' },
+    { name: 'Reviews', category: 'reviews', icon: '⭐' },
+    { name: 'Spaces', category: 'spaces', icon: '🎙️' },
+    { name: 'Instagram', category: 'instagram', icon: '📸' },
+    { name: 'Facebook', category: 'facebook', icon: '👍' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Search Header */}
+      <div className="border-b border-zinc-800 p-6">
+        <div className="container mx-auto">
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-zinc-400" />
+            <Input
+              placeholder="Search creators by name or skill..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-400"
+            />
+          </div>
+
+          {/* Category Icons */}
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {categoryIcons.map((cat) => (
+              <Button
+                key={cat.category}
+                variant="ghost"
+                onClick={() => setCategoryFilter(cat.category === categoryFilter ? '' : cat.category)}
+                className={`flex-shrink-0 flex flex-col items-center p-4 rounded-full w-20 h-20 ${
+                  categoryFilter === cat.category 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                }`}
+              >
+                <span className="text-2xl mb-1">{cat.icon}</span>
+                <span className="text-xs">{cat.name}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto p-6">
+        <div className="flex gap-6">
+          {/* Creators List */}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold mb-6">
+              {categoryFilter ? `${categoryFilter.toUpperCase()} Creators` : 'All Creators'}
+              {creators && <span className="text-zinc-400 text-lg ml-2">({creators.length})</span>}
+            </h2>
+
+            {isLoading ? (
+              <div className="text-center py-8">Loading creators...</div>
+            ) : creators && creators.length > 0 ? (
+              <div className="space-y-4">
+                {creators.map((creator) => (
+                  <Card key={creator.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={creator.avatar_url} alt={creator.handle} />
+                          <AvatarFallback className="bg-zinc-800 text-white text-lg">
+                            {creator.handle[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg">@{creator.handle}</h3>
+                            <Badge variant="outline" className="border-blue-500 text-blue-400">
+                              {creator.category}
+                            </Badge>
+                          </div>
+                          <p className="text-zinc-400 mb-2">{creator.headline}</p>
+                          
+                          <div className="flex items-center gap-6 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              <span className="text-white font-medium">{creator.rating}</span>
+                              <span className="text-zinc-400">({creator.review_count})</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 text-zinc-400">
+                              <Clock className="h-4 w-4" />
+                              <span>{creator.avg_delivery_days} day delivery</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 text-zinc-400">
+                              <DollarSign className="h-4 w-4" />
+                              <span>From ${creator.avg_price} USDC</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 text-zinc-400">
+                              <Package className="h-4 w-4" />
+                              <span>{creator.service_count} services</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700">
+                          View Profile
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardContent className="text-center py-12">
+                  <Search className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No creators found</h3>
+                  <p className="text-zinc-400">
+                    Try adjusting your search or filters
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Filters Sidebar */}
+          <div className="w-80 space-y-6">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="h-5 w-5" />
+                  <h3 className="font-semibold">Filters</h3>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Category Filter */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Category</Label>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-800 border-zinc-700">
+                        <SelectItem value="">All Categories</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category} className="text-white">
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Price Range */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      Price Range: ${priceRange[0]} - ${priceRange[1]} USDC
+                    </Label>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={setPriceRange}
+                      max={1000}
+                      min={0}
+                      step={25}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Clear Filters */}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setCategoryFilter('');
+                      setPriceRange([0, 1000]);
+                      setSearchQuery('');
+                    }}
+                    className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
