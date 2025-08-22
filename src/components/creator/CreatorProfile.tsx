@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2 } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { format } from 'date-fns';
-import { Service, Creator, User, Review } from '@/types/database';
 
 interface CreatorProfileData {
   id: string;
@@ -24,6 +22,19 @@ interface CreatorProfileData {
   review_count: number;
   created_at: string;
   tier: string;
+}
+
+interface ServiceData {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ReviewData {
@@ -40,7 +51,7 @@ interface ReviewData {
 export const CreatorProfile = () => {
   const { handle } = useParams();
   const navigate = useNavigate();
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
   const { data: creator, isLoading } = useQuery({
@@ -93,7 +104,7 @@ export const CreatorProfile = () => {
 
   const { data: services } = useQuery({
     queryKey: ['creator-services', creator?.user_id],
-    queryFn: async (): Promise<Service[]> => {
+    queryFn: async (): Promise<ServiceData[]> => {
       if (!creator?.user_id) return [];
 
       const { data, error } = await supabase
@@ -108,7 +119,11 @@ export const CreatorProfile = () => {
         return [];
       }
 
-      return data || [];
+      // Transform the data to ensure description is not null
+      return (data || []).map(service => ({
+        ...service,
+        description: service.description || ''
+      }));
     },
     enabled: !!creator?.user_id
   });
@@ -144,7 +159,7 @@ export const CreatorProfile = () => {
     enabled: !!creator?.user_id
   });
 
-  const handleBookService = (service: Service) => {
+  const handleBookService = (service: ServiceData) => {
     setSelectedService(service);
     setShowBookingModal(true);
   };
