@@ -1,11 +1,19 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { Search, Users, CreditCard, Shield, Globe, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Home() {
   const { user } = useAuth();
@@ -109,22 +117,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Services Categories Section */}
+      {/* Services Categories Section with Carousel */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Services That Drive Web3 Growth</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {services.map((service) => (
-              <Card key={service.name} className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border">
-                <CardContent className="p-4 text-center">
-                  <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
-                  <p className="text-xs text-muted-foreground">{service.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            plugins={[
+              Autoplay({
+                delay: 3000,
+              }),
+            ]}
+            className="w-full max-w-7xl mx-auto"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {services.map((service, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
+                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border">
+                    <CardContent className="p-4 text-center">
+                      <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
+                      <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
+                      <p className="text-xs text-muted-foreground">{service.description}</p>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
         </div>
       </section>
 
@@ -167,13 +192,15 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center mb-12">Featured Creators</h2>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {featuredCategories.map((category) => (
+            {[
+              { title: 'Top AMA Hosts', description: 'Expert hosts for live sessions', count: 'Coming Soon' },
+              { title: 'Best at Twitter Campaigns', description: 'Proven Twitter growth specialists', count: 'Coming Soon' },
+              { title: 'Rising Video Creators', description: 'Trending video content makers', count: 'Coming Soon' }
+            ].map((category) => (
               <Card key={category.title} className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-center">{category.title}</CardTitle>
-                  <CardDescription className="text-center">{category.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
+                <CardContent className="p-6 text-center">
+                  <h3 className="text-xl font-semibold mb-2">{category.title}</h3>
+                  <p className="text-muted-foreground mb-4">{category.description}</p>
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                     {category.count}
                   </Badge>
@@ -243,7 +270,7 @@ export default function Home() {
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <img 
-              src="/placeholder.svg" 
+              src="/lovable-uploads/62634403-0cf8-4432-a1e2-28c295b08bd6.png" 
               alt="LeveledUP Logo" 
               className="h-8 w-8"
             />

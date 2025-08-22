@@ -21,7 +21,7 @@ export const Header = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-3">
           <img 
-            src="/placeholder.svg" 
+            src="/lovable-uploads/62634403-0cf8-4432-a1e2-28c295b08bd6.png" 
             alt="LeveledUP Logo" 
             className="h-8 w-8"
           />
