@@ -31,7 +31,7 @@ interface CreatorExplorerProps {
 
 export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState(selectedCategory || '');
+  const [categoryFilter, setCategoryFilter] = useState(selectedCategory || 'all');
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -87,7 +87,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           creator.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
           creator.headline?.toLowerCase().includes(searchQuery.toLowerCase());
         
-        const matchesCategory = !categoryFilter || creator.category === categoryFilter;
+        const matchesCategory = categoryFilter === 'all' || creator.category === categoryFilter;
         
         const matchesPrice = creator.avg_price >= priceRange[0] && creator.avg_price <= priceRange[1];
         
@@ -128,7 +128,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
               <Button
                 key={cat.category}
                 variant="ghost"
-                onClick={() => setCategoryFilter(cat.category === categoryFilter ? '' : cat.category)}
+                onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
                 className={`flex-shrink-0 flex flex-col items-center p-4 rounded-full w-20 h-20 ${
                   categoryFilter === cat.category 
                     ? 'bg-blue-600 text-white' 
@@ -149,7 +149,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           {/* Creators List */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold mb-6">
-              {categoryFilter ? `${categoryFilter.toUpperCase()} Creators` : 'All Creators'}
+              {categoryFilter !== 'all' ? `${categoryFilter.toUpperCase()} Creators` : 'All Creators'}
               {creators && <span className="text-zinc-400 text-lg ml-2">({creators.length})</span>}
             </h2>
 
@@ -240,7 +240,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-800 border-zinc-700">
-                        <SelectItem value="">All Categories</SelectItem>
+                        <SelectItem value="all" className="text-white">All Categories</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category} value={category} className="text-white">
                             {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -269,7 +269,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                   <Button 
                     variant="outline" 
                     onClick={() => {
-                      setCategoryFilter('');
+                      setCategoryFilter('all');
                       setPriceRange([0, 1000]);
                       setSearchQuery('');
                     }}
