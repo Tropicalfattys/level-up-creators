@@ -1,14 +1,22 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2, Play, ChevronDown } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface CreatorProfileData {
   id: string;
@@ -51,8 +59,11 @@ interface ReviewData {
 export const CreatorProfile = () => {
   const { handle } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const { data: creator, isLoading } = useQuery({
     queryKey: ['creator-profile', handle],
@@ -158,9 +169,50 @@ export const CreatorProfile = () => {
     enabled: !!creator?.user_id
   });
 
-  const handleBookService = (service: ServiceData) => {
-    setSelectedService(service);
-    setShowBookingModal(true);
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      // For now, just toggle the local state. Later you can implement actual following in the database
+      setIsFollowing(!isFollowing);
+    },
+    onSuccess: () => {
+      toast.success(isFollowing ? 'Unfollowed creator' : 'Following creator');
+    }
+  });
+
+  const shareCreator = (platform: string) => {
+    const url = window.location.href;
+    const text = `Check out @${creator?.handle} on our platform!`;
+    
+    let shareUrl = '';
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+        return;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+  };
+
+  const handleContactCreator = () => {
+    if (!user) {
+      toast.error('Please log in to message creators');
+      navigate('/auth');
+      return;
+    }
+    // Navigate to direct messaging (we'll implement this)
+    navigate(`/messages/${creator?.user_id}`);
   };
 
   if (isLoading) {
@@ -181,6 +233,16 @@ export const CreatorProfile = () => {
       </div>
     );
   }
+
+  // Sample reasons/tags for hiring (creator can edit these later)
+  const sampleReasons = [
+    'Expert in crypto trading',
+    'Quick turnaround time',
+    'Personalized advice',
+    'Proven track record',
+    'Great communication',
+    'Educational content'
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -238,16 +300,44 @@ export const CreatorProfile = () => {
                   </div>
 
                   <div className="flex gap-2 mb-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Heart className="h-4 w-4 mr-1" />
-                      Follow
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className={`flex-1 ${isFollowing ? 'bg-red-600 border-red-600' : ''}`}
+                      onClick={() => followMutation.mutate()}
+                    >
+                      <Heart className={`h-4 w-4 mr-1 ${isFollowing ? 'fill-white' : ''}`} />
+                      {isFollowing ? 'Following' : 'Follow'}
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => shareCreator('twitter')}>
+                          Share on Twitter
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => shareCreator('facebook')}>
+                          Share on Facebook
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => shareCreator('telegram')}>
+                          Share on Telegram
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => shareCreator('copy')}>
+                          Copy Link
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleContactCreator}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Contact Creator
                   </Button>
@@ -255,6 +345,7 @@ export const CreatorProfile = () => {
               </CardContent>
             </Card>
 
+            {/* About Section */}
             {creator.bio && (
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardContent className="p-6">
@@ -263,6 +354,35 @@ export const CreatorProfile = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Intro Video Section */}
+            {creator.tier === 'pro' && (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-3">Intro Video</h3>
+                  <div className="relative bg-zinc-800 rounded-lg aspect-video flex items-center justify-center">
+                    <Play className="h-12 w-12 text-zinc-400" />
+                    <div className="absolute bottom-2 right-2 bg-black/50 rounded px-2 py-1 text-xs">
+                      1:30
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reasons to Hire Section */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-3">Reasons to Hire This Creator</h3>
+                <div className="flex flex-wrap gap-2">
+                  {sampleReasons.map((reason, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {reason}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Services and Reviews */}
@@ -298,7 +418,10 @@ export const CreatorProfile = () => {
                           </div>
                           
                           <Button 
-                            onClick={() => handleBookService(service)}
+                            onClick={() => {
+                              setSelectedService(service);
+                              setShowBookingModal(true);
+                            }}
                             className="ml-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
                           >
                             Book Now
@@ -318,9 +441,9 @@ export const CreatorProfile = () => {
             </div>
 
             {/* Reviews Section */}
-            {reviews && reviews.length > 0 && (
-              <div>
-                <h2 className="text-xl font-bold mb-4">Recent Reviews</h2>
+            <div>
+              <h2 className="text-xl font-bold mb-4">Recent Reviews</h2>
+              {reviews && reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review) => (
                     <Card key={review.id} className="bg-zinc-900 border-zinc-800">
@@ -361,8 +484,14 @@ export const CreatorProfile = () => {
                     </Card>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="text-center py-8">
+                    <p className="text-zinc-400">No reviews yet</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>
