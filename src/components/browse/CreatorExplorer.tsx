@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign, Package, Filter, Search } from 'lucide-react';
 
-interface Creator {
+interface CreatorData {
   id: string;
   handle: string;
   avatar_url?: string;
@@ -33,7 +34,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(selectedCategory || 'all');
   const [priceRange, setPriceRange] = useState([0, 1000]);
-  const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
 
   const categories = [
     'ama', 'twitter', 'video', 'tutorials', 'reviews', 'spaces',
@@ -43,58 +44,105 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['creators-explore', searchQuery, categoryFilter, priceRange],
-    queryFn: async (): Promise<Creator[]> => {
-      // Mock data for now since we don't have real creators yet
-      return [
-        {
-          id: '1',
-          handle: 'cryptoking',
-          avatar_url: undefined,
-          headline: 'Top AMA Host & Twitter Influencer',
-          category: 'ama',
-          rating: 4.9,
-          review_count: 127,
-          avg_delivery_days: 2,
-          avg_price: 150,
-          service_count: 5
-        },
-        {
-          id: '2',
-          handle: 'nftqueen',
-          avatar_url: undefined,
-          headline: 'NFT Marketing & Video Creator',
-          category: 'video',
-          rating: 4.8,
-          review_count: 89,
-          avg_delivery_days: 3,
-          avg_price: 200,
-          service_count: 8
-        },
-        {
-          id: '3',
-          handle: 'defiexpert',
-          avatar_url: undefined,
-          headline: 'DeFi Educator & Content Creator',
-          category: 'tutorials',
-          rating: 4.7,
-          review_count: 156,
-          avg_delivery_days: 1,
-          avg_price: 75,
-          service_count: 12
-        }
-      ].filter(creator => {
-        const matchesSearch = !searchQuery || 
-          creator.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          creator.headline?.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesCategory = categoryFilter === 'all' || creator.category === categoryFilter;
-        
-        const matchesPrice = creator.avg_price >= priceRange[0] && creator.avg_price <= priceRange[1];
-        
-        return matchesSearch && matchesCategory && matchesPrice;
-      });
+    queryFn: async (): Promise<CreatorData[]> => {
+      console.log('Fetching creators with filters:', { searchQuery, categoryFilter, priceRange });
+      
+      // Build the query for approved creators with their user data
+      let query = supabase
+        .from('creators')
+        .select(`
+          id,
+          user_id,
+          headline,
+          category,
+          rating,
+          review_count,
+          users!creators_user_id_fkey (
+            handle,
+            avatar_url
+          )
+        `)
+        .eq('approved', true);
+
+      const { data: creatorsData, error } = await query;
+
+      if (error) {
+        console.error('Error fetching creators:', error);
+        throw error;
+      }
+
+      if (!creatorsData || creatorsData.length === 0) {
+        console.log('No creators found');
+        return [];
+      }
+
+      // For each creator, get their services data
+      const creatorsWithServices = await Promise.all(
+        creatorsData.map(async (creator) => {
+          const { data: services, error: servicesError } = await supabase
+            .from('services')
+            .select('price_usdc, delivery_days, title, description, category')
+            .eq('creator_id', creator.user_id)
+            .eq('active', true);
+
+          if (servicesError) {
+            console.error('Error fetching services for creator:', creator.user_id, servicesError);
+            return null;
+          }
+
+          // Calculate averages
+          const prices = services?.map(s => Number(s.price_usdc)).filter(p => p > 0) || [];
+          const deliveryDays = services?.map(s => s.delivery_days).filter(d => d > 0) || [];
+          
+          const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+          const avgDelivery = deliveryDays.length > 0 ? Math.round(deliveryDays.reduce((a, b) => a + b, 0) / deliveryDays.length) : 3;
+
+          // Apply search filter
+          const searchMatch = !searchQuery || (
+            creator.users?.handle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            creator.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            services?.some(service => 
+              service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              service.description?.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          );
+
+          // Apply category filter
+          const categoryMatch = categoryFilter === 'all' || 
+            creator.category === categoryFilter ||
+            services?.some(service => service.category === categoryFilter);
+
+          // Apply price filter
+          const priceMatch = avgPrice === 0 || (avgPrice >= priceRange[0] && avgPrice <= priceRange[1]);
+
+          if (!searchMatch || !categoryMatch || !priceMatch) {
+            return null;
+          }
+
+          return {
+            id: creator.id,
+            handle: creator.users?.handle || 'unknown',
+            avatar_url: creator.users?.avatar_url,
+            headline: creator.headline,
+            category: creator.category,
+            rating: Number(creator.rating) || 0,
+            review_count: creator.review_count || 0,
+            avg_delivery_days: avgDelivery,
+            avg_price: Math.round(avgPrice),
+            service_count: services?.length || 0
+          };
+        })
+      );
+
+      const filteredCreators = creatorsWithServices.filter(creator => creator !== null) as CreatorData[];
+      console.log('Filtered creators:', filteredCreators);
+      return filteredCreators;
     }
   });
+
+  const handleViewProfile = (handle: string) => {
+    navigate(`/creator/${handle}`);
+  };
 
   const categoryIcons = [
     { name: 'AMA', category: 'ama', icon: '🎤' },
@@ -164,23 +212,25 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         <Avatar className="h-16 w-16">
                           <AvatarImage src={creator.avatar_url} alt={creator.handle} />
                           <AvatarFallback className="bg-zinc-800 text-white text-lg">
-                            {creator.handle[0].toUpperCase()}
+                            {creator.handle[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold text-lg">@{creator.handle}</h3>
-                            <Badge variant="outline" className="border-blue-500 text-blue-400">
-                              {creator.category}
-                            </Badge>
+                            {creator.category && (
+                              <Badge variant="outline" className="border-blue-500 text-blue-400">
+                                {creator.category}
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-zinc-400 mb-2">{creator.headline}</p>
+                          <p className="text-zinc-400 mb-2">{creator.headline || 'Creator'}</p>
                           
                           <div className="flex items-center gap-6 text-sm">
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="text-white font-medium">{creator.rating}</span>
+                              <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
                               <span className="text-zinc-400">({creator.review_count})</span>
                             </div>
                             
@@ -189,10 +239,12 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                               <span>{creator.avg_delivery_days} day delivery</span>
                             </div>
                             
-                            <div className="flex items-center gap-1 text-zinc-400">
-                              <DollarSign className="h-4 w-4" />
-                              <span>From ${creator.avg_price} USDC</span>
-                            </div>
+                            {creator.avg_price > 0 && (
+                              <div className="flex items-center gap-1 text-zinc-400">
+                                <DollarSign className="h-4 w-4" />
+                                <span>From ${creator.avg_price} USDC</span>
+                              </div>
+                            )}
                             
                             <div className="flex items-center gap-1 text-zinc-400">
                               <Package className="h-4 w-4" />
@@ -201,7 +253,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           </div>
                         </div>
                         
-                        <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700">
+                        <Button 
+                          onClick={() => handleViewProfile(creator.handle)}
+                          className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
+                        >
                           View Profile
                         </Button>
                       </div>
