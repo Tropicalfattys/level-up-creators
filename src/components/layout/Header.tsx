@@ -39,7 +39,7 @@ export const Header = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-3">
           <img 
-            src="/lovable-uploads/a78181a3-f679-433a-93ca-e839266d55d5.png" 
+            src="/lovable-uploads/d172b9fc-950a-4abe-8f59-00d751cecddc.png" 
             alt="LeveledUP Logo" 
             className="h-10 w-10 object-contain"
           />
