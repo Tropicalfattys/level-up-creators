@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface BookingWithDetails {
   id: string;
@@ -35,7 +36,7 @@ export const BookingManagement = () => {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
     queryFn: async (): Promise<BookingWithDetails[]> => {
-      if (!user) return [];
+      if (!user?.id) return [];
 
       const { data, error } = await supabase
         .from('bookings')
@@ -47,10 +48,13 @@ export const BookingManagement = () => {
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        return [];
+      }
       return data || [];
     },
-    enabled: !!user
+    enabled: !!user?.id
   });
 
   const updateBookingStatus = useMutation({
@@ -59,7 +63,7 @@ export const BookingManagement = () => {
       status: string; 
       deliveredAt?: string; 
     }) => {
-      const updateData: any = { status };
+      const updateData: any = { status, updated_at: new Date().toISOString() };
       if (deliveredAt) {
         updateData.delivered_at = deliveredAt;
       }
@@ -210,10 +214,12 @@ export const BookingManagement = () => {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Chat
-                      </Button>
+                      <Link to={`/chat/${booking.id}`}>
+                        <Button size="sm" variant="outline">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Chat
+                        </Button>
+                      </Link>
                       {getStatusActions(booking)}
                     </div>
                   </div>

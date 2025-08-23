@@ -34,18 +34,22 @@ export const CreatorServices = () => {
   const { data: services, isLoading } = useQuery({
     queryKey: ['creator-services', user?.id],
     queryFn: async (): Promise<Service[]> => {
-      if (!user) return [];
+      if (!user?.id) return [];
 
+      // Use user.id directly as creator_id since creators table uses user_id
       const { data, error } = await supabase
         .from('services')
         .select(`
           *,
-          bookings!inner(id)
+          bookings(id)
         `)
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching services:', error);
+        return [];
+      }
 
       // Transform the data to include booking counts
       return (data || []).map(service => ({
@@ -55,7 +59,7 @@ export const CreatorServices = () => {
         }
       }));
     },
-    enabled: !!user
+    enabled: !!user?.id
   });
 
   const toggleServiceMutation = useMutation({
@@ -71,7 +75,8 @@ export const CreatorServices = () => {
       queryClient.invalidateQueries({ queryKey: ['creator-services'] });
       toast.success('Service updated successfully');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error updating service:', error);
       toast.error('Failed to update service');
     }
   });
@@ -89,7 +94,8 @@ export const CreatorServices = () => {
       queryClient.invalidateQueries({ queryKey: ['creator-services'] });
       toast.success('Service deleted successfully');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error deleting service:', error);
       toast.error('Failed to delete service');
     }
   });

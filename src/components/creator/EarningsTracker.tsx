@@ -29,7 +29,7 @@ export const EarningsTracker = () => {
   const { data: earnings, isLoading } = useQuery({
     queryKey: ['creator-earnings', user?.id],
     queryFn: async (): Promise<EarningsData> => {
-      if (!user) return {
+      if (!user?.id) return {
         totalEarnings: 0,
         monthlyEarnings: 0,
         pendingEarnings: 0,
@@ -37,7 +37,7 @@ export const EarningsTracker = () => {
         recentEarnings: []
       };
 
-      // Get all bookings for the creator
+      // Get all bookings for the creator using user_id as creator_id
       const { data: bookings, error } = await supabase
         .from('bookings')
         .select(`
@@ -48,7 +48,10 @@ export const EarningsTracker = () => {
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching earnings:', error);
+        throw error;
+      }
 
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -89,7 +92,7 @@ export const EarningsTracker = () => {
         recentEarnings
       };
     },
-    enabled: !!user
+    enabled: !!user?.id
   });
 
   if (isLoading) {

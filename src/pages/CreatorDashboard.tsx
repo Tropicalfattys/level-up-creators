@@ -24,10 +24,12 @@ export default function CreatorDashboard() {
   const { data: creator } = useQuery({
     queryKey: ['creator-profile', user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
+      
       const { data, error } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
       if (error) {
@@ -36,17 +38,34 @@ export default function CreatorDashboard() {
       }
       return data;
     },
+    enabled: !!user?.id
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!creator?.id) return;
+      if (!user?.id) return;
 
       // Fetch active services count
       const { data: services, error: servicesError } = await supabase
         .from('services')
         .select('*', { count: 'exact' })
-        .eq('creator_id', creator.id)
+        .eq('creator_id', user.id)
         .eq('active', true);
 
       if (servicesError) {
@@ -58,7 +77,7 @@ export default function CreatorDashboard() {
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('*', { count: 'exact' })
-        .eq('creator_id', creator.id)
+        .eq('creator_id', user.id)
         .in('status', ['paid', 'in_progress', 'delivered']);
 
       if (bookingsError) {
@@ -70,7 +89,7 @@ export default function CreatorDashboard() {
       const { data: earnings, error: earningsError } = await supabase
         .from('bookings')
         .select('usdc_amount')
-        .eq('creator_id', creator.id)
+        .eq('creator_id', user.id)
         .in('status', ['accepted', 'released']);
 
       if (earningsError) {
@@ -90,7 +109,7 @@ export default function CreatorDashboard() {
     };
 
     fetchStats();
-  }, [creator?.id]);
+  }, [user?.id]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -180,7 +199,7 @@ export default function CreatorDashboard() {
             </Card>
           </div>
 
-          {/* Dashboard Tabs */}
+          {/* Dashboard Tabs - Using the exact same components as main dashboard */}
           <Tabs defaultValue="services" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="services" className="flex items-center gap-2">
@@ -214,7 +233,7 @@ export default function CreatorDashboard() {
             </TabsContent>
 
             <TabsContent value="messages">
-              <ChatList />
+              <ChatList userRole={currentUser?.role} />
             </TabsContent>
           </Tabs>
         </>
