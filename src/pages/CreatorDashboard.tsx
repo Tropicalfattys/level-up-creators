@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
-import { ChatList } from '@/components/messaging/ChatList';
+import { MessagesList } from '@/components/messaging/MessagesList';
 import { Package, Calendar, DollarSign, RefreshCw, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -36,22 +36,6 @@ export default function CreatorDashboard() {
         console.error('Error fetching creator profile:', error);
         return null;
       }
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  const { data: currentUser } = useQuery({
-    queryKey: ['current-user', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
       return data;
     },
     enabled: !!user?.id
@@ -233,7 +217,7 @@ export default function CreatorDashboard() {
             </TabsContent>
 
             <TabsContent value="messages">
-              <ChatList userRole={currentUser?.role} />
+              <MessagesList />
             </TabsContent>
           </Tabs>
         </>
