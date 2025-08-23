@@ -57,7 +57,11 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
       const { data, error } = await supabase
         .from('direct_messages')
         .select(`
-          *,
+          id,
+          from_user_id,
+          to_user_id,
+          body,
+          created_at,
           from_user:users!direct_messages_from_user_id_fkey (handle, avatar_url)
         `)
         .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${otherUserId}),and(from_user_id.eq.${otherUserId},to_user_id.eq.${user.id})`)
