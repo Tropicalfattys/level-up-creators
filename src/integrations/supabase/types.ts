@@ -489,6 +489,45 @@ export type Database = {
           },
         ]
       }
+      shopping_cart: {
+        Row: {
+          added_at: string | null
+          creator_id: string
+          id: string
+          service_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          creator_id: string
+          id?: string
+          service_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          creator_id?: string
+          id?: string
+          service_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_shopping_cart_creator"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shopping_cart_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null

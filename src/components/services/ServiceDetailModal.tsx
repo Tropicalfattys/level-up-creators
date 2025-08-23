@@ -1,144 +1,130 @@
-
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Clock, DollarSign, User, Star } from 'lucide-react';
-import { BookingModal } from './BookingModal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Star, Clock, DollarSign, ShoppingCart } from 'lucide-react';
+import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { useAuth } from '@/hooks/useAuth';
 
-// Use the same interface structure as AdvancedSearch
-interface ServiceDetailModalProps {
-  service: {
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
+  creator: {
     id: string;
-    title: string;
-    description: string;
-    category: string;
-    price_usdc: number;
-    delivery_days: number;
-    creator: {
+    user_id: string;
+    users: {
       handle: string;
       avatar_url?: string;
     };
-  } | null;
+    rating: number;
+    review_count: number;
+  };
+}
+
+interface ServiceDetailModalProps {
+  service: Service | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailModalProps) => {
-  const [showBookingModal, setShowBookingModal] = useState(false);
-
+  const { user } = useAuth();
+  const { addToCart, isAddingToCart, cartItems } = useShoppingCart();
+  
   if (!service) return null;
 
-  const handleBookNow = () => {
-    setShowBookingModal(true);
-  };
-
-  const handleBookingClose = () => {
-    setShowBookingModal(false);
-  };
-
-  // Transform the service data to match what BookingModal expects
-  const bookingService = {
-    id: service.id,
-    title: service.title,
-    description: service.description,
-    category: service.category,
-    price_usdc: service.price_usdc,
-    delivery_days: service.delivery_days,
-    creator_id: service.creator.handle, // Transform nested creator to creator_id
-    active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-
-  // Mock creator data structure for BookingModal
-  const creatorData = {
-    id: service.creator.handle,
-    user_id: service.creator.handle,
-    users: {
-      handle: service.creator.handle,
-      avatar_url: service.creator.avatar_url || ''
+  const isInCart = cartItems.some(item => item.service_id === service.id);
+  
+  const handleAddToCart = () => {
+    if (!user) {
+      // Redirect to auth page or show login modal
+      return;
     }
+    
+    addToCart({
+      serviceId: service.id,
+      creatorId: service.creator.user_id
+    });
   };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{service.title}</DialogTitle>
-            <DialogDescription>Service Details</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Creator Info */}
-            <div className="flex items-center gap-3">
-              {service.creator.avatar_url && (
-                <img
-                  src={service.creator.avatar_url}
-                  alt={service.creator.handle}
-                  className="w-12 h-12 rounded-full"
-                />
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="font-medium">@{service.creator.handle}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Star className="h-3 w-3 fill-current" />
-                  <span>Creator</span>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Service Details */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-muted-foreground">{service.description}</p>
-              </div>
-
-              <div className="flex items-center gap-6 text-sm">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <div className="flex items-center gap-4 mb-4">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={service.creator.users.avatar_url} />
+              <AvatarFallback>
+                {service.creator.users.handle[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <DialogTitle className="text-xl">{service.title}</DialogTitle>
+              <DialogDescription className="flex items-center gap-2 mt-1">
+                <span>by @{service.creator.users.handle}</span>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="font-semibold">${service.price_usdc} USDC</span>
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm">
+                    {service.creator.rating.toFixed(1)} ({service.creator.review_count} reviews)
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{service.delivery_days} days delivery</span>
-                </div>
-                <Badge variant="outline">{service.category}</Badge>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Actions */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose} className="flex-1">
-                Cancel
-              </Button>
-              <Button onClick={handleBookNow} className="flex-1">
-                Book Now
-              </Button>
+              </DialogDescription>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DialogHeader>
 
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <BookingModal
-          service={bookingService}
-          creator={creatorData}
-          isOpen={showBookingModal}
-          onClose={handleBookingClose}
-        />
-      )}
-    </>
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold mb-2">Description</h4>
+            <p className="text-muted-foreground leading-relaxed">
+              {service.description}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 border rounded-lg">
+              <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600" />
+              <div className="font-semibold">${service.price_usdc}</div>
+              <div className="text-sm text-muted-foreground">USDC</div>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Clock className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+              <div className="font-semibold">{service.delivery_days} days</div>
+              <div className="text-sm text-muted-foreground">Delivery</div>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Badge variant="outline" className="mb-2">
+                {service.category}
+              </Badge>
+              <div className="text-sm text-muted-foreground">Category</div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Close
+            </Button>
+            {user ? (
+              <Button 
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || isInCart}
+                className="flex-1"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                {isInCart ? 'In Cart' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              </Button>
+            ) : (
+              <Button asChild className="flex-1">
+                <a href="/auth">Sign In to Book</a>
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
