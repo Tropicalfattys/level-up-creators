@@ -79,7 +79,7 @@ export const AdvancedSearch = () => {
           category,
           price_usdc,
           delivery_days,
-          creator:users!creator_id (
+          users!services_creator_id_fkey (
             handle,
             avatar_url
           )
@@ -125,7 +125,10 @@ export const AdvancedSearch = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      return data || [];
+      return (data || []).map(service => ({
+        ...service,
+        creator: service.users
+      }));
     },
     enabled: true
   });
@@ -171,7 +174,7 @@ export const AdvancedSearch = () => {
         price_usdc,
         delivery_days,
         category,
-        creators!services_creator_id_fkey (
+        creators (
           id,
           user_id,
           rating,
