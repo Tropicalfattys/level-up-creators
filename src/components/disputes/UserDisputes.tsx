@@ -87,6 +87,19 @@ export const UserDisputes = () => {
     queryFn: async () => {
       if (!user) return [];
 
+      // First get user's booking IDs
+      const { data: userBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .or(`client_id.eq.${user.id},creator_id.eq.${user.id}`);
+
+      if (bookingsError || !userBookings) return [];
+
+      const bookingIds = userBookings.map(booking => booking.id);
+
+      if (bookingIds.length === 0) return [];
+
+      // Then get disputes for those bookings
       const { data, error } = await supabase
         .from('disputes')
         .select(`
@@ -107,12 +120,7 @@ export const UserDisputes = () => {
             creator:users!bookings_creator_id_fkey (handle)
           )
         `)
-        .in('booking_id', 
-          supabase
-            .from('bookings')
-            .select('id')
-            .or(`client_id.eq.${user.id},creator_id.eq.${user.id}`)
-        )
+        .in('booking_id', bookingIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
