@@ -46,20 +46,53 @@ export const useShoppingCart = () => {
             price_usdc,
             delivery_days,
             category
-          ),
-          creators (
-            user_id,
-            users (
-              handle,
-              avatar_url
-            )
           )
         `)
         .eq('user_id', user.id)
         .order('added_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Fetch creator data separately for each cart item
+      const cartItemsWithCreators = await Promise.all(
+        (data || []).map(async (item) => {
+          const { data: creatorData, error: creatorError } = await supabase
+            .from('creators')
+            .select(`
+              user_id,
+              users (
+                handle,
+                avatar_url
+              )
+            `)
+            .eq('user_id', item.creator_id)
+            .single();
+
+          if (creatorError || !creatorData) {
+            // Fallback to basic user data if creator profile doesn't exist
+            const { data: userData } = await supabase
+              .from('users')
+              .select('handle, avatar_url')
+              .eq('id', item.creator_id)
+              .single();
+
+            return {
+              ...item,
+              creators: {
+                user_id: item.creator_id,
+                users: userData || { handle: 'Unknown', avatar_url: '' }
+              }
+            };
+          }
+
+          return {
+            ...item,
+            creators: creatorData
+          };
+        })
+      );
+
+      return cartItemsWithCreators;
     },
     enabled: !!user
   });

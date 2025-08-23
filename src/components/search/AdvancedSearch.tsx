@@ -28,6 +28,7 @@ interface SearchService {
   category: string;
   price_usdc: number;
   delivery_days: number;
+  creator_id: string;
   creator: {
     handle: string;
     avatar_url?: string;
@@ -79,10 +80,7 @@ export const AdvancedSearch = () => {
           category,
           price_usdc,
           delivery_days,
-          users!services_creator_id_fkey (
-            handle,
-            avatar_url
-          )
+          creator_id
         `)
         .eq('active', true);
 
@@ -125,10 +123,23 @@ export const AdvancedSearch = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map(service => ({
-        ...service,
-        creator: service.users
-      }));
+      // Fetch creator data separately for each service
+      const servicesWithCreators = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('handle, avatar_url')
+            .eq('id', service.creator_id)
+            .single();
+
+          return {
+            ...service,
+            creator: userData || { handle: 'Unknown', avatar_url: '' }
+          };
+        })
+      );
+
+      return servicesWithCreators;
     },
     enabled: true
   });
@@ -165,7 +176,7 @@ export const AdvancedSearch = () => {
 
   const handleViewDetails = async (service: SearchService) => {
     // Fetch full service details for the modal
-    const { data, error } = await supabase
+    const { data: serviceData, error: serviceError } = await supabase
       .from('services')
       .select(`
         id,
@@ -174,24 +185,33 @@ export const AdvancedSearch = () => {
         price_usdc,
         delivery_days,
         category,
-        creators (
-          id,
-          user_id,
-          rating,
-          review_count,
-          users (
-            handle,
-            avatar_url
-          )
-        )
+        creator_id
       `)
       .eq('id', service.id)
       .single();
 
-    if (!error && data && data.creators) {
+    if (serviceError || !serviceData) return;
+
+    // Fetch creator details separately
+    const { data: creatorData, error: creatorError } = await supabase
+      .from('creators')
+      .select(`
+        id,
+        user_id,
+        rating,
+        review_count,
+        users (
+          handle,
+          avatar_url
+        )
+      `)
+      .eq('user_id', serviceData.creator_id)
+      .single();
+
+    if (!creatorError && creatorData) {
       const detailService: DetailModalService = {
-        ...data,
-        creator: data.creators
+        ...serviceData,
+        creator: creatorData
       };
       setSelectedService(detailService);
       setShowDetailModal(true);
