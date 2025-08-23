@@ -1,3 +1,4 @@
+
 // Temporary type definitions until Supabase types regenerate
 export interface Dispute {
   id: string;
@@ -71,6 +72,18 @@ export interface User {
   referral_code?: string;
   referral_credits: number;
   referred_by?: string;
+  website_url?: string;
+  portfolio_url?: string;
+  youtube_url?: string;
+  social_links?: {
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    telegram?: string;
+    discord?: string;
+    medium?: string;
+    linkedin?: string;
+  };
   created_at: string;
   updated_at: string;
 }

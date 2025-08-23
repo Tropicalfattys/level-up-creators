@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload } from 'lucide-react';
+import { Upload, Globe, Portfolio, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -20,11 +20,23 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     handle: userProfile?.handle || '',
     bio: userProfile?.bio || '',
-    avatar_url: userProfile?.avatar_url || ''
+    avatar_url: userProfile?.avatar_url || '',
+    website_url: userProfile?.website_url || '',
+    portfolio_url: userProfile?.portfolio_url || '',
+    youtube_url: userProfile?.youtube_url || '',
+    social_links: userProfile?.social_links || {}
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (data: { handle: string; bio: string; avatar_url?: string }) => {
+    mutationFn: async (data: { 
+      handle: string; 
+      bio: string; 
+      avatar_url?: string;
+      website_url?: string;
+      portfolio_url?: string;
+      youtube_url?: string;
+      social_links?: any;
+    }) => {
       if (!userProfile?.id) throw new Error('No user profile');
       
       const { error } = await supabase
@@ -33,6 +45,10 @@ export default function Settings() {
           handle: data.handle,
           bio: data.bio,
           avatar_url: data.avatar_url,
+          website_url: data.website_url,
+          portfolio_url: data.portfolio_url,
+          youtube_url: data.youtube_url,
+          social_links: data.social_links,
           updated_at: new Date().toISOString()
         })
         .eq('id', userProfile.id);
@@ -83,6 +99,16 @@ export default function Settings() {
     updateProfile.mutate(profileData);
   };
 
+  const updateSocialLink = (platform: string, url: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      social_links: {
+        ...prev.social_links,
+        [platform]: url
+      }
+    }));
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -95,6 +121,7 @@ export default function Settings() {
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="social">Social & Links</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
@@ -174,6 +201,166 @@ export default function Settings() {
 
               <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Media & Links</CardTitle>
+              <CardDescription>
+                Add your social media profiles and website links to appear on your creator profile
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Website and Portfolio Links */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Professional Links</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="website">
+                      <Globe className="h-4 w-4 inline mr-2" />
+                      Website URL
+                    </Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      value={profileData.website_url}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, website_url: e.target.value }))}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="portfolio">
+                      <Portfolio className="h-4 w-4 inline mr-2" />
+                      Portfolio URL
+                    </Label>
+                    <Input
+                      id="portfolio"
+                      type="url"
+                      value={profileData.portfolio_url}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, portfolio_url: e.target.value }))}
+                      placeholder="https://portfolio.com"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="youtube">
+                    <Youtube className="h-4 w-4 inline mr-2" />
+                    YouTube Channel
+                  </Label>
+                  <Input
+                    id="youtube"
+                    type="url"
+                    value={profileData.youtube_url}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, youtube_url: e.target.value }))}
+                    placeholder="https://youtube.com/@username"
+                  />
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Social Media</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="twitter">
+                      <Twitter className="h-4 w-4 inline mr-2" />
+                      Twitter/X
+                    </Label>
+                    <Input
+                      id="twitter"
+                      type="url"
+                      value={profileData.social_links?.twitter || ''}
+                      onChange={(e) => updateSocialLink('twitter', e.target.value)}
+                      placeholder="https://twitter.com/username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="facebook">
+                      <Facebook className="h-4 w-4 inline mr-2" />
+                      Facebook
+                    </Label>
+                    <Input
+                      id="facebook"
+                      type="url"
+                      value={profileData.social_links?.facebook || ''}
+                      onChange={(e) => updateSocialLink('facebook', e.target.value)}
+                      placeholder="https://facebook.com/username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="instagram">
+                      <Instagram className="h-4 w-4 inline mr-2" />
+                      Instagram
+                    </Label>
+                    <Input
+                      id="instagram"
+                      type="url"
+                      value={profileData.social_links?.instagram || ''}
+                      onChange={(e) => updateSocialLink('instagram', e.target.value)}
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="telegram">
+                      <MessageCircle className="h-4 w-4 inline mr-2" />
+                      Telegram
+                    </Label>
+                    <Input
+                      id="telegram"
+                      type="url"
+                      value={profileData.social_links?.telegram || ''}
+                      onChange={(e) => updateSocialLink('telegram', e.target.value)}
+                      placeholder="https://t.me/username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discord">
+                      <Users className="h-4 w-4 inline mr-2" />
+                      Discord
+                    </Label>
+                    <Input
+                      id="discord"
+                      type="text"
+                      value={profileData.social_links?.discord || ''}
+                      onChange={(e) => updateSocialLink('discord', e.target.value)}
+                      placeholder="username#1234"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="medium">
+                      <BookOpen className="h-4 w-4 inline mr-2" />
+                      Medium
+                    </Label>
+                    <Input
+                      id="medium"
+                      type="url"
+                      value={profileData.social_links?.medium || ''}
+                      onChange={(e) => updateSocialLink('medium', e.target.value)}
+                      placeholder="https://medium.com/@username"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="linkedin">
+                      <Linkedin className="h-4 w-4 inline mr-2" />
+                      LinkedIn
+                    </Label>
+                    <Input
+                      id="linkedin"
+                      type="url"
+                      value={profileData.social_links?.linkedin || ''}
+                      onChange={(e) => updateSocialLink('linkedin', e.target.value)}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+                {updateProfile.isPending ? 'Saving...' : 'Save Social Links'}
               </Button>
             </CardContent>
           </Card>

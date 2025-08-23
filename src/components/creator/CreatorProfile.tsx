@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2, Play, ChevronDown } from 'lucide-react';
+import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2, Play, ChevronDown, ExternalLink, Globe, Portfolio, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -31,6 +31,10 @@ interface CreatorProfileData {
   review_count: number;
   created_at: string;
   tier: string;
+  website_url?: string;
+  portfolio_url?: string;
+  youtube_url?: string;
+  social_links?: any;
 }
 
 interface ServiceData {
@@ -75,7 +79,7 @@ export const CreatorProfile = () => {
       // First get the user by handle
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, handle, avatar_url, bio')
+        .select('id, handle, avatar_url, bio, website_url, portfolio_url, youtube_url, social_links')
         .eq('handle', handle)
         .maybeSingle();
 
@@ -108,7 +112,11 @@ export const CreatorProfile = () => {
         rating: Number(creatorData.rating) || 0,
         review_count: creatorData.review_count || 0,
         created_at: creatorData.created_at,
-        tier: creatorData.tier
+        tier: creatorData.tier,
+        website_url: userData.website_url,
+        portfolio_url: userData.portfolio_url,
+        youtube_url: userData.youtube_url,
+        social_links: userData.social_links
       };
     },
     enabled: !!handle
@@ -225,6 +233,26 @@ export const CreatorProfile = () => {
     }
     // Navigate to direct messaging (we'll implement this)
     navigate(`/messages/${creator?.user_id}`);
+  };
+
+  const getSocialIcon = (platform: string) => {
+    switch (platform) {
+      case 'twitter': return <Twitter className="h-4 w-4" />;
+      case 'facebook': return <Facebook className="h-4 w-4" />;
+      case 'instagram': return <Instagram className="h-4 w-4" />;
+      case 'telegram': return <MessageCircle className="h-4 w-4" />;
+      case 'discord': return <Users className="h-4 w-4" />;
+      case 'medium': return <BookOpen className="h-4 w-4" />;
+      case 'linkedin': return <Linkedin className="h-4 w-4" />;
+      default: return <ExternalLink className="h-4 w-4" />;
+    }
+  };
+
+  const formatSocialUrl = (platform: string, value: string) => {
+    if (platform === 'discord') {
+      return `https://discord.com/users/${value.replace('#', '')}`;
+    }
+    return value.startsWith('http') ? value : `https://${value}`;
   };
 
   if (isLoading) {
@@ -359,17 +387,81 @@ export const CreatorProfile = () => {
               </CardContent>
             </Card>
 
-            {/* About Section - Fixed text wrapping */}
-            {creator.bio && (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-3">About</h3>
+            {/* About Section with Social Links */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-3">About</h3>
+                
+                {/* Social Links and Website Links */}
+                {(creator.social_links || creator.website_url || creator.portfolio_url || creator.youtube_url) && (
+                  <div className="mb-4 space-y-3">
+                    {/* Professional Links */}
+                    <div className="flex flex-wrap gap-2">
+                      {creator.website_url && (
+                        <a 
+                          href={creator.website_url.startsWith('http') ? creator.website_url : `https://${creator.website_url}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
+                        >
+                          <Globe className="h-3 w-3" />
+                          Website
+                        </a>
+                      )}
+                      {creator.portfolio_url && (
+                        <a 
+                          href={creator.portfolio_url.startsWith('http') ? creator.portfolio_url : `https://${creator.portfolio_url}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
+                        >
+                          <Portfolio className="h-3 w-3" />
+                          Portfolio
+                        </a>
+                      )}
+                      {creator.youtube_url && (
+                        <a 
+                          href={creator.youtube_url.startsWith('http') ? creator.youtube_url : `https://${creator.youtube_url}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
+                        >
+                          <Youtube className="h-3 w-3" />
+                          YouTube
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Social Media Links */}
+                    {creator.social_links && Object.keys(creator.social_links).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(creator.social_links).map(([platform, url]) => {
+                          if (!url || url === '') return null;
+                          return (
+                            <a 
+                              key={platform}
+                              href={formatSocialUrl(platform, url as string)}
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors capitalize"
+                            >
+                              {getSocialIcon(platform)}
+                              {platform}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {creator.bio && (
                   <p className="text-zinc-400 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
                     {creator.bio}
                   </p>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
             {/* Intro Video Section */}
             {creator.tier === 'pro' && (
