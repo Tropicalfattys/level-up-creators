@@ -17,6 +17,10 @@ export const ShoppingCartModal = ({ isOpen, onClose }: ShoppingCartModalProps) =
 
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.services?.price_usdc || 0), 0);
 
+  const handleClearCart = () => {
+    clearCart();
+  };
+
   if (cartCount === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -52,7 +56,7 @@ export const ShoppingCartModal = ({ isOpen, onClose }: ShoppingCartModalProps) =
               <ShoppingBag className="h-5 w-5" />
               Shopping Cart ({cartCount} items)
             </div>
-            <Button variant="outline" size="sm" onClick={clearCart}>
+            <Button variant="outline" size="sm" onClick={handleClearCart}>
               Clear All
             </Button>
           </DialogTitle>
