@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserFollows } from '@/hooks/useUserFollows';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,7 +64,8 @@ export const CreatorProfile = () => {
   const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  
+  const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
   const { data: creator, isLoading } = useQuery({
     queryKey: ['creator-profile', handle],
@@ -171,11 +173,21 @@ export const CreatorProfile = () => {
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      // For now, just toggle the local state. Later you can implement actual following in the database
-      setIsFollowing(!isFollowing);
-    },
-    onSuccess: () => {
-      toast.success(isFollowing ? 'Unfollowed creator' : 'Following creator');
+      if (!creator) return;
+      
+      if (isFollowing(creator.user_id)) {
+        removeFollow(creator.user_id);
+        toast.success('Unfollowed creator');
+      } else {
+        addFollow({
+          id: creator.id,
+          user_id: creator.user_id,
+          handle: creator.handle,
+          avatar_url: creator.avatar_url,
+          headline: creator.headline
+        });
+        toast.success('Following creator');
+      }
     }
   });
 
@@ -244,6 +256,8 @@ export const CreatorProfile = () => {
     'Educational content'
   ];
 
+  const isCurrentlyFollowing = isFollowing(creator.user_id);
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -303,11 +317,11 @@ export const CreatorProfile = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className={`flex-1 ${isFollowing ? 'bg-red-600 border-red-600' : ''}`}
+                      className={`flex-1 ${isCurrentlyFollowing ? 'bg-red-600 border-red-600' : ''}`}
                       onClick={() => followMutation.mutate()}
                     >
-                      <Heart className={`h-4 w-4 mr-1 ${isFollowing ? 'fill-white' : ''}`} />
-                      {isFollowing ? 'Following' : 'Follow'}
+                      <Heart className={`h-4 w-4 mr-1 ${isCurrentlyFollowing ? 'fill-white' : ''}`} />
+                      {isCurrentlyFollowing ? 'Following' : 'Follow'}
                     </Button>
                     
                     <DropdownMenu>

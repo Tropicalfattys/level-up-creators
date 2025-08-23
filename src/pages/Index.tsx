@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessagesList } from '@/components/messaging/MessagesList';
+import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
 import { 
   DollarSign, 
   Users, 
@@ -268,7 +269,7 @@ export default function Index() {
             </Card>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
@@ -315,6 +316,8 @@ export default function Index() {
                 </p>
               </CardContent>
             </Card>
+
+            <CreatorsFollowedCard />
           </div>
         </TabsContent>
 
