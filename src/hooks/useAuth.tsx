@@ -76,7 +76,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (!error && data) {
         console.log('User profile fetched:', data);
-        setUserProfile(data);
+        
+        // Type-safe conversion from database row to UserProfile
+        const userProfile: UserProfile = {
+          id: data.id,
+          email: data.email,
+          role: data.role,
+          handle: data.handle,
+          avatar_url: data.avatar_url,
+          bio: data.bio,
+          website_url: data.website_url,
+          portfolio_url: data.portfolio_url,
+          youtube_url: data.youtube_url,
+          social_links: data.social_links as UserProfile['social_links'],
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          referral_code: data.referral_code,
+          referral_credits: data.referral_credits
+        };
+        
+        setUserProfile(userProfile);
         setUserRole(data.role || 'client');
       } else if (error) {
         console.error('Error fetching user profile:', error);
