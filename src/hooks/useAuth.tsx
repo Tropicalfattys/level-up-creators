@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,18 @@ interface UserProfile {
   handle?: string;
   avatar_url?: string;
   bio?: string;
+  website_url?: string;
+  portfolio_url?: string;
+  youtube_url?: string;
+  social_links?: {
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    telegram?: string;
+    discord?: string;
+    medium?: string;
+    linkedin?: string;
+  };
   created_at?: string;
   updated_at?: string;
   referral_code?: string;

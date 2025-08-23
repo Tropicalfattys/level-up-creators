@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Globe, Portfolio, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
+import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -234,7 +234,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <Label htmlFor="portfolio">
-                      <Portfolio className="h-4 w-4 inline mr-2" />
+                      <Briefcase className="h-4 w-4 inline mr-2" />
                       Portfolio URL
                     </Label>
                     <Input

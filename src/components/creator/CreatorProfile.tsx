@@ -1,628 +1,268 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserFollows } from '@/hooks/useUserFollows';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, ArrowLeft, Calendar, Heart, MessageSquare, Share2, Play, ChevronDown, ExternalLink, Globe, Portfolio, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
-import { BookingModal } from '@/components/services/BookingModal';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-interface CreatorProfileData {
-  id: string;
-  user_id: string;
-  handle: string;
-  avatar_url?: string;
-  headline?: string;
-  bio?: string;
-  category?: string;
-  rating: number;
-  review_count: number;
-  created_at: string;
-  tier: string;
-  website_url?: string;
-  portfolio_url?: string;
-  youtube_url?: string;
-  social_links?: any;
-}
-
-interface ServiceData {
-  id: string;
-  creator_id: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category?: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ReviewData {
-  id: string;
-  rating: number;
-  comment?: string;
-  created_at: string;
-  reviewer: {
-    handle: string;
-    avatar_url?: string;
-  };
-}
+import { Separator } from '@/components/ui/separator';
+import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
 
 export const CreatorProfile = () => {
   const { handle } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  
-  const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
+  // Fetch creator data by handle
   const { data: creator, isLoading } = useQuery({
     queryKey: ['creator-profile', handle],
-    queryFn: async (): Promise<CreatorProfileData | null> => {
-      if (!handle) return null;
-
+    queryFn: async () => {
+      console.log('Fetching creator profile for handle:', handle);
+      
       // First get the user by handle
-      const { data: userData, error: userError } = await supabase
+      const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, handle, avatar_url, bio, website_url, portfolio_url, youtube_url, social_links')
+        .select('*')
         .eq('handle', handle)
-        .maybeSingle();
+        .single();
 
-      if (userError || !userData) {
+      if (userError || !user) {
         console.error('Error fetching user:', userError);
-        return null;
+        throw new Error('User not found');
       }
 
-      // Then get the creator profile for this user
+      // Then get the creator profile
       const { data: creatorData, error: creatorError } = await supabase
         .from('creators')
-        .select('id, user_id, headline, category, rating, review_count, tier, created_at')
-        .eq('user_id', userData.id)
-        .eq('approved', true)
-        .maybeSingle();
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
       if (creatorError || !creatorData) {
         console.error('Error fetching creator:', creatorError);
-        return null;
+        throw new Error('Creator not found');
+      }
+
+      // Get creator's services
+      const { data: services, error: servicesError } = await supabase
+        .from('services')
+        .select('*')
+        .eq('creator_id', creatorData.id)
+        .eq('active', true);
+
+      if (servicesError) {
+        console.error('Error fetching services:', servicesError);
       }
 
       return {
-        id: creatorData.id,
-        user_id: creatorData.user_id,
-        handle: userData.handle,
-        avatar_url: userData.avatar_url,
-        headline: creatorData.headline,
-        bio: userData.bio,
-        category: creatorData.category,
-        rating: Number(creatorData.rating) || 0,
-        review_count: creatorData.review_count || 0,
-        created_at: creatorData.created_at,
-        tier: creatorData.tier,
-        website_url: userData.website_url,
-        portfolio_url: userData.portfolio_url,
-        youtube_url: userData.youtube_url,
-        social_links: userData.social_links
+        ...creatorData,
+        user,
+        services: services || []
       };
     },
     enabled: !!handle
   });
 
-  const { data: services } = useQuery({
-    queryKey: ['creator-services', creator?.user_id],
-    queryFn: async (): Promise<ServiceData[]> => {
-      if (!creator?.user_id) return [];
-
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('creator_id', creator.user_id)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching services:', error);
-        return [];
-      }
-
-      // Transform the data to ensure description is not null
-      return (data || []).map(service => ({
-        ...service,
-        description: service.description || ''
-      }));
-    },
-    enabled: !!creator?.user_id
-  });
-
-  const { data: reviews } = useQuery({
-    queryKey: ['creator-reviews', creator?.user_id],
-    queryFn: async (): Promise<ReviewData[]> => {
-      if (!creator?.user_id) return [];
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          reviewer:users!reviews_reviewer_id_fkey (
-            handle,
-            avatar_url
-          )
-        `)
-        .eq('reviewee_id', creator.user_id)
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (error) {
-        console.error('Error fetching reviews:', error);
-        return [];
-      }
-
-      return data || [];
-    },
-    enabled: !!creator?.user_id
-  });
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      if (!creator) return;
-      
-      if (isFollowing(creator.user_id)) {
-        removeFollow(creator.user_id);
-        toast.success('Unfollowed creator');
-      } else {
-        addFollow({
-          id: creator.id,
-          user_id: creator.user_id,
-          handle: creator.handle,
-          avatar_url: creator.avatar_url,
-          headline: creator.headline
-        });
-        toast.success('Following creator');
-      }
-    }
-  });
-
-  const shareCreator = (platform: string) => {
-    const url = window.location.href;
-    const text = `Check out @${creator?.handle} on our platform!`;
-    
-    let shareUrl = '';
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-        break;
-      case 'telegram':
-        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-        break;
-      case 'copy':
-        navigator.clipboard.writeText(url);
-        toast.success('Link copied to clipboard!');
-        return;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    }
-  };
-
-  const handleContactCreator = () => {
-    if (!user) {
-      toast.error('Please log in to message creators');
-      navigate('/auth');
-      return;
-    }
-    // Navigate to direct messaging (we'll implement this)
-    navigate(`/messages/${creator?.user_id}`);
-  };
-
-  const getSocialIcon = (platform: string) => {
-    switch (platform) {
-      case 'twitter': return <Twitter className="h-4 w-4" />;
-      case 'facebook': return <Facebook className="h-4 w-4" />;
-      case 'instagram': return <Instagram className="h-4 w-4" />;
-      case 'telegram': return <MessageCircle className="h-4 w-4" />;
-      case 'discord': return <Users className="h-4 w-4" />;
-      case 'medium': return <BookOpen className="h-4 w-4" />;
-      case 'linkedin': return <Linkedin className="h-4 w-4" />;
-      default: return <ExternalLink className="h-4 w-4" />;
-    }
-  };
-
-  const formatSocialUrl = (platform: string, value: string) => {
-    if (platform === 'discord') {
-      return `https://discord.com/users/${value.replace('#', '')}`;
-    }
-    return value.startsWith('http') ? value : `https://${value}`;
+  // Social media icons mapping
+  const socialIcons = {
+    twitter: Twitter,
+    facebook: Facebook,
+    instagram: Instagram,
+    telegram: MessageCircle,
+    discord: Users,
+    medium: BookOpen,
+    linkedin: Linkedin
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div>Loading creator profile...</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Loading...</div>
       </div>
     );
   }
 
   if (!creator) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Creator not found</h2>
-          <Button onClick={() => navigate('/browse')}>Back to Browse</Button>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Creator not found</div>
       </div>
     );
   }
 
-  // Sample reasons/tags for hiring (creator can edit these later)
-  const sampleReasons = [
-    'Expert in crypto trading',
-    'Quick turnaround time',
-    'Personalized advice',
-    'Proven track record',
-    'Great communication',
-    'Educational content'
-  ];
-
-  const isCurrentlyFollowing = isFollowing(creator.user_id);
-
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-zinc-800 p-6">
-        <div className="container mx-auto">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/browse')}
-            className="mb-4 text-zinc-400 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Browse
-          </Button>
-        </div>
-      </div>
-
-      <div className="container mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Creator Info */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <Avatar className="h-32 w-32 mx-auto mb-4">
-                    <AvatarImage src={creator.avatar_url} alt={creator.handle} />
-                    <AvatarFallback className="bg-zinc-800 text-white text-2xl">
-                      {creator.handle[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <h1 className="text-2xl font-bold mb-2">@{creator.handle}</h1>
-                  
-                  {creator.headline && (
-                    <p className="text-zinc-400 mb-4">{creator.headline}</p>
-                  )}
-
-                  {creator.category && (
-                    <Badge className="mb-4" variant="outline">
-                      {creator.category}
-                    </Badge>
-                  )}
-
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{creator.rating.toFixed(1)}</span>
-                      <span className="text-zinc-400">({creator.review_count})</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-1 text-sm text-zinc-400 mb-6">
-                    <Calendar className="h-4 w-4" />
-                    <span>Joined {format(new Date(creator.created_at), 'MMMM yyyy')}</span>
-                  </div>
-
-                  <div className="flex gap-2 mb-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className={`flex-1 ${isCurrentlyFollowing ? 'bg-red-600 border-red-600' : ''}`}
-                      onClick={() => followMutation.mutate()}
-                    >
-                      <Heart className={`h-4 w-4 mr-1 ${isCurrentlyFollowing ? 'fill-white' : ''}`} />
-                      {isCurrentlyFollowing ? 'Following' : 'Follow'}
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => shareCreator('twitter')}>
-                          Share on Twitter
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => shareCreator('facebook')}>
-                          Share on Facebook
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => shareCreator('telegram')}>
-                          Share on Telegram
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => shareCreator('copy')}>
-                          Copy Link
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleContactCreator}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Contact Creator
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* About Section with Social Links */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3">About</h3>
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Creator Info */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Profile Card */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <Avatar className="h-24 w-24 mx-auto">
+                  <AvatarImage src={creator.user?.avatar_url} />
+                  <AvatarFallback className="text-2xl">
+                    {creator.user?.handle?.[0]?.toUpperCase() || 'C'}
+                  </AvatarFallback>
+                </Avatar>
                 
-                {/* Social Links and Website Links */}
-                {(creator.social_links || creator.website_url || creator.portfolio_url || creator.youtube_url) && (
-                  <div className="mb-4 space-y-3">
+                <div>
+                  <h1 className="text-2xl font-bold">{creator.user?.handle}</h1>
+                  {creator.headline && (
+                    <p className="text-muted-foreground">{creator.headline}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-center items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{creator.rating.toFixed(1)}</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    ({creator.review_count} reviews)
+                  </span>
+                </div>
+
+                <Badge variant={creator.tier === 'pro' ? 'default' : 'secondary'}>
+                  {creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1)} Creator
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* About Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Social Links Section */}
+              {(creator.user?.social_links || creator.user?.website_url || creator.user?.portfolio_url || creator.user?.youtube_url) && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Links</h4>
+                  <div className="space-y-2">
                     {/* Professional Links */}
-                    <div className="flex flex-wrap gap-2">
-                      {creator.website_url && (
-                        <a 
-                          href={creator.website_url.startsWith('http') ? creator.website_url : `https://${creator.website_url}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
-                        >
-                          <Globe className="h-3 w-3" />
-                          Website
-                        </a>
-                      )}
-                      {creator.portfolio_url && (
-                        <a 
-                          href={creator.portfolio_url.startsWith('http') ? creator.portfolio_url : `https://${creator.portfolio_url}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
-                        >
-                          <Portfolio className="h-3 w-3" />
-                          Portfolio
-                        </a>
-                      )}
-                      {creator.youtube_url && (
-                        <a 
-                          href={creator.youtube_url.startsWith('http') ? creator.youtube_url : `https://${creator.youtube_url}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors"
-                        >
-                          <Youtube className="h-3 w-3" />
-                          YouTube
-                        </a>
-                      )}
-                    </div>
+                    {creator.user?.website_url && (
+                      <a 
+                        href={creator.user.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                      >
+                        <Globe className="h-4 w-4" />
+                        Website
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    
+                    {creator.user?.portfolio_url && (
+                      <a 
+                        href={creator.user.portfolio_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                      >
+                        <Briefcase className="h-4 w-4" />
+                        Portfolio
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    
+                    {creator.user?.youtube_url && (
+                      <a 
+                        href={creator.user.youtube_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                      >
+                        <Youtube className="h-4 w-4" />
+                        YouTube
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
 
                     {/* Social Media Links */}
-                    {creator.social_links && Object.keys(creator.social_links).length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(creator.social_links).map(([platform, url]) => {
-                          if (!url || url === '') return null;
-                          return (
-                            <a 
-                              key={platform}
-                              href={formatSocialUrl(platform, url as string)}
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors capitalize"
-                            >
-                              {getSocialIcon(platform)}
-                              {platform}
-                            </a>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {creator.user?.social_links && Object.entries(creator.user.social_links).map(([platform, url]) => {
+                      if (!url) return null;
+                      const IconComponent = socialIcons[platform as keyof typeof socialIcons];
+                      if (!IconComponent) return null;
+                      
+                      return (
+                        <a 
+                          key={platform}
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                        >
+                          <IconComponent className="h-4 w-4" />
+                          {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      );
+                    })}
                   </div>
-                )}
-
-                {creator.bio && (
-                  <p className="text-zinc-400 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
-                    {creator.bio}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Intro Video Section */}
-            {creator.tier === 'pro' && (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-3">Intro Video</h3>
-                  <div className="relative bg-zinc-800 rounded-lg aspect-video flex items-center justify-center">
-                    <Play className="h-12 w-12 text-zinc-400" />
-                    <div className="absolute bottom-2 right-2 bg-black/50 rounded px-2 py-1 text-xs">
-                      1:30
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Reasons to Hire Section */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3">Reasons to Hire This Creator</h3>
-                <div className="flex flex-wrap gap-2">
-                  {sampleReasons.map((reason, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {reason}
-                    </Badge>
-                  ))}
+                  <Separator />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
 
-          {/* Right Column - Services and Reviews */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Services Section */}
-            <div>
-              <h2 className="text-xl font-bold mb-4">Available Services</h2>
-              {services && services.length > 0 ? (
+              {/* Bio Section */}
+              {creator.user?.bio && (
+                <div>
+                  <p className="text-sm leading-relaxed">{creator.user.bio}</p>
+                </div>
+              )}
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <div className="font-semibold">{creator.services?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">Services</div>
+                </div>
+                <div>
+                  <div className="font-semibold">{creator.review_count}</div>
+                  <div className="text-xs text-muted-foreground">Reviews</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Services */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Services</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {creator.services && creator.services.length > 0 ? (
                 <div className="grid gap-4">
-                  {services.map((service) => (
-                    <Card key={service.id} className="bg-zinc-900 border-zinc-800">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-2">{service.title}</h3>
-                            {service.description && (
-                              <p className="text-zinc-400 mb-4">{service.description}</p>
-                            )}
-                            
-                            <div className="flex items-center gap-4 text-sm">
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
-                                <span className="font-semibold">${service.price_usdc} USDC</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-zinc-400">
-                                <Clock className="h-4 w-4" />
-                                <span>{service.delivery_days} days delivery</span>
-                              </div>
-                              {service.category && (
-                                <Badge variant="outline">{service.category}</Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <Button 
-                            onClick={() => {
-                              setSelectedService(service);
-                              setShowBookingModal(true);
-                            }}
-                            className="ml-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
-                          >
-                            Book Now
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {creator.services.map((service: any) => (
+                    <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold">{service.title}</h3>
+                        <Badge variant="outline">${service.price_usdc}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {service.description}
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Delivery: {service.delivery_days} days
+                        </span>
+                        <Button size="sm">Book Now</Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="text-center py-8">
-                    <p className="text-zinc-400">No services available at the moment</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Reviews Section */}
-            <div>
-              <h2 className="text-xl font-bold mb-4">Recent Reviews</h2>
-              {reviews && reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <Card key={review.id} className="bg-zinc-900 border-zinc-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={review.reviewer?.avatar_url} alt={review.reviewer?.handle} />
-                            <AvatarFallback className="bg-zinc-800 text-white">
-                              {review.reviewer?.handle?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">@{review.reviewer?.handle}</span>
-                              <div className="flex items-center gap-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-3 w-3 ${
-                                      i < review.rating 
-                                        ? 'fill-yellow-400 text-yellow-400' 
-                                        : 'text-zinc-600'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-xs text-zinc-400">
-                                {format(new Date(review.created_at), 'MMM d, yyyy')}
-                              </span>
-                            </div>
-                            {review.comment && (
-                              <p className="text-zinc-400 text-sm">{review.comment}</p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No services available</p>
                 </div>
-              ) : (
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="text-center py-8">
-                    <p className="text-zinc-400">No reviews yet</p>
-                  </CardContent>
-                </Card>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Booking Modal */}
-      {selectedService && showBookingModal && (
-        <BookingModal
-          service={selectedService}
-          creator={{
-            id: creator.id,
-            user_id: creator.user_id,
-            users: {
-              handle: creator.handle,
-              avatar_url: creator.avatar_url || ''
-            }
-          }}
-          isOpen={showBookingModal}
-          onClose={() => {
-            setShowBookingModal(false);
-            setSelectedService(null);
-          }}
-        />
-      )}
     </div>
   );
 };
