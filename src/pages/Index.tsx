@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessagesList } from '@/components/messaging/MessagesList';
 import { 
   DollarSign, 
   Users, 
@@ -225,6 +225,7 @@ export default function Index() {
           {canAccessCreatorTools && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
+          <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           {userRole === 'admin' && (
             <TabsTrigger value="admin">Admin Panel</TabsTrigger>
@@ -370,6 +371,10 @@ export default function Index() {
             </div>
           </TabsContent>
         )}
+
+        <TabsContent value="messages" className="space-y-6">
+          <MessagesList />
+        </TabsContent>
 
         <TabsContent value="referrals" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">

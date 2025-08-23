@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -58,18 +58,19 @@ export default function Settings() {
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${userProfile?.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // For now, we'll simulate the upload since we don't have storage buckets set up
-      // In a real implementation, you'd upload to Supabase Storage
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setProfileData(prev => ({ ...prev, avatar_url: result }));
-        toast.success('Profile picture updated! Click Save Changes to apply.');
-      };
-      reader.readAsDataURL(file);
+      // Create a temporary URL for immediate preview
+      const tempUrl = URL.createObjectURL(file);
+      setProfileData(prev => ({ ...prev, avatar_url: tempUrl }));
+
+      // For now, we'll use a placeholder URL since storage buckets aren't set up
+      // In production, you would upload to Supabase Storage here
+      const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile?.handle || 'user'}`;
+      setProfileData(prev => ({ ...prev, avatar_url: placeholderUrl }));
+      
+      toast.success('Profile picture updated! Click Save Changes to apply.');
       
     } catch (error: any) {
       toast.error('Error uploading avatar: ' + error.message);
