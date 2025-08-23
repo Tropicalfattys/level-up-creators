@@ -359,12 +359,14 @@ export const CreatorProfile = () => {
               </CardContent>
             </Card>
 
-            {/* About Section */}
+            {/* About Section - Fixed text wrapping */}
             {creator.bio && (
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-3">About</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed">{creator.bio}</p>
+                  <p className="text-zinc-400 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                    {creator.bio}
+                  </p>
                 </CardContent>
               </Card>
             )}

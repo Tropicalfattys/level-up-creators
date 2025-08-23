@@ -154,15 +154,15 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
   }
 
   return (
-    <Card className="h-96 flex flex-col">
-      <CardHeader className="pb-3">
+    <Card className="h-96 flex flex-col overflow-hidden">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-lg">
           Chat with @{otherUser?.handle || 'User'}
         </CardTitle>
         <CardDescription>Direct conversation</CardDescription>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col p-0">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages && messages.length > 0 ? (
@@ -173,7 +173,7 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
                   msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 flex-shrink-0">
                   <AvatarImage src={msg.from_user?.avatar_url} />
                   <AvatarFallback>
                     {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
@@ -186,7 +186,7 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="text-sm">{msg.body}</p>
+                  <p className="text-sm break-words">{msg.body}</p>
                   <p
                     className={`text-xs mt-1 ${
                       msg.from_user_id === user?.id
@@ -207,17 +207,22 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input */}
-        <div className="border-t p-4">
+        {/* Message Input - Fixed alignment */}
+        <div className="border-t p-4 flex-shrink-0">
           <form onSubmit={handleSend} className="flex gap-2">
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1"
+              className="flex-1 min-w-0"
               disabled={sendMessage.isPending}
             />
-            <Button size="sm" type="submit" disabled={sendMessage.isPending || !message.trim()}>
+            <Button 
+              size="sm" 
+              type="submit" 
+              disabled={sendMessage.isPending || !message.trim()}
+              className="flex-shrink-0"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>
