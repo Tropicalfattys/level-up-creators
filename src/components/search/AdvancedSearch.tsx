@@ -21,7 +21,7 @@ interface SearchFilters {
   sortBy: string;
 }
 
-interface Service {
+interface SearchService {
   id: string;
   title: string;
   description: string;
@@ -31,6 +31,25 @@ interface Service {
   creator: {
     handle: string;
     avatar_url?: string;
+  };
+}
+
+interface DetailModalService {
+  id: string;
+  title: string;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
+  creator: {
+    id: string;
+    user_id: string;
+    users: {
+      handle: string;
+      avatar_url?: string;
+    };
+    rating: number;
+    review_count: number;
   };
 }
 
@@ -45,12 +64,12 @@ export const AdvancedSearch = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<DetailModalService | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['advanced-search', filters],
-    queryFn: async (): Promise<Service[]> => {
+    queryFn: async (): Promise<SearchService[]> => {
       let query = supabase
         .from('services')
         .select(`
@@ -141,9 +160,39 @@ export const AdvancedSearch = () => {
     });
   };
 
-  const handleViewDetails = (service: Service) => {
-    setSelectedService(service);
-    setShowDetailModal(true);
+  const handleViewDetails = async (service: SearchService) => {
+    // Fetch full service details for the modal
+    const { data, error } = await supabase
+      .from('services')
+      .select(`
+        id,
+        title,
+        description,
+        price_usdc,
+        delivery_days,
+        category,
+        creators!services_creator_id_fkey (
+          id,
+          user_id,
+          rating,
+          review_count,
+          users (
+            handle,
+            avatar_url
+          )
+        )
+      `)
+      .eq('id', service.id)
+      .single();
+
+    if (!error && data && data.creators) {
+      const detailService: DetailModalService = {
+        ...data,
+        creator: data.creators
+      };
+      setSelectedService(detailService);
+      setShowDetailModal(true);
+    }
   };
 
   const handleCloseModal = () => {

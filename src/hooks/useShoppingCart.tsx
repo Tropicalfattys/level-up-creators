@@ -47,7 +47,7 @@ export const useShoppingCart = () => {
             delivery_days,
             category
           ),
-          creators (
+          creators!shopping_cart_creator_id_fkey (
             user_id,
             users (
               handle,
