@@ -48,19 +48,18 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
     }
   });
 
-  // Get direct messages between users using the messages table
+  // Get direct messages between users using the direct_messages table
   const { data: messages } = useQuery({
     queryKey: ['direct-messages', user?.id, otherUserId],
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
-        .from('messages')
+        .from('direct_messages')
         .select(`
           *,
-          from_user:users!messages_from_user_id_fkey (handle, avatar_url)
+          from_user:users!direct_messages_from_user_id_fkey (handle, avatar_url)
         `)
-        .is('booking_id', null) // Only get direct messages (not booking-related)
         .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${otherUserId}),and(from_user_id.eq.${otherUserId},to_user_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
@@ -78,12 +77,11 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
       if (!user || !messageBody.trim()) return;
 
       const { error } = await supabase
-        .from('messages')
+        .from('direct_messages')
         .insert([{
           from_user_id: user.id,
           to_user_id: otherUserId,
-          body: messageBody.trim(),
-          booking_id: null // Direct message, not linked to a booking
+          body: messageBody.trim()
         }]);
 
       if (error) throw error;
@@ -119,8 +117,7 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
-          filter: `booking_id=is.null`
+          table: 'direct_messages'
         },
         (payload) => {
           // Check if this message is for this conversation
