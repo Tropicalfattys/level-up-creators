@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessagesList } from '@/components/messaging/MessagesList';
 import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
+import { UserDisputes } from '@/components/disputes/UserDisputes';
 import { 
   DollarSign, 
   Users, 
@@ -20,7 +21,8 @@ import {
   Settings,
   Copy,
   Gift,
-  Share2
+  Share2,
+  Shield
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -227,6 +229,7 @@ export default function Index() {
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
           <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="disputes">Disputes</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           {userRole === 'admin' && (
             <TabsTrigger value="admin">Admin Panel</TabsTrigger>
@@ -377,6 +380,10 @@ export default function Index() {
 
         <TabsContent value="messages" className="space-y-6">
           <MessagesList />
+        </TabsContent>
+
+        <TabsContent value="disputes" className="space-y-6">
+          <UserDisputes />
         </TabsContent>
 
         <TabsContent value="referrals" className="space-y-6">
