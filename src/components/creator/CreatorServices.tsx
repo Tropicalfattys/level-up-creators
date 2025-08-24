@@ -5,22 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { MoreVertical, Edit, Trash2 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Copy, Edit, Trash2 } from 'lucide-react';
 import { ServiceForm } from './ServiceForm';
 
 interface Service {
@@ -57,7 +44,7 @@ export const CreatorServices = () => {
     },
   });
 
-  const mutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
         .from('services')
@@ -92,64 +79,110 @@ export const CreatorServices = () => {
   };
 
   const handleDelete = (id: string) => {
-    mutation.mutate(id);
+    deleteMutation.mutate(id);
+  };
+
+  const handleCopy = (service: Service) => {
+    setSelectedService({ ...service, id: undefined, title: `${service.title} (Copy)` });
+    setOpen(true);
   };
 
   if (isLoading) return <div>Loading services...</div>;
   if (isError) return <div>Error fetching services.</div>;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">My Services</h1>
-        <Button onClick={handleOpen}>Add Service</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">My Services</h2>
+          <p className="text-zinc-400">Manage the services you offer to clients</p>
+        </div>
+        <Button onClick={handleOpen} className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+          Add Service
+        </Button>
       </div>
 
       {services && services.length > 0 ? (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price (USDC)</TableHead>
-                <TableHead>Delivery (Days)</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {services.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell>{service.title}</TableCell>
-                  <TableCell>{service.category}</TableCell>
-                  <TableCell>{service.price_usdc}</TableCell>
-                  <TableCell>{service.delivery_days}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(service)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(service.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {services.map((service) => (
+            <Card key={service.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl text-white">{service.title}</CardTitle>
+                  <Badge 
+                    variant={service.active ? "default" : "secondary"}
+                    className={service.active ? "bg-green-600 text-white" : "bg-zinc-700 text-zinc-300"}
+                  >
+                    {service.active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <CardDescription className="text-zinc-400 line-clamp-2">
+                  {service.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Price:</span>
+                    <span className="text-white font-semibold">${service.price_usdc}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Delivery:</span>
+                    <span className="text-white">{service.delivery_days} days</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Category:</span>
+                    <span className="text-white capitalize">{service.category}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopy(service)}
+                    className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(service)}
+                    className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(service.id)}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : (
-        <p>No services created yet.</p>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="text-zinc-400 text-lg">No services created yet</div>
+              <p className="text-zinc-500 text-sm">
+                Create your first service to start offering your expertise to clients
+              </p>
+              <Button onClick={handleOpen} className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                Create Your First Service
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <ServiceForm isOpen={open} onClose={handleClose} service={selectedService || undefined} />
