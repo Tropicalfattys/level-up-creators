@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ServiceForm } from './ServiceForm';
 
 interface Service {
   id: string;
