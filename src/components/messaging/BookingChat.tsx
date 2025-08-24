@@ -157,8 +157,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
       if (uploadError) {
         console.error('Upload error details:', {
           error: uploadError,
-          message: uploadError.message,
-          statusCode: uploadError.statusCode
+          message: uploadError.message
         });
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
