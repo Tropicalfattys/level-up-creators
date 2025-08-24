@@ -12,8 +12,8 @@ import { ExternalLink, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminPayments = () => {
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [networkFilter, setNetworkFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [networkFilter, setNetworkFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const queryClient = useQueryClient();
 
@@ -28,11 +28,11 @@ export const AdminPayments = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
       
-      if (networkFilter) {
+      if (networkFilter && networkFilter !== 'all') {
         query = query.eq('network', networkFilter);
       }
 
@@ -161,7 +161,7 @@ export const AdminPayments = () => {
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="verified">Verified</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
@@ -172,7 +172,7 @@ export const AdminPayments = () => {
                 <SelectValue placeholder="All Networks" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Networks</SelectItem>
+                <SelectItem value="all">All Networks</SelectItem>
                 <SelectItem value="ethereum">Ethereum</SelectItem>
                 <SelectItem value="solana">Solana</SelectItem>
                 <SelectItem value="bsc">BSC</SelectItem>
