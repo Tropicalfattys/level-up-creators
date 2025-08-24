@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,7 @@ interface CreatorWithUser {
 export const AdminCreators = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const queryClient = useQueryClient();
   
   const { data: creators = [], isLoading } = useQuery({
     queryKey: ['admin-creators', statusFilter, searchQuery],

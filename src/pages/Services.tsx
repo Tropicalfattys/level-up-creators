@@ -1,123 +1,138 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceCard } from '@/components/service/ServiceCard';
-import { CategoryFilter } from '@/components/service/CategoryFilter';
-import { SortBy } from '@/components/service/SortBy';
+import { ServiceCard } from '@/components/services/ServiceCard';
+import { CategoryFilter } from '@/components/services/CategoryFilter';
+import { SortBy } from '@/components/services/SortBy';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 
+interface Service {
+  id: string;
+  title: string;
+  description: string | null;
+  price_usdc: number | null;
+  delivery_days: number | null;
+  category: string | null;
+  payment_method: string | null;
+  active: boolean | null;
+  creator_id: string | null;
+  created_at: string | null;
+  creators: {
+    id: string;
+    user_id: string | null;
+    headline: string | null;
+    tier: string | null;
+    rating: number | null;
+    review_count: number | null;
+    users: {
+      handle: string | null;
+      avatar_url: string | null;
+    };
+  } | null;
+}
+
 export default function Services() {
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('priority');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('newest');
 
   const { data: services = [], isLoading } = useQuery({
-    queryKey: ['services', categoryFilter, sortBy],
-    queryFn: async () => {
+    queryKey: ['services', searchQuery, selectedCategory, sortBy],
+    queryFn: async (): Promise<Service[]> => {
       let query = supabase
         .from('services')
         .select(`
           *,
-          creators!inner (
+          creators!services_creator_id_fkey (
             id,
-            approved,
             user_id,
             headline,
             tier,
-            priority_score,
             rating,
             review_count,
             users!creators_user_id_fkey (
-              id,
               handle,
-              avatar_url,
-              bio
+              avatar_url
             )
           )
         `)
-        .eq('active', true)
-        .eq('creators.approved', true);
+        .eq('active', true);
 
-      if (categoryFilter !== 'all') {
-        query = query.eq('category', categoryFilter);
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory);
+      }
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
       // Apply sorting
       switch (sortBy) {
-        case 'price_low':
+        case 'price-low':
           query = query.order('price_usdc', { ascending: true });
           break;
-        case 'price_high':
+        case 'price-high':
           query = query.order('price_usdc', { ascending: false });
           break;
-        case 'rating':
-          query = query.order('creators.rating', { ascending: false });
+        case 'delivery':
+          query = query.order('delivery_days', { ascending: true });
           break;
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
+        case 'rating':
+          query = query.order('rating', { ascending: false, foreignTable: 'creators' });
           break;
         default:
-          query = query.order('creators.priority_score', { ascending: false });
+          query = query.order('created_at', { ascending: false });
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      
-      // Ensure all services have payment_method field
-      return (data || []).map(service => ({
-        ...service,
-        payment_method: service.payment_method || 'ethereum_usdc'
-      }));
+
+      return data || [];
     }
   });
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const filteredServices = searchQuery
-    ? services.filter(service =>
-        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : services;
-
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Explore Services</h1>
-
-      {/* Filters and Sorting */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <CategoryFilter onCategoryChange={setCategoryFilter} />
-        <SortBy onSortByChange={setSortBy} />
-        <div>
-          <Label htmlFor="search">Search Services</Label>
-          <div className="relative">
-            <Input
-              id="search"
-              type="search"
-              placeholder="Search by title or description..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          </div>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Browse Services</h1>
+        <p className="text-muted-foreground">
+          Discover amazing services from crypto creators
+        </p>
       </div>
 
-      {/* Services List */}
+      {/* Search and Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="md:col-span-2 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search services..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+        <SortBy
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
+      </div>
+
+      {/* Services Grid */}
       {isLoading ? (
         <div className="text-center py-8">Loading services...</div>
-      ) : filteredServices.length === 0 ? (
+      ) : services.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           No services found matching your criteria
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map((service) => (
+          {services.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}
         </div>
