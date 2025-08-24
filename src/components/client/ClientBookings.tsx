@@ -5,16 +5,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Link } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, ExternalLink, Link, Star, ThumbsUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link as RouterLink } from 'react-router-dom';
+import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
-interface BookingWithDetails {
+interface ClientBookingWithDetails {
   id: string;
   status: string;
   usdc_amount: number;
@@ -26,25 +25,24 @@ interface BookingWithDetails {
   chain?: string;
   proof_link?: string;
   proof_file_url?: string;
+  creator_id: string;
   services: {
     title: string;
   } | null;
-  client: {
+  creator: {
     handle: string;
     avatar_url?: string;
   } | null;
 }
 
-export const BookingManagement = () => {
+export const ClientBookings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [proofLink, setProofLink] = useState('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [submittingProof, setSubmittingProof] = useState<string | null>(null);
+  const [showReviewFor, setShowReviewFor] = useState<string | null>(null);
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['creator-bookings', user?.id],
-    queryFn: async (): Promise<BookingWithDetails[]> => {
+    queryKey: ['client-bookings', user?.id],
+    queryFn: async (): Promise<ClientBookingWithDetails[]> => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
@@ -52,13 +50,13 @@ export const BookingManagement = () => {
         .select(`
           *,
           services (title),
-          client:users!bookings_client_id_fkey (handle, avatar_url)
+          creator:users!bookings_creator_id_fkey (handle, avatar_url)
         `)
-        .eq('creator_id', user.id)
+        .eq('client_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching bookings:', error);
+        console.error('Error fetching client bookings:', error);
         return [];
       }
       return data || [];
@@ -66,71 +64,13 @@ export const BookingManagement = () => {
     enabled: !!user?.id
   });
 
-  const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status, deliveredAt }: { 
-      bookingId: string; 
-      status: string; 
-      deliveredAt?: string; 
-    }) => {
-      const updateData: any = { status, updated_at: new Date().toISOString() };
-      if (deliveredAt) {
-        updateData.delivered_at = deliveredAt;
-      }
-
-      const { error } = await supabase
-        .from('bookings')
-        .update(updateData)
-        .eq('id', bookingId);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      const statusText = status === 'in_progress' ? 'started' : 
-                        status === 'delivered' ? 'delivered' : 'updated';
-      toast.success(`Booking ${statusText} successfully!`);
-    },
-    onError: (error) => {
-      console.error('Update booking error:', error);
-      toast.error('Failed to update booking status');
-    }
-  });
-
-  const submitProof = useMutation({
-    mutationFn: async ({ bookingId, link, file }: { 
-      bookingId: string; 
-      link?: string; 
-      file?: File; 
-    }) => {
-      let fileUrl = null;
-      
-      // Upload file if provided
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${bookingId}_${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('deliverables')
-          .upload(fileName, file);
-        
-        if (uploadError) throw uploadError;
-        
-        // Get public URL
-        const { data } = supabase.storage
-          .from('deliverables')
-          .getPublicUrl(fileName);
-        
-        fileUrl = data.publicUrl;
-      }
-
-      // Update booking with proof
+  const acceptDelivery = useMutation({
+    mutationFn: async (bookingId: string) => {
       const { error } = await supabase
         .from('bookings')
         .update({
-          status: 'delivered',
-          delivered_at: new Date().toISOString(),
-          proof_link: link || null,
-          proof_file_url: fileUrl,
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', bookingId);
@@ -138,28 +78,14 @@ export const BookingManagement = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      toast.success('Proof submitted and booking marked as delivered!');
-      setProofLink('');
-      setProofFile(null);
-      setSubmittingProof(null);
+      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      toast.success('Delivery accepted! You can now leave a review.');
     },
     onError: (error) => {
-      console.error('Submit proof error:', error);
-      toast.error('Failed to submit proof');
-      setSubmittingProof(null);
+      console.error('Accept delivery error:', error);
+      toast.error('Failed to accept delivery');
     }
   });
-
-  const handleSubmitProof = (bookingId: string) => {
-    if (!proofLink && !proofFile) {
-      toast.error('Please provide either a link or upload a file as proof');
-      return;
-    }
-    
-    setSubmittingProof(bookingId);
-    submitProof.mutate({ bookingId, link: proofLink, file: proofFile || undefined });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -172,66 +98,56 @@ export const BookingManagement = () => {
     }
   };
 
-  const getStatusActions = (booking: BookingWithDetails) => {
+  const getStatusActions = (booking: ClientBookingWithDetails) => {
     switch (booking.status) {
       case 'paid':
         return (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => updateBookingStatus.mutate({ 
-              bookingId: booking.id, 
-              status: 'in_progress' 
-            })}
-            disabled={updateBookingStatus.isPending}
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Start Work
-          </Button>
+          <div className="text-sm text-muted-foreground">
+            Waiting for creator to start work
+          </div>
         );
       case 'in_progress':
         return (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Proof link (optional)"
-                value={submittingProof === booking.id ? proofLink : ''}
-                onChange={(e) => setProofLink(e.target.value)}
-                className="text-xs"
-              />
-              <input
-                type="file"
-                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                className="hidden"
-                id={`file-${booking.id}`}
-              />
-              <Label htmlFor={`file-${booking.id}`} className="cursor-pointer">
-                <Button size="sm" variant="outline" type="button">
-                  <Upload className="h-3 w-3" />
-                </Button>
-              </Label>
-            </div>
-            <Button 
-              size="sm"
-              onClick={() => handleSubmitProof(booking.id)}
-              disabled={submittingProof === booking.id}
-              className="w-full"
-            >
-              {submittingProof === booking.id ? 'Submitting...' : 'Submit Proof & Mark Delivered'}
-            </Button>
+          <div className="text-sm text-muted-foreground">
+            Work in progress
           </div>
         );
       case 'delivered':
         return (
-          <div className="text-sm text-muted-foreground">
-            Waiting for client review
+          <div className="space-y-2">
+            <Button 
+              size="sm"
+              onClick={() => acceptDelivery.mutate(booking.id)}
+              disabled={acceptDelivery.isPending}
+            >
+              <ThumbsUp className="h-3 w-3 mr-1" />
+              Accept Delivery
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setShowReviewFor(booking.id)}
+            >
+              <Star className="h-3 w-3 mr-1" />
+              Leave Review
+            </Button>
           </div>
         );
       case 'accepted':
       case 'released':
         return (
-          <div className="text-sm text-green-600 font-medium">
-            Completed
+          <div className="space-y-2">
+            <div className="text-sm text-green-600 font-medium">
+              Completed
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setShowReviewFor(booking.id)}
+            >
+              <Star className="h-3 w-3 mr-1" />
+              Review
+            </Button>
           </div>
         );
       default:
@@ -259,27 +175,28 @@ export const BookingManagement = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading bookings...</div>;
+    return <div className="text-center py-8">Loading your bookings...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Booking Management</h3>
+        <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
         <p className="text-muted-foreground">
-          Manage your active bookings and deliverables
+          Track your booked services and communicate with creators
         </p>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({bookings?.length || 0})</TabsTrigger>
-          <TabsTrigger value="paid">New ({filterBookings('paid').length})</TabsTrigger>
+          <TabsTrigger value="paid">Pending ({filterBookings('paid').length})</TabsTrigger>
           <TabsTrigger value="in_progress">In Progress ({filterBookings('in_progress').length})</TabsTrigger>
           <TabsTrigger value="delivered">Delivered ({filterBookings('delivered').length})</TabsTrigger>
+          <TabsTrigger value="accepted">Completed ({filterBookings('accepted').length + filterBookings('released').length})</TabsTrigger>
         </TabsList>
 
-        {['all', 'paid', 'in_progress', 'delivered'].map(status => (
+        {['all', 'paid', 'in_progress', 'delivered', 'accepted'].map(status => (
           <TabsContent key={status} value={status} className="space-y-4">
             {filterBookings(status).map((booking) => (
               <Card key={booking.id}>
@@ -289,7 +206,7 @@ export const BookingManagement = () => {
                       <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Client: @{booking.client?.handle || 'Unknown'}
+                        Creator: @{booking.creator?.handle || 'Unknown'}
                       </CardDescription>
                     </div>
                     <div className="text-right">
@@ -308,7 +225,7 @@ export const BookingManagement = () => {
                     {/* Transaction Hash Display */}
                     {booking.tx_hash && (
                       <div className="flex items-center gap-2 text-sm bg-muted/50 p-2 rounded">
-                        <span className="font-medium">TX Hash:</span>
+                        <span className="font-medium">Your TX Hash:</span>
                         <code className="flex-1 text-xs">{booking.tx_hash}</code>
                         {booking.chain && (
                           <Button
@@ -325,7 +242,7 @@ export const BookingManagement = () => {
                     {/* Proof Display */}
                     {(booking.proof_link || booking.proof_file_url) && (
                       <div className="space-y-2">
-                        <span className="text-sm font-medium">Proof of Completion:</span>
+                        <span className="text-sm font-medium">Delivered Work:</span>
                         <div className="flex gap-2">
                           {booking.proof_link && (
                             <Button
@@ -344,7 +261,7 @@ export const BookingManagement = () => {
                               onClick={() => window.open(booking.proof_file_url, '_blank')}
                             >
                               <Upload className="h-3 w-3 mr-1" />
-                              View File
+                              Download File
                             </Button>
                           )}
                         </div>
@@ -374,6 +291,17 @@ export const BookingManagement = () => {
                         {getStatusActions(booking)}
                       </div>
                     </div>
+
+                    {/* Review System */}
+                    {showReviewFor === booking.id && (booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released') && (
+                      <div className="mt-4 pt-4 border-t">
+                        <ReviewSystem 
+                          bookingId={booking.id}
+                          revieweeId={booking.creator_id}
+                          canReview={true}
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

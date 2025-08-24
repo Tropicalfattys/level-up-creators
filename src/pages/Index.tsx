@@ -1,523 +1,119 @@
+
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { Header } from '@/components/layout/Header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessagesList } from '@/components/messaging/MessagesList';
-import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
-import { UserDisputes } from '@/components/disputes/UserDisputes';
-import { 
-  DollarSign, 
-  Users, 
-  Star, 
-  Crown, 
-  TrendingUp,
-  MessageSquare,
-  Calendar,
-  Plus,
-  Clock,
-  Settings,
-  Copy,
-  Gift,
-  Share2,
-  Shield
-} from 'lucide-react';
+import { MessageSquare, ShoppingCart, Users, Star, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
+import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
+import { ReferralSystem } from '@/components/referrals/ReferralSystem';
+import { ClientBookings } from '@/components/client/ClientBookings';
+import { DirectMessageInterface } from '@/components/messaging/DirectMessageInterface';
+import { UserDisputes } from '@/components/disputes/UserDisputes';
 
-export default function Index() {
-  const { user, userRole, loading } = useAuth();
-
-  // Check if user has a creator profile
-  const { data: creatorProfile } = useQuery({
-    queryKey: ['creator-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching creator profile:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  // Get user profile for referral info
-  const { data: userProfile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  console.log('Dashboard state:', { user: !!user, userRole, creatorProfile, approved: creatorProfile?.approved });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+const Index = () => {
+  const { user } = useAuth();
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Welcome to CryptoTalent</h1>
-          <p className="text-muted-foreground mb-6">
-            Please sign in to access your dashboard
-          </p>
-          <Button asChild>
-            <Link to="/auth">Sign In</Link>
-          </Button>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Welcome to Level Up Creators</h1>
+            <p className="text-muted-foreground mb-6">
+              Connect with crypto creators and book personalized services
+            </p>
+            <Link to="/auth">
+              <Button>Get Started</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Determine creator status - check if user has an approved creator profile OR is creator role
-  const hasCreatorProfile = !!creatorProfile;
-  const isApprovedCreator = creatorProfile?.approved === true;
-  const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
-  const canAccessCreatorTools = isApprovedCreator || (userRole === 'creator' && hasCreatorProfile);
-
-  const copyReferralCode = () => {
-    if (userProfile?.referral_code) {
-      navigator.clipboard.writeText(userProfile.referral_code);
-      toast.success('Referral code copied to clipboard!');
-    }
-  };
-
-  const copyReferralLink = () => {
-    if (userProfile?.referral_code) {
-      const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
-      navigator.clipboard.writeText(referralUrl);
-      toast.success('Referral link copied to clipboard!');
-    }
-  };
-
-  const shareOnSocial = (platform: string) => {
-    if (!userProfile?.referral_code) return;
-    
-    const referralUrl = `${window.location.origin}/auth?ref=${userProfile.referral_code}`;
-    const message = "Join CryptoTalent and get access to amazing crypto services!";
-    
-    let shareUrl = '';
-    
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralUrl)}`;
-        break;
-      case 'telegram':
-        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`;
-        break;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's what's happening with your account.
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Welcome back, @{user.handle || 'User'}</h1>
+          <p className="text-muted-foreground">Manage your account and bookings</p>
+        </div>
 
-      {/* Creator Application Status Cards */}
-      {hasPendingApplication && (
-        <Card className="mb-8 border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-700">
-              <Clock className="h-5 w-5" />
-              Creator Application Pending
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              Your creator application is under review. We'll notify you within 3 business days.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="booked">Booked</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="disputes">Disputes</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          </TabsList>
 
-      {isApprovedCreator && (
-        <Card className="mb-8 border-green-200 bg-green-50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-green-700">
-                  <Crown className="h-5 w-5" />
-                  Creator Dashboard Active
-                </CardTitle>
-                <CardDescription className="text-green-600">
-                  You're approved! Access your full creator dashboard to manage services and bookings.
-                </CardDescription>
-              </div>
-              <Button asChild>
-                <Link to="/creator-dashboard">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Creator Dashboard
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Creator Application CTA - Only show if not applied yet and not admin */}
-      {!hasCreatorProfile && userRole !== 'admin' && (
-        <Card className="mb-8 border-primary/20 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-primary" />
-                  Become a Creator
-                </CardTitle>
-                <CardDescription>
-                  Start earning by offering your expertise to the crypto community
-                </CardDescription>
-              </div>
-              <Button asChild>
-                <Link to="/become-creator">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Apply Now
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          {canAccessCreatorTools && (
-            <TabsTrigger value="creator">Creator Tools</TabsTrigger>
-          )}
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-          <TabsTrigger value="disputes">Disputes</TabsTrigger>
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          {userRole === 'admin' && (
-            <TabsTrigger value="admin">Admin Panel</TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Profile</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{userRole || 'Client'}</div>
-                <p className="text-xs text-muted-foreground">Your current role</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Activity</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Recent bookings</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Credits</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                <p className="text-xs text-muted-foreground">Referral credits</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/browse">
-                    <Star className="h-4 w-4 mr-2" />
-                    Browse Services
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Profile Settings
-                  </Link>
-                </Button>
-                {!hasCreatorProfile && userRole !== 'admin' && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <Link to="/become-creator">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Become a Creator
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Link to="/browse">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Users className="mr-2 h-4 w-4" />
+                        Browse Creators
+                      </Button>
                     </Link>
-                  </Button>
-                )}
-                {canAccessCreatorTools && (
-                  <Button className="w-full justify-start" asChild>
-                    <Link to="/creator-dashboard">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Creator Dashboard
+                    <Link to="/services">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Star className="mr-2 h-4 w-4" />
+                        Explore Services
+                      </Button>
                     </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-sm">
-                  No recent activity to show
-                </p>
-              </CardContent>
-            </Card>
-
-            <CreatorsFollowedCard />
-          </div>
-        </TabsContent>
-
-        {canAccessCreatorTools && (
-          <TabsContent value="creator">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Creator Tools</h2>
-                <Button asChild>
-                  <Link to="/creator-dashboard">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Full Dashboard
-                  </Link>
-                </Button>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Services</CardTitle>
-                    <CardDescription>Manage your service offerings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/services">Manage Services</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Bookings</CardTitle>
-                    <CardDescription>Track active bookings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Bookings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Earnings</CardTitle>
-                    <CardDescription>Track your earnings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Earnings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-        )}
-
-        <TabsContent value="messages" className="space-y-6">
-          <MessagesList />
-        </TabsContent>
-
-        <TabsContent value="disputes" className="space-y-6">
-          <UserDisputes />
-        </TabsContent>
-
-        <TabsContent value="referrals" className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  Your Referral Program
-                </CardTitle>
-                <CardDescription>
-                  Earn $1 credit for every successful referral that signs up and makes their first purchase
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
-                  <div className="flex items-center gap-2">
-                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1">
-                      {userProfile?.referral_code || 'Loading...'}
-                    </code>
-                    <Button size="sm" variant="outline" onClick={copyReferralCode}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral link:</p>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-muted px-3 py-2 rounded text-sm flex-1 truncate">
-                      {userProfile?.referral_code ? 
-                        `${window.location.origin}/auth?ref=${userProfile.referral_code}` : 
-                        'Loading...'
-                      }
+                </CardContent>
+              </Card>
+
+              <CreatorsFollowedCard />
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      No recent activity
                     </div>
-                    <Button size="sm" variant="outline" onClick={copyReferralLink}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                    <p className="text-xs text-muted-foreground">Credits Earned</p>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">Friends Referred</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Share on social media:</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('twitter')}>
-                      Twitter
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('facebook')}>
-                      Facebook
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('linkedin')}>
-                      LinkedIn
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('telegram')}>
-                      Telegram
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">1</Badge>
-                  <div>
-                    <p className="font-medium">Share your code or link</p>
-                    <p className="text-sm text-muted-foreground">
-                      Send your referral code or link to friends
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">2</Badge>
-                  <div>
-                    <p className="font-medium">They sign up</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your friend creates an account using your referral
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">3</Badge>
-                  <div>
-                    <p className="font-medium">Earn $1 credit</p>
-                    <p className="text-sm text-muted-foreground">
-                      Get $1 credit when they make their first purchase
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">4</Badge>
-                  <div>
-                    <p className="font-medium">Use your credits</p>
-                    <p className="text-sm text-muted-foreground">
-                      Apply credits to any service on the platform
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {userRole === 'admin' && (
-          <TabsContent value="admin">
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Tools</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link to="/admin">Admin Panel</Link>
-                </Button>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
-        )}
-      </Tabs>
+
+          <TabsContent value="booked">
+            <ClientBookings />
+          </TabsContent>
+
+          <TabsContent value="messages">
+            <DirectMessageInterface />
+          </TabsContent>
+
+          <TabsContent value="disputes">
+            <UserDisputes />
+          </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralSystem />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
-}
+};
+
+export default Index;

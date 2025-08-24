@@ -1,27 +1,25 @@
 
-import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Header } from '@/components/layout/Header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, DollarSign, Users, Star, MessageSquare, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
-import { MessagesList } from '@/components/messaging/MessagesList';
-import { Package, Calendar, DollarSign, RefreshCw, MessageSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ReferralSystem } from '@/components/referrals/ReferralSystem';
+import { DirectMessageInterface } from '@/components/messaging/DirectMessageInterface';
+import { UserDisputes } from '@/components/disputes/UserDisputes';
 
-export default function CreatorDashboard() {
+const CreatorDashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    activeServices: 0,
-    activeBookings: 0,
-    totalEarnings: 0,
-  });
 
-  const { data: creator } = useQuery({
+  const { data: creatorProfile } = useQuery({
     queryKey: ['creator-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -38,190 +36,208 @@ export default function CreatorDashboard() {
       }
       return data;
     },
+    enabled: !!user?.id && user?.role === 'creator'
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['creator-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const [servicesResult, bookingsResult] = await Promise.all([
+        supabase
+          .from('services')
+          .select('id')
+          .eq('creator_id', user.id)
+          .eq('active', true),
+        supabase
+          .from('bookings')
+          .select('usdc_amount, status')
+          .eq('creator_id', user.id)
+      ]);
+
+      const activeServices = servicesResult.data?.length || 0;
+      const totalBookings = bookingsResult.data?.length || 0;
+      const totalEarnings = bookingsResult.data?.reduce((sum, booking) => {
+        if (booking.status === 'released' || booking.status === 'accepted') {
+          return sum + Number(booking.usdc_amount || 0);
+        }
+        return sum;
+      }, 0) || 0;
+
+      return {
+        activeServices,
+        totalBookings,
+        totalEarnings: totalEarnings * 0.85 // 85% after platform fee
+      };
+    },
     enabled: !!user?.id
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) return;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Creator Dashboard</h1>
+            <p className="text-muted-foreground mb-6">
+              Please log in to access your creator dashboard
+            </p>
+            <Link to="/auth">
+              <Button>Login</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      // Fetch active services count
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('*', { count: 'exact' })
-        .eq('creator_id', user.id)
-        .eq('active', true);
-
-      if (servicesError) {
-        console.error('Error fetching active services:', servicesError);
-        return;
-      }
-
-      // Fetch active bookings count
-      const { data: bookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact' })
-        .eq('creator_id', user.id)
-        .in('status', ['paid', 'in_progress', 'delivered']);
-
-      if (bookingsError) {
-        console.error('Error fetching active bookings:', bookingsError);
-        return;
-      }
-
-      // Fetch total earnings - using usdc_amount since creator_amount doesn't exist
-      const { data: earnings, error: earningsError } = await supabase
-        .from('bookings')
-        .select('usdc_amount')
-        .eq('creator_id', user.id)
-        .in('status', ['accepted', 'released']);
-
-      if (earningsError) {
-        console.error('Error fetching earnings:', earningsError);
-        return;
-      }
-
-      // Calculate 85% of total earnings (platform takes 15%)
-      const totalGross = earnings?.reduce((acc, booking) => acc + (booking?.usdc_amount || 0), 0) || 0;
-      const totalEarnings = totalGross * 0.85;
-
-      setStats({
-        activeServices: services?.length || 0,
-        activeBookings: bookings?.length || 0,
-        totalEarnings: totalEarnings,
-      });
-    };
-
-    fetchStats();
-  }, [user?.id]);
+  if (user.role !== 'creator') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Become a Creator</h1>
+            <p className="text-muted-foreground mb-6">
+              You need to apply to become a creator to access this dashboard
+            </p>
+            <Link to="/become-creator">
+              <Button>Apply Now</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      {/* Creator Application Status */}
-      {!creator ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold">Complete Your Creator Profile</h2>
-              <p className="text-muted-foreground">
-                Join our platform as a creator and start offering your services to clients.
-              </p>
-              <Link to="/become-creator">
-                <Button size="lg">
-                  Complete Creator Application
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Creator Dashboard</h1>
+              <p className="text-muted-foreground">Welcome back, @{user.handle}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {creatorProfile && (
+                <Badge variant={creatorProfile.tier === 'elite' ? 'default' : 'secondary'}>
+                  {creatorProfile.tier} Tier
+                </Badge>
+              )}
+              <Link to="/settings">
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
                 </Button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
-      ) : !creator.approved ? (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <RefreshCw className="h-8 w-8 text-yellow-600 animate-spin" />
-              <div>
-                <h3 className="text-lg font-semibold text-yellow-800">
-                  Application Under Review
-                </h3>
-                <p className="text-yellow-700">
-                  Your creator application is being reviewed by our team. You'll receive an email once approved.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Creator Stats Overview */}
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Services</p>
-                    <p className="text-2xl font-bold">{stats.activeServices}</p>
-                  </div>
-                  <Package className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Bookings</p>
-                    <p className="text-2xl font-bold">{stats.activeBookings}</p>
-                  </div>
-                  <Calendar className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
-                    <p className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Rating</p>
-                    <p className="text-2xl font-bold">{creator.rating.toFixed(1)}</p>
-                  </div>
-                  <div className="text-yellow-500">★</div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
+        </div>
 
-          {/* Dashboard Tabs - Using the exact same components as main dashboard */}
-          <Tabs defaultValue="services" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="services" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Services
-              </TabsTrigger>
-              <TabsTrigger value="bookings" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Bookings
-              </TabsTrigger>
-              <TabsTrigger value="earnings" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Earnings
-              </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Messages
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
+            <TabsTrigger value="booked">Booked</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="disputes">Disputes</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="services">
-              <CreatorServices />
-            </TabsContent>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Services</CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.activeServices || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Services available for booking
+                  </p>
+                </CardContent>
+              </Card>
 
-            <TabsContent value="bookings">
-              <BookingManagement />
-            </TabsContent>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalBookings || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    All-time bookings received
+                  </p>
+                </CardContent>
+              </Card>
 
-            <TabsContent value="earnings">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">${stats?.totalEarnings.toFixed(2) || '0.00'}</div>
+                  <p className="text-xs text-muted-foreground">
+                    After platform fees (85%)
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Link to="/services/new">
+                    <Button className="w-full justify-start">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create New Service
+                    </Button>
+                  </Link>
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link to="/creator-profile">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Edit Profile
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
               <EarningsTracker />
-            </TabsContent>
+            </div>
+          </TabsContent>
 
-            <TabsContent value="messages">
-              <MessagesList />
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+          <TabsContent value="services">
+            <CreatorServices />
+          </TabsContent>
+
+          <TabsContent value="booked">
+            <BookingManagement />
+          </TabsContent>
+
+          <TabsContent value="messages">
+            <DirectMessageInterface />
+          </TabsContent>
+
+          <TabsContent value="disputes">
+            <UserDisputes />
+          </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralSystem />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
-}
+};
+
+export default CreatorDashboard;
