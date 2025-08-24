@@ -26,14 +26,17 @@ export default function Services() {
         .from('services')
         .select(`
           *,
-          creators!services_creator_id_fkey(
+          creators (
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users!creators_user_id_fkey(handle, avatar_url)
+            users (
+              handle,
+              avatar_url
+            )
           )
         `)
         .eq('active', true);
@@ -103,7 +106,6 @@ export default function Services() {
           Discover amazing services from verified creators
         </p>
         
-        {/* Advanced Search Component - inline since component props are unclear */}
         <div className="bg-card rounded-lg border p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
