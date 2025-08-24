@@ -165,8 +165,11 @@ export type Database = {
           headline: string | null
           id: string
           intro_video_url: string | null
+          payout_address_bsc: string | null
+          payout_address_cardano: string | null
           payout_address_eth: string | null
           payout_address_sol: string | null
+          payout_address_sui: string | null
           priority_score: number | null
           rating: number | null
           review_count: number | null
@@ -181,8 +184,11 @@ export type Database = {
           headline?: string | null
           id?: string
           intro_video_url?: string | null
+          payout_address_bsc?: string | null
+          payout_address_cardano?: string | null
           payout_address_eth?: string | null
           payout_address_sol?: string | null
+          payout_address_sui?: string | null
           priority_score?: number | null
           rating?: number | null
           review_count?: number | null
@@ -197,8 +203,11 @@ export type Database = {
           headline?: string | null
           id?: string
           intro_video_url?: string | null
+          payout_address_bsc?: string | null
+          payout_address_cardano?: string | null
           payout_address_eth?: string | null
           payout_address_sol?: string | null
+          payout_address_sui?: string | null
           priority_score?: number | null
           rating?: number | null
           review_count?: number | null

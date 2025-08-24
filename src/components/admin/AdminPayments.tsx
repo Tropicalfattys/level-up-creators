@@ -1,347 +1,363 @@
+
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, ExternalLink, Search, Filter } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ExternalLink, Eye, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { NETWORK_CONFIG } from '@/lib/contracts';
-import { useAuth } from '@/hooks/useAuth';
 
-interface PaymentUser {
-  handle: string | null;
-  email: string;
-}
-
-interface PaymentService {
-  title: string;
-}
-
-interface PaymentBooking {
-  id: string;
-}
-
-interface PaymentWithRelations {
+interface Payment {
   id: string;
   user_id: string;
-  creator_id: string | null;
-  service_id: string | null;
-  booking_id: string | null;
-  payment_type: 'service_booking' | 'creator_tier';
+  creator_id?: string;
+  service_id?: string;
+  booking_id?: string;
+  payment_type: string;
   network: string;
-  amount: number;
   currency: string;
+  amount: number;
   tx_hash: string;
-  status: 'pending' | 'verified' | 'rejected';
   admin_wallet_address: string;
+  status: string;
   created_at: string;
-  verified_by: string | null;
-  verified_at: string | null;
-  users: PaymentUser;
-  creator?: PaymentUser;
-  services?: PaymentService;
-  bookings?: PaymentBooking;
+  verified_at?: string;
+  verified_by?: string;
+  users: {
+    handle: string;
+    email: string;
+  };
+  creator?: {
+    users: {
+      handle: string;
+      email: string;
+    };
+  };
+  services?: {
+    title: string;
+    description: string;
+  };
 }
 
 export const AdminPayments = () => {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [networkFilter, setNetworkFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
-  const { data: payments = [], isLoading } = useQuery({
-    queryKey: ['admin-payments', statusFilter, networkFilter, typeFilter, searchQuery],
-    queryFn: async (): Promise<PaymentWithRelations[]> => {
-      let query = supabase
+  const { data: payments, isLoading, refetch } = useQuery({
+    queryKey: ['admin-payments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('payments')
         .select(`
           *,
-          users!payments_user_id_fkey (handle, email),
-          creator:users!payments_creator_id_fkey (handle, email),
-          services (title),
-          bookings (id)
+          users!payments_user_id_fkey(handle, email),
+          creator:users!payments_creator_id_fkey(handle, email),
+          services(title, description)
         `)
         .order('created_at', { ascending: false });
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (networkFilter !== 'all') {
-        query = query.eq('network', networkFilter);
-      }
-
-      if (typeFilter !== 'all') {
-        query = query.eq('payment_type', typeFilter);
-      }
-
-      if (searchQuery) {
-        query = query.or(`tx_hash.ilike.%${searchQuery}%,users.handle.ilike.%${searchQuery}%,users.email.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      
-      // Filter and type-cast the results properly
-      return (data || []).filter(payment => 
-        payment.users && 
-        typeof payment.users === 'object' && 
-        !('error' in payment.users)
-      ).map(payment => ({
-        ...payment,
-        payment_type: payment.payment_type as 'service_booking' | 'creator_tier',
-        status: payment.status as 'pending' | 'verified' | 'rejected'
-      }));
+      return data as Payment[];
     }
   });
 
-  const verifyPayment = useMutation({
-    mutationFn: async ({ paymentId, status }: { paymentId: string; status: 'verified' | 'rejected' }) => {
+  const updatePaymentStatus = async (paymentId: string, status: 'verified' | 'rejected') => {
+    try {
       const { error } = await supabase
         .from('payments')
         .update({
           status,
-          verified_by: user?.id,
-          verified_at: new Date().toISOString()
+          verified_at: status === 'verified' ? new Date().toISOString() : null,
+          verified_by: status === 'verified' ? (await supabase.auth.getUser()).data.user?.id : null
         })
         .eq('id', paymentId);
 
       if (error) throw error;
 
-      // If verifying a service booking, update the booking status
-      const payment = payments.find(p => p.id === paymentId);
-      if (payment && payment.payment_type === 'service_booking' && payment.booking_id && status === 'verified') {
-        const { error: bookingError } = await supabase
-          .from('bookings')
-          .update({ status: 'paid' })
-          .eq('id', payment.booking_id);
-        
-        if (bookingError) throw bookingError;
-      }
-    },
-    onSuccess: () => {
-      toast.success('Payment status updated successfully!');
-      queryClient.invalidateQueries({ queryKey: ['admin-payments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-    },
-    onError: (error: any) => {
+      toast.success(`Payment ${status} successfully`);
+      refetch();
+    } catch (error: any) {
       toast.error('Failed to update payment status: ' + error.message);
-    }
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'verified': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getExplorerUrl = (network: string, txHash: string) => {
-    const networkConfig = NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG];
-    return `${networkConfig.explorerUrl}${txHash}`;
+    const config = NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG];
+    return config ? `${config.explorerUrl}${txHash}` : '#';
   };
 
-  const formatAmount = (amount: number, currency: string) => {
-    return `${amount.toFixed(2)} ${currency}`;
+  const viewPaymentDetails = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setShowDetails(true);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">Loading payments...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const pendingPayments = payments?.filter(p => p.status === 'pending') || [];
+  const verifiedPayments = payments?.filter(p => p.status === 'verified') || [];
+  const rejectedPayments = payments?.filter(p => p.status === 'rejected') || [];
 
   return (
     <div className="space-y-6">
+      {/* Pending Payments */}
       <Card>
         <CardHeader>
-          <CardTitle>Payment Management</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Pending Payments ({pendingPayments.length})
+          </CardTitle>
           <CardDescription>
-            Review and verify user payment submissions
+            Payments requiring verification
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div>
-              <Label>Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+          {pendingPayments.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              No pending payments
             </div>
-
-            <div>
-              <Label>Network</Label>
-              <Select value={networkFilter} onValueChange={setNetworkFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Networks</SelectItem>
-                  <SelectItem value="ethereum">Ethereum</SelectItem>
-                  <SelectItem value="solana">Solana</SelectItem>
-                  <SelectItem value="bsc">BSC</SelectItem>
-                  <SelectItem value="sui">Sui</SelectItem>
-                  <SelectItem value="cardano">Cardano</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Type</Label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="service_booking">Service Booking</SelectItem>
-                  <SelectItem value="creator_tier">Creator Tier</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Search</Label>
-              <Input
-                placeholder="TX hash, user..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Payments List */}
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="text-center py-8">Loading payments...</div>
-            ) : payments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No payments found matching your filters
-              </div>
-            ) : (
-              payments.map((payment) => (
-                <Card key={payment.id} className="p-4">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* Payment Info */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(payment.status)}>
-                          {payment.status.toUpperCase()}
-                        </Badge>
-                        <Badge variant="outline">
-                          {payment.payment_type === 'service_booking' ? 'Service' : 'Creator Tier'}
-                        </Badge>
-                        <div className="flex items-center gap-1">
-                          <span className="text-lg">
-                            {NETWORK_CONFIG[payment.network as keyof typeof NETWORK_CONFIG]?.icon}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {NETWORK_CONFIG[payment.network as keyof typeof NETWORK_CONFIG]?.name}
-                          </span>
-                        </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Network</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{payment.users?.handle}</div>
+                        <div className="text-sm text-muted-foreground">{payment.users?.email}</div>
                       </div>
-
-                      <div className="space-y-1">
-                        <p className="text-sm">
-                          <span className="font-medium">User:</span> {payment.users.handle || payment.users.email}
-                        </p>
-                        {payment.creator && (
-                          <p className="text-sm">
-                            <span className="font-medium">Creator:</span> {payment.creator.handle || payment.creator.email}
-                          </p>
-                        )}
-                        {payment.services && (
-                          <p className="text-sm">
-                            <span className="font-medium">Service:</span> {payment.services.title}
-                          </p>
-                        )}
-                        <p className="text-sm">
-                          <span className="font-medium">Amount:</span> {formatAmount(payment.amount, payment.currency)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Submitted: {formatDate(payment.created_at)}
-                        </p>
-                        {payment.verified_at && (
-                          <p className="text-sm text-muted-foreground">
-                            Verified: {formatDate(payment.verified_at)}
-                          </p>
-                        )}
-                      </div>
-
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {payment.payment_type.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <code className="text-xs bg-muted px-2 py-1 rounded break-all">
-                          {payment.tx_hash}
-                        </code>
+                        <span>{NETWORK_CONFIG[payment.network as keyof typeof NETWORK_CONFIG]?.icon}</span>
+                        <span className="capitalize">{payment.network}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {payment.amount} {payment.currency}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(payment.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(getExplorerUrl(payment.network, payment.tx_hash), '_blank')}
+                          onClick={() => viewPaymentDetails(payment)}
                         >
-                          <ExternalLink className="h-3 w-3" />
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => updatePaymentStatus(payment.id, 'verified')}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                        >
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col justify-center gap-2">
-                      {payment.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => verifyPayment.mutate({ paymentId: payment.id, status: 'verified' })}
-                            disabled={verifyPayment.isPending}
-                            className="flex-1"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Verify
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => verifyPayment.mutate({ paymentId: payment.id, status: 'rejected' })}
-                            disabled={verifyPayment.isPending}
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                      {payment.status !== 'pending' && (
-                        <div className="text-center text-sm text-muted-foreground">
-                          {payment.status === 'verified' ? 'Payment verified' : 'Payment rejected'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      {/* Verified Payments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Verified Payments ({verifiedPayments.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {verifiedPayments.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              No verified payments
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Network</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Verified Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {verifiedPayments.slice(0, 10).map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{payment.users?.handle}</div>
+                        <div className="text-sm text-muted-foreground">{payment.users?.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default">
+                        {payment.payment_type.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{NETWORK_CONFIG[payment.network as keyof typeof NETWORK_CONFIG]?.icon}</span>
+                        <span className="capitalize">{payment.network}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {payment.amount} {payment.currency}
+                    </TableCell>
+                    <TableCell>
+                      {payment.verified_at && new Date(payment.verified_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => viewPaymentDetails(payment)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Payment Details</DialogTitle>
+            <DialogDescription>
+              Complete payment information and verification details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Payment Information</h4>
+                  <div className="text-sm space-y-1">
+                    <div><strong>Amount:</strong> {selectedPayment.amount} {selectedPayment.currency}</div>
+                    <div><strong>Network:</strong> {selectedPayment.network}</div>
+                    <div><strong>Type:</strong> {selectedPayment.payment_type.replace('_', ' ')}</div>
+                    <div><strong>Status:</strong> 
+                      <Badge className="ml-2" variant={selectedPayment.status === 'verified' ? 'default' : 'secondary'}>
+                        {selectedPayment.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">User Information</h4>
+                  <div className="text-sm space-y-1">
+                    <div><strong>User:</strong> {selectedPayment.users?.handle}</div>
+                    <div><strong>Email:</strong> {selectedPayment.users?.email}</div>
+                    {selectedPayment.creator && (
+                      <div><strong>Creator:</strong> {selectedPayment.creator.users?.handle}</div>
+                    )}
+                    {selectedPayment.services && (
+                      <div><strong>Service:</strong> {selectedPayment.services.title}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Transaction Hash</h4>
+                <div className="flex items-center gap-2">
+                  <code className="bg-muted p-2 rounded flex-1 text-xs break-all">
+                    {selectedPayment.tx_hash}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(getExplorerUrl(selectedPayment.network, selectedPayment.tx_hash), '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Admin Wallet Address</h4>
+                <code className="bg-muted p-2 rounded block text-xs break-all">
+                  {selectedPayment.admin_wallet_address}
+                </code>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                <div><strong>Created:</strong> {new Date(selectedPayment.created_at).toLocaleString()}</div>
+                {selectedPayment.verified_at && (
+                  <div><strong>Verified:</strong> {new Date(selectedPayment.verified_at).toLocaleString()}</div>
+                )}
+              </div>
+
+              {selectedPayment.status === 'pending' && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      updatePaymentStatus(selectedPayment.id, 'verified');
+                      setShowDetails(false);
+                    }}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Verify Payment
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      updatePaymentStatus(selectedPayment.id, 'rejected');
+                      setShowDetails(false);
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject Payment
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

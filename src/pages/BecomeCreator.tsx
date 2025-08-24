@@ -1,76 +1,89 @@
+
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Star, Crown } from 'lucide-react';
+import { CreatorPayment } from '@/components/creator/CreatorPayment';
 import { useAuth } from '@/hooks/useAuth';
-import { PlanDisplay } from '@/components/pricing/PlanDisplay';
-import { CreatorPayment } from '@/components/payments/CreatorPayment';
+
+const tiers = [
+  {
+    id: 'basic' as const,
+    name: 'Basic',
+    price: 0,
+    icon: <CheckCircle className="h-8 w-8" />,
+    description: 'Perfect for getting started',
+    features: [
+      'Basic creator profile',
+      'Up to 3 active services',
+      'Standard support',
+      'Basic analytics',
+      'Admin approval required'
+    ],
+    color: 'bg-gray-50'
+  },
+  {
+    id: 'mid' as const,
+    name: 'Premium',
+    price: 25,
+    icon: <Star className="h-8 w-8" />,
+    description: 'Enhanced features for growth',
+    features: [
+      'Enhanced creator profile',
+      'Up to 10 active services',
+      'Priority support',
+      'Advanced analytics',
+      'Featured listing',
+      'Custom branding'
+    ],
+    color: 'bg-blue-50',
+    popular: true
+  },
+  {
+    id: 'pro' as const,
+    name: 'Pro',
+    price: 50,
+    icon: <Crown className="h-8 w-8" />,
+    description: 'Premium features for professionals',
+    features: [
+      'Premium creator profile',
+      'Unlimited active services',
+      'VIP support',
+      'Advanced analytics',
+      'Top featured listing',
+      'Custom branding',
+      'Video introductions',
+      'Priority placement'
+    ],
+    color: 'bg-purple-50'
+  }
+];
 
 export default function BecomeCreator() {
-  const { user, userProfile } = useAuth();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    headline: '',
-    category: '',
-    tier: 'basic'
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const [selectedTier, setSelectedTier] = useState<'basic' | 'mid' | 'pro' | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const { user } = useAuth();
 
-  const createCreatorProfile = useMutation({
-    mutationFn: async (data: any) => {
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('creators')
-        .insert([{
-          user_id: user.id,
-          headline: data.headline,
-          category: data.category,
-          tier: data.tier,
-          approved: false
-        }]);
-        
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Creator profile submitted for review!');
-      queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
-      setStep(3);
-    },
-    onError: (error: any) => {
-      toast.error('Failed to create profile: ' + error.message);
-    }
-  });
-
-  const handleTierPayment = (paymentId: string) => {
-    toast.success('Payment submitted! Your application will be reviewed once payment is verified.');
-    setStep(3);
+  const handleTierSelect = (tier: 'basic' | 'mid' | 'pro') => {
+    setSelectedTier(tier);
+    setShowPayment(true);
   };
 
-  const handleSubmit = () => {
-    if (!formData.headline || !formData.category) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    setIsSubmitting(true);
-    createCreatorProfile.mutate(formData);
+  const handlePaymentSuccess = () => {
+    setShowPayment(false);
+    // Handle successful payment/application
   };
 
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="pt-6 text-center">
-            <p>Please sign in to become a creator</p>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
+            <p className="text-muted-foreground">
+              You need to be signed in to apply as a creator.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -79,162 +92,101 @@ export default function BecomeCreator() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Become a Creator</h1>
-          <p className="text-muted-foreground">
-            Join our platform and start offering your services to clients
-          </p>
-        </div>
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold mb-4">Become a Creator</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Join our marketplace and start offering your services to clients worldwide.
+          Choose the tier that best fits your needs.
+        </p>
+      </div>
 
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                  i <= step
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {i}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {tiers.map((tier) => (
+          <Card 
+            key={tier.id} 
+            className={`relative ${tier.color} ${tier.popular ? 'ring-2 ring-primary' : ''}`}
+          >
+            {tier.popular && (
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                Most Popular
+              </Badge>
+            )}
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4 text-primary">
+                {tier.icon}
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Profile Setup</span>
-            <span>Choose Tier</span>
-            <span>Complete</span>
-          </div>
-        </div>
-
-        {/* Step 1: Profile Setup */}
-        {step === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Your Profile</CardTitle>
-              <CardDescription>
-                Tell us about yourself and what services you'll offer
+              <CardTitle className="text-2xl">{tier.name}</CardTitle>
+              <div className="text-4xl font-bold text-primary">
+                ${tier.price}
+                {tier.price > 0 && <span className="text-lg font-normal text-muted-foreground">/one-time</span>}
+              </div>
+              <CardDescription className="text-base">
+                {tier.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={userProfile?.avatar_url} alt="Profile" />
-                  <AvatarFallback>
-                    {userProfile?.handle?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">@{userProfile?.handle || 'No handle set'}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="headline">Headline *</Label>
-                <Input
-                  id="headline"
-                  value={formData.headline}
-                  onChange={(e) => setFormData(prev => ({ ...prev, headline: e.target.value }))}
-                  placeholder="e.g., Expert Crypto Trader & DeFi Strategist"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select your main category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="trading">Trading</SelectItem>
-                    <SelectItem value="nft">NFT</SelectItem>
-                    <SelectItem value="defi">DeFi</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="development">Development</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <CardContent>
+              <ul className="space-y-3 mb-8">
+                {tier.features.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
               <Button 
-                onClick={() => setStep(2)} 
+                onClick={() => handleTierSelect(tier.id)}
                 className="w-full"
-                disabled={!formData.headline || !formData.category}
+                variant={tier.popular ? 'default' : 'outline'}
+                size="lg"
               >
-                Continue to Tier Selection
+                {tier.price === 0 ? 'Apply Free' : `Apply for $${tier.price}`}
               </Button>
             </CardContent>
           </Card>
-        )}
-
-        {/* Step 2: Tier Selection */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Choose Your Tier</CardTitle>
-                <CardDescription>
-                  Select a membership tier to unlock different features and benefits
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PlanDisplay 
-                  onPlanSelect={(tier) => {
-                    setFormData(prev => ({ ...prev, tier }));
-                    if (tier === 'basic') {
-                      handleSubmit();
-                    }
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            {formData.tier !== 'basic' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Complete Payment</CardTitle>
-                  <CardDescription>
-                    Pay for your {formData.tier} tier to unlock premium features
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CreatorPayment 
-                    tier={formData.tier}
-                    onPaymentSubmitted={handleTierPayment}
-                    creatorId={user.id}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Complete */}
-        {step === 3 && (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
-              <h2 className="text-2xl font-bold mb-2">Application Submitted!</h2>
-              <p className="text-muted-foreground mb-6">
-                Your creator application has been submitted for review. You'll receive an email notification once it's approved.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" asChild>
-                  <a href="/">Return Home</a>
-                </Button>
-                <Button asChild>
-                  <a href="/settings">Complete Profile</a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        ))}
       </div>
+
+      <div className="mt-16 text-center">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>What happens next?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-primary font-bold">1</span>
+                </div>
+                <h3 className="font-semibold mb-2">Apply</h3>
+                <p className="text-muted-foreground">Complete your application and make payment if required</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-primary font-bold">2</span>
+                </div>
+                <h3 className="font-semibold mb-2">Review</h3>
+                <p className="text-muted-foreground">Our team reviews your application within 24-48 hours</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-primary font-bold">3</span>
+                </div>
+                <h3 className="font-semibold mb-2">Start</h3>
+                <p className="text-muted-foreground">Get approved and start listing your services</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {selectedTier && (
+        <CreatorPayment
+          isOpen={showPayment}
+          onClose={() => setShowPayment(false)}
+          onPaymentSuccess={handlePaymentSuccess}
+          tier={selectedTier}
+        />
+      )}
     </div>
   );
 }

@@ -5,68 +5,73 @@ import { supabase } from '@/integrations/supabase/client';
 import { ServiceCard } from '@/components/services/ServiceCard';
 import { CategoryFilter } from '@/components/services/CategoryFilter';
 import { SortBy } from '@/components/services/SortBy';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { AdvancedSearch } from '@/components/search/AdvancedSearch';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Service {
   id: string;
   title: string;
-  description: string | null;
-  price_usdc: number | null;
-  delivery_days: number | null;
-  category: string | null;
-  payment_method: string | null;
-  active: boolean | null;
-  creator_id: string | null;
-  created_at: string | null;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
+  payment_method: string;
+  active: boolean;
+  creator_id: string;
+  created_at: string;
+  updated_at: string;
   creators: {
     id: string;
-    user_id: string | null;
-    headline: string | null;
-    tier: string | null;
-    rating: number | null;
-    review_count: number | null;
+    user_id: string;
+    headline: string;
+    tier: string;
+    rating: number;
+    review_count: number;
     users: {
-      handle: string | null;
-      avatar_url: string | null;
+      handle: string;
+      avatar_url: string;
     };
-  } | null;
+  };
 }
 
 export default function Services() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
 
-  const { data: services = [], isLoading } = useQuery({
-    queryKey: ['services', searchQuery, selectedCategory, sortBy],
-    queryFn: async (): Promise<Service[]> => {
+  const { data: services, isLoading, error } = useQuery({
+    queryKey: ['services', selectedCategory, sortBy, searchQuery, priceRange],
+    queryFn: async () => {
       let query = supabase
         .from('services')
         .select(`
           *,
-          creators!services_creator_id_fkey (
+          creators!inner(
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users!creators_user_id_fkey (
-              handle,
-              avatar_url
-            )
+            users!inner(handle, avatar_url)
           )
         `)
         .eq('active', true);
 
-      if (selectedCategory !== 'all') {
+      // Apply category filter
+      if (selectedCategory) {
         query = query.eq('category', selectedCategory);
       }
 
+      // Apply search query
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        query = query.or(`title.ilike.%${searchQuery}%, description.ilike.%${searchQuery}%`);
       }
+
+      // Apply price range filter
+      query = query.gte('price_usdc', priceRange[0]).lte('price_usdc', priceRange[1]);
 
       // Apply sorting
       switch (sortBy) {
@@ -76,11 +81,11 @@ export default function Services() {
         case 'price-high':
           query = query.order('price_usdc', { ascending: false });
           break;
+        case 'rating':
+          query = query.order('creators(rating)', { ascending: false });
+          break;
         case 'delivery':
           query = query.order('delivery_days', { ascending: true });
-          break;
-        case 'rating':
-          query = query.order('rating', { ascending: false, foreignTable: 'creators' });
           break;
         default:
           query = query.order('created_at', { ascending: false });
@@ -88,55 +93,84 @@ export default function Services() {
 
       const { data, error } = await query;
       if (error) throw error;
-
-      return data || [];
+      
+      return data as Service[];
     }
   });
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-600">Error loading services: {error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Browse Services</h1>
-        <p className="text-muted-foreground">
-          Discover amazing services from crypto creators
+        <h1 className="text-3xl font-bold mb-4">Browse Services</h1>
+        <p className="text-muted-foreground mb-6">
+          Discover amazing services from verified creators
         </p>
+        
+        <AdvancedSearch
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          priceRange={priceRange}
+          onPriceRangeChange={setPriceRange}
+        />
       </div>
 
-      {/* Search and Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="md:col-span-2 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-64 space-y-4">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
+          <SortBy
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
         </div>
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-        />
-        <SortBy
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-        />
-      </div>
 
-      {/* Services Grid */}
-      {isLoading ? (
-        <div className="text-center py-8">Loading services...</div>
-      ) : services.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          No services found matching your criteria
+        <div className="flex-1">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-48 w-full mb-4" />
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : services && services.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No services found matching your criteria.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service) => (
-            <ServiceCard key={service.id} service={service} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
