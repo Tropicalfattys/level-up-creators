@@ -9,11 +9,11 @@ import { Link } from 'react-router-dom';
 import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
 import { ReferralSystem } from '@/components/referrals/ReferralSystem';
 import { ClientBookings } from '@/components/client/ClientBookings';
-import { DirectMessageInterface } from '@/components/messaging/DirectMessageInterface';
 import { UserDisputes } from '@/components/disputes/UserDisputes';
+import { ChatList } from '@/components/messaging/ChatList';
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   if (!user) {
     return (
@@ -39,7 +39,7 @@ const Index = () => {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Welcome back, @{user.handle || 'User'}</h1>
+          <h1 className="text-2xl font-bold">Welcome back, @{userProfile?.handle || 'User'}</h1>
           <p className="text-muted-foreground">Manage your account and bookings</p>
         </div>
 
@@ -100,7 +100,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="messages">
-            <DirectMessageInterface />
+            <ChatList />
           </TabsContent>
 
           <TabsContent value="disputes">

@@ -13,11 +13,11 @@ import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { ReferralSystem } from '@/components/referrals/ReferralSystem';
-import { DirectMessageInterface } from '@/components/messaging/DirectMessageInterface';
 import { UserDisputes } from '@/components/disputes/UserDisputes';
+import { ChatList } from '@/components/messaging/ChatList';
 
 const CreatorDashboard = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const { data: creatorProfile } = useQuery({
     queryKey: ['creator-profile', user?.id],
@@ -36,7 +36,7 @@ const CreatorDashboard = () => {
       }
       return data;
     },
-    enabled: !!user?.id && user?.role === 'creator'
+    enabled: !!user?.id && userProfile?.role === 'creator'
   });
 
   const { data: stats } = useQuery({
@@ -93,7 +93,7 @@ const CreatorDashboard = () => {
     );
   }
 
-  if (user.role !== 'creator') {
+  if (userProfile?.role !== 'creator') {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -120,7 +120,7 @@ const CreatorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Creator Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, @{user.handle}</p>
+              <p className="text-muted-foreground">Welcome back, @{userProfile?.handle}</p>
             </div>
             <div className="flex items-center gap-2">
               {creatorProfile && (
@@ -224,7 +224,7 @@ const CreatorDashboard = () => {
           </TabsContent>
 
           <TabsContent value="messages">
-            <DirectMessageInterface />
+            <ChatList />
           </TabsContent>
 
           <TabsContent value="disputes">
