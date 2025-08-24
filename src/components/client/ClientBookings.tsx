@@ -1,15 +1,16 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Upload, Hash } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Upload, Hash, Copy, CheckCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { ReviewSystem } from '@/components/reviews/ReviewSystem';
+import { toast } from 'sonner';
 
 interface ClientBookingWithDetails {
   id: string;
@@ -33,6 +34,7 @@ interface ClientBookingWithDetails {
 
 export const ClientBookings = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['client-bookings', user?.id],
@@ -58,6 +60,64 @@ export const ClientBookings = () => {
     enabled: !!user?.id
   });
 
+  const acceptBooking = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      toast.success('Booking accepted successfully!');
+    },
+    onError: (error) => {
+      console.error('Accept booking error:', error);
+      toast.error('Failed to accept booking');
+    }
+  });
+
+  const createDispute = useMutation({
+    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason: string }) => {
+      const { error } = await supabase
+        .from('disputes')
+        .insert({
+          booking_id: bookingId,
+          opened_by: 'client',
+          reason: reason || 'Delivery does not meet requirements',
+          status: 'open'
+        });
+
+      if (error) throw error;
+
+      // Update booking status to disputed
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .update({ status: 'disputed' })
+        .eq('id', bookingId);
+
+      if (bookingError) throw bookingError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      toast.success('Dispute created successfully');
+    },
+    onError: (error) => {
+      console.error('Create dispute error:', error);
+      toast.error('Failed to create dispute');
+    }
+  });
+
+  const copyTxHash = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    toast.success('Transaction hash copied to clipboard');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
@@ -65,7 +125,53 @@ export const ClientBookings = () => {
       case 'delivered': return 'secondary';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
+      case 'disputed': return 'destructive';
       default: return 'secondary';
+    }
+  };
+
+  const getStatusActions = (booking: ClientBookingWithDetails) => {
+    switch (booking.status) {
+      case 'delivered':
+        return (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => acceptBooking.mutate(booking.id)}
+              disabled={acceptBooking.isPending}
+            >
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Accept
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => createDispute.mutate({ 
+                bookingId: booking.id, 
+                reason: 'Delivery does not meet requirements' 
+              })}
+              disabled={createDispute.isPending}
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Dispute
+            </Button>
+          </div>
+        );
+      case 'accepted':
+      case 'released':
+        return (
+          <div className="text-sm text-green-600 font-medium">
+            Completed
+          </div>
+        );
+      case 'disputed':
+        return (
+          <div className="text-sm text-orange-600 font-medium">
+            Under Review
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -111,7 +217,17 @@ export const ClientBookings = () => {
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <Hash className="h-3 w-3" />
-                          TX: {booking.tx_hash.slice(0, 10)}...{booking.tx_hash.slice(-6)}
+                          <span className="font-mono text-xs">
+                            TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                          </span>
+                          <Button
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => copyTxHash(booking.tx_hash!)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
                         </CardDescription>
                       )}
                     </div>
@@ -150,8 +266,8 @@ export const ClientBookings = () => {
                     </div>
                   )}
 
-                  {/* Review System for delivered bookings */}
-                  {booking.status === 'delivered' && booking.creator?.id && (
+                  {/* Review System for accepted/completed bookings */}
+                  {(booking.status === 'accepted' || booking.status === 'released') && booking.creator?.id && (
                     <div className="mb-4">
                       <ReviewSystem 
                         bookingId={booking.id}
@@ -174,13 +290,14 @@ export const ClientBookings = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <Link to={`/chat/${booking.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageSquare className="h-3 w-3 mr-1" />
                           Chat
                         </Button>
                       </Link>
+                      {getStatusActions(booking)}
                     </div>
                   </div>
                 </CardContent>

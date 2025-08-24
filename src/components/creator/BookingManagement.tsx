@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -139,6 +140,11 @@ export const BookingManagement = () => {
     });
   };
 
+  const copyTxHash = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    toast.success('Transaction hash copied to clipboard');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
@@ -263,7 +269,17 @@ export const BookingManagement = () => {
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <Hash className="h-3 w-3" />
-                          TX: {booking.tx_hash.slice(0, 10)}...{booking.tx_hash.slice(-6)}
+                          <span className="font-mono text-xs">
+                            TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                          </span>
+                          <Button
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => copyTxHash(booking.tx_hash!)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
                         </CardDescription>
                       )}
                     </div>

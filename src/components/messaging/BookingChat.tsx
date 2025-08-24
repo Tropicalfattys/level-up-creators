@@ -62,7 +62,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const sendMessage = useMutation({
     mutationFn: async ({ messageBody, attachments }: { messageBody: string; attachments?: any }) => {
-      if (!user || (!messageBody.trim() && !attachments)) return;
+      if (!user || (!messageBody.trim() && (!attachments || attachments.length === 0))) return;
 
       const messageData: any = {
         booking_id: bookingId,
@@ -86,7 +86,8 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
       setPendingAttachments([]);
       queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Failed to send message:', error);
       toast.error('Failed to send message');
     }
   });
@@ -103,6 +104,10 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const handleAttachmentAdd = (attachment: any) => {
     setPendingAttachments(prev => [...prev, attachment]);
+  };
+
+  const handleAttachmentRemove = (attachmentId: string) => {
+    setPendingAttachments(prev => prev.filter(att => att.id !== attachmentId));
   };
 
   useEffect(() => {
@@ -191,10 +196,20 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         {/* Pending Attachments Preview */}
         {pendingAttachments.length > 0 && (
           <div className="border-t p-4 bg-muted/30">
-            <MessageAttachments 
-              attachments={pendingAttachments}
-              canUpload={false}
-            />
+            <div className="space-y-2">
+              {pendingAttachments.map((attachment) => (
+                <div key={attachment.id} className="flex items-center justify-between p-2 bg-background rounded">
+                  <span className="text-sm truncate">{attachment.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleAttachmentRemove(attachment.id)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -214,7 +229,11 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
               className="flex-1"
               disabled={sendMessage.isPending}
             />
-            <Button size="sm" type="submit" disabled={sendMessage.isPending || (!message.trim() && pendingAttachments.length === 0)}>
+            <Button 
+              size="sm" 
+              type="submit" 
+              disabled={sendMessage.isPending || (!message.trim() && pendingAttachments.length === 0)}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>
