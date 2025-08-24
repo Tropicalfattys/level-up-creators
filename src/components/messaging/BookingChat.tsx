@@ -180,7 +180,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   }
 
   return (
-    <Card className="h-96 flex flex-col">
+    <Card className="w-full">
       <CardHeader className="pb-3 border-b">
         <div className="flex items-center justify-between">
           <div>
@@ -198,14 +198,14 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-64">
+      <CardContent className="p-0">
+        {/* Messages Area - Fixed height with scroll */}
+        <div className="h-64 overflow-y-auto p-4 space-y-3">
           {messages && messages.length > 0 ? (
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2 max-w-full ${
+                className={`flex gap-2 ${
                   msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
@@ -215,28 +215,28 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                     {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 max-w-xs">
                   <div
-                    className={`inline-block max-w-xs px-3 py-2 rounded-lg break-words ${
+                    className={`inline-block px-3 py-2 rounded-lg ${
                       msg.from_user_id === user?.id
-                        ? 'bg-primary text-primary-foreground ml-auto'
-                        : 'bg-muted text-foreground'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
                     
                     {/* Message Attachments */}
                     {msg.attachments?.files && Array.isArray(msg.attachments.files) && (
                       <div className="mt-2 space-y-1">
                         {msg.attachments.files.map((attachment: any, index: number) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-background/10 rounded text-xs">
+                          <div key={index} className="flex items-center gap-2 p-2 bg-white/10 rounded text-xs">
                             {getFileIcon(attachment.type)}
                             <span className="flex-1 truncate">{attachment.name}</span>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => downloadFile(attachment)}
-                              className="h-6 w-6 p-0"
+                              className="h-6 w-6 p-0 hover:bg-white/20"
                             >
                               <Download className="h-3 w-3" />
                             </Button>
@@ -260,7 +260,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input */}
+        {/* Message Input - Fixed at bottom */}
         <div className="border-t p-3">
           <form onSubmit={handleSend} className="space-y-2">
             <div className="flex gap-2">
