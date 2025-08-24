@@ -8,32 +8,7 @@ import { SortBy } from '@/components/services/SortBy';
 import { AdvancedSearch } from '@/components/search/AdvancedSearch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category: string;
-  payment_method: string;
-  active: boolean;
-  creator_id: string;
-  created_at: string;
-  updated_at: string;
-  creators: {
-    id: string;
-    user_id: string;
-    headline: string;
-    tier: string;
-    rating: number;
-    review_count: number;
-    users: {
-      handle: string;
-      avatar_url: string;
-    };
-  };
-}
+import type { Service } from '@/types/database';
 
 export default function Services() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -48,14 +23,14 @@ export default function Services() {
         .from('services')
         .select(`
           *,
-          creators!inner(
+          creators!services_creator_id_fkey(
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users!inner(handle, avatar_url)
+            users!creators_user_id_fkey(handle, avatar_url)
           )
         `)
         .eq('active', true);
@@ -156,7 +131,20 @@ export default function Services() {
               {services.map((service) => (
                 <ServiceCard
                   key={service.id}
-                  service={service}
+                  service={{
+                    id: service.id,
+                    title: service.title,
+                    description: service.description,
+                    price_usdc: service.price_usdc,
+                    delivery_days: service.delivery_days,
+                    category: service.category,
+                    payment_method: service.payment_method,
+                    creator: {
+                      handle: service.creators.users.handle,
+                      avatar_url: service.creators.users.avatar_url,
+                      rating: service.creators.rating,
+                    }
+                  }}
                 />
               ))}
             </div>

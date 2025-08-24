@@ -50,7 +50,7 @@ export const AdminCreators = () => {
         .from('creators')
         .select(`
           *,
-          users!inner(*)
+          users!creators_user_id_fkey(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -186,6 +186,12 @@ export const AdminCreators = () => {
               ))}
             </TableBody>
           </Table>
+
+          {(!creators || creators.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground">
+              No creators found.
+            </div>
+          )}
         </CardContent>
       </Card>
 
