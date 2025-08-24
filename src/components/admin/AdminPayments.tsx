@@ -24,7 +24,9 @@ export const AdminPayments = () => {
         .from('payments')
         .select(`
           *,
-          users!payments_user_id_fkey(handle, email)
+          payer:users!payments_user_id_fkey(handle, email),
+          creator:users!payments_creator_id_fkey(handle, email),
+          service:services!payments_service_id_fkey(title, price_usdc)
         `)
         .order('created_at', { ascending: false });
 
@@ -45,49 +47,6 @@ export const AdminPayments = () => {
       
       return data;
     }
-  });
-
-  // Separate queries for creator and service details
-  const { data: creatorsData } = useQuery({
-    queryKey: ['payment-creators', payments],
-    queryFn: async () => {
-      if (!payments?.length) return {};
-      
-      const creatorIds = [...new Set(payments.map(p => p.creator_id).filter(Boolean))];
-      if (!creatorIds.length) return {};
-      
-      const { data } = await supabase
-        .from('creators')
-        .select('id, users!creators_user_id_fkey(handle, email)')
-        .in('id', creatorIds);
-      
-      return data?.reduce((acc, creator) => {
-        acc[creator.id] = creator;
-        return acc;
-      }, {} as Record<string, any>) || {};
-    },
-    enabled: !!payments?.length
-  });
-
-  const { data: servicesData } = useQuery({
-    queryKey: ['payment-services', payments],
-    queryFn: async () => {
-      if (!payments?.length) return {};
-      
-      const serviceIds = [...new Set(payments.map(p => p.service_id).filter(Boolean))];
-      if (!serviceIds.length) return {};
-      
-      const { data } = await supabase
-        .from('services')
-        .select('id, title, price_usdc')
-        .in('id', serviceIds);
-      
-      return data?.reduce((acc, service) => {
-        acc[service.id] = service;
-        return acc;
-      }, {} as Record<string, any>) || {};
-    },
-    enabled: !!payments?.length
   });
 
   const updatePaymentStatus = async (paymentId: string, status: string) => {
@@ -121,9 +80,7 @@ export const AdminPayments = () => {
     return explorers[network as keyof typeof explorers] || '#';
   };
 
-  const loading = isLoading;
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -197,87 +154,82 @@ export const AdminPayments = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments?.map((payment) => {
-                const creator = creatorsData?.[payment.creator_id];
-                const service = servicesData?.[payment.service_id];
-                
-                return (
-                  <TableRow key={payment.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
-                        </code>
+              {payments?.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => window.open(getExplorerUrl(payment.network, payment.tx_hash), '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{payment.payer?.handle || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">{payment.payer?.email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{payment.creator?.handle || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">{payment.creator?.email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{payment.service?.title || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">${payment.service?.price_usdc || payment.amount}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">${payment.amount}</div>
+                    <div className="text-sm text-muted-foreground">{payment.currency}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{payment.network}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={
+                        payment.status === 'verified' ? 'default' : 
+                        payment.status === 'rejected' ? 'destructive' : 
+                        'secondary'
+                      }
+                    >
+                      {payment.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(payment.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {payment.status === 'pending' && (
+                      <div className="flex gap-2">
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(getExplorerUrl(payment.network, payment.tx_hash), '_blank')}
+                          onClick={() => updatePaymentStatus(payment.id, 'verified')}
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          Verify
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                        >
+                          Reject
                         </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{payment.users?.handle || 'Unknown'}</div>
-                        <div className="text-sm text-muted-foreground">{payment.users?.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{creator?.users?.handle || 'Unknown'}</div>
-                        <div className="text-sm text-muted-foreground">{creator?.users?.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{service?.title || 'Unknown'}</div>
-                        <div className="text-sm text-muted-foreground">${service?.price_usdc || payment.amount}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">${payment.amount}</div>
-                      <div className="text-sm text-muted-foreground">{payment.currency}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{payment.network}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          payment.status === 'verified' ? 'default' : 
-                          payment.status === 'rejected' ? 'destructive' : 
-                          'secondary'
-                        }
-                      >
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(payment.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {payment.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => updatePaymentStatus(payment.id, 'verified')}
-                          >
-                            Verify
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => updatePaymentStatus(payment.id, 'rejected')}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
 
