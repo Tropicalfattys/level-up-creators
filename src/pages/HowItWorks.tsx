@@ -70,8 +70,10 @@ export default function HowItWorks() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">ETH</Badge>
-                      <Badge variant="outline">BASE</Badge>
+                      <Badge variant="outline">SUI</Badge>
                       <Badge variant="outline">SOL</Badge>
+                      <Badge variant="outline">BSC</Badge>
+                      <Badge variant="outline">Cardano</Badge>
                       <span>Choose your preferred blockchain</span>
                     </div>
                   </div>
@@ -100,13 +102,12 @@ export default function HowItWorks() {
                     <CardTitle className="text-2xl">Pay with Crypto</CardTitle>
                   </div>
                   <CardDescription className="text-lg mb-6">
-                    Connect your wallet and pay instantly with USDC. We support MetaMask for 
-                    Ethereum/Base and Phantom for Solana.
+                    Easily complete your order with secure crypto payments.
                   </CardDescription>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5 text-green-600" />
-                      <span>Secure wallet connection</span>
+                      <span>Send payment manually from your wallet to our escrow wallet</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-green-600" />
@@ -132,7 +133,7 @@ export default function HowItWorks() {
                     <CardTitle className="text-2xl">Chat & Collaborate</CardTitle>
                   </div>
                   <CardDescription className="text-lg mb-6">
-                    Once booked, a private chat opens between you and the creator. 
+                    Connect with your creator right away and share project details.
                     Share details, requirements, and track progress in real-time.
                   </CardDescription>
                   <div className="space-y-3">
@@ -142,11 +143,11 @@ export default function HowItWorks() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Upload className="h-5 w-5 text-blue-600" />
-                      <span>Share files and requirements</span>
+                      <span>Share requirements and expectations</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-blue-600" />
-                      <span>Track delivery timeline</span>
+                      <span>Track progress from start to finish</span>
                     </div>
                   </div>
                 </CardHeader>
