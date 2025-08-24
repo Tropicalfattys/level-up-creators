@@ -21,7 +21,17 @@ interface Service {
   delivery_days: number;
   category: string;
   payment_method: string;
-  creator_id: string;
+  creator_id?: string; // Make this optional since it might come from creator structure
+  creator?: {
+    id: string;
+    user_id: string;
+    users: {
+      handle: string;
+      avatar_url: string;
+    };
+    rating: number;
+    review_count?: number;
+  };
 }
 
 interface Creator {
@@ -50,12 +60,23 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
     mutationFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
+      // Get the correct creator_id - either from service.creator_id or from the nested creator structure
+      const creatorId = service.creator_id || service.creator?.user_id || creator.user_id;
+      
+      console.log('Creating booking with data:', {
+        client_id: user.id,
+        creator_id: creatorId,
+        service_id: service.id,
+        usdc_amount: service.price_usdc,
+        status: 'pending'
+      });
+
       // Create booking with pending status
       const { data: booking, error } = await supabase
         .from('bookings')
         .insert({
           client_id: user.id,
-          creator_id: service.creator_id,
+          creator_id: creatorId,
           service_id: service.id,
           usdc_amount: service.price_usdc,
           status: 'pending'
@@ -63,16 +84,20 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Booking creation error details:', error);
+        throw error;
+      }
       return booking;
     },
     onSuccess: (booking) => {
+      console.log('Booking created successfully:', booking);
       setBookingId(booking.id);
       setStep('payment');
     },
     onError: (error: any) => {
       console.error('Booking creation error:', error);
-      toast.error('Failed to create booking: ' + error.message);
+      toast.error('Failed to create booking: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -127,6 +152,9 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
   }
 
   if (step === 'payment' && bookingId) {
+    // Get the correct creator_id for payment instructions
+    const creatorId = service.creator_id || service.creator?.user_id || creator.user_id;
+    
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl">
@@ -140,7 +168,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
             paymentMethod={service.payment_method}
             amount={service.price_usdc}
             serviceId={service.id}
-            creatorId={service.creator_id}
+            creatorId={creatorId}
             bookingId={bookingId}
             paymentType="service_booking"
             onPaymentSubmitted={handlePaymentSubmitted}
