@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -234,15 +235,23 @@ export const BookingManagement = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Action Buttons Section - Above Chat */}
+                {/* Project Actions Section */}
                 <div className="border rounded-lg p-4 bg-muted/20">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       Project Actions
                     </h4>
-                    <div className="flex gap-2">
-                      {booking.status === 'paid' && (
+                  </div>
+
+                  {/* Action Buttons and Content */}
+                  <div className="space-y-4">
+                    {/* Status-specific buttons and content */}
+                    {booking.status === 'paid' && (
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Ready to start work on this project
+                        </div>
                         <Button 
                           size="sm" 
                           variant="default"
@@ -255,64 +264,98 @@ export const BookingManagement = () => {
                           <Play className="h-3 w-3 mr-1" />
                           Start Work
                         </Button>
-                      )}
-                      
-                      {booking.status === 'in_progress' && (
-                        <div className="text-sm text-blue-600 font-medium">
-                          Add proof links below to mark as delivered
+                      </div>
+                    )}
+                    
+                    {booking.status === 'in_progress' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-blue-600 font-medium">
+                            Project in progress - Add proof links below to mark as delivered
+                          </div>
                         </div>
-                      )}
-                      
-                      {booking.status === 'delivered' && (
-                        <div className="text-sm text-orange-600 font-medium">
-                          Waiting for client review
+                        
+                        {/* Proof Submission Form */}
+                        <ProofSubmission
+                          bookingId={booking.id}
+                          currentProof={{
+                            link: booking.proof_link,
+                            fileUrl: booking.proof_file_url
+                          }}
+                          onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
+                          isSubmitting={updateBookingStatus.isPending}
+                        />
+                      </div>
+                    )}
+                    
+                    {booking.status === 'delivered' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-orange-600 font-medium flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Work delivered - Waiting for client review
+                          </div>
                         </div>
-                      )}
-                      
-                      {(booking.status === 'accepted' || booking.status === 'released') && (
-                        <div className="text-sm text-green-600 font-medium flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Completed
+                        
+                        {/* Display submitted proof */}
+                        {(booking.proof_link || booking.proof_file_url) && (
+                          <div className="p-3 bg-background rounded border">
+                            <p className="text-sm font-medium mb-2">Submitted Proof:</p>
+                            {booking.proof_link && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <ExternalLink className="h-3 w-3" />
+                                <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                  View Proof Link
+                                </a>
+                              </div>
+                            )}
+                            {booking.proof_file_url && (
+                              <div className="flex items-center gap-2">
+                                <Upload className="h-3 w-3" />
+                                <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                  View Proof File
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {(booking.status === 'accepted' || booking.status === 'released') && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Project completed successfully
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        
+                        {/* Display final proof links */}
+                        {(booking.proof_link || booking.proof_file_url) && (
+                          <div className="p-3 bg-green-50 rounded border border-green-200">
+                            <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
+                            {booking.proof_link && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <ExternalLink className="h-3 w-3 text-green-600" />
+                                <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                  View Proof Link
+                                </a>
+                              </div>
+                            )}
+                            {booking.proof_file_url && (
+                              <div className="flex items-center gap-2">
+                                <Upload className="h-3 w-3 text-green-600" />
+                                <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                  View Proof File
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Existing Proof Display - for delivered bookings */}
-                  {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
-                    <div className="p-3 bg-background rounded border">
-                      <p className="text-sm font-medium mb-2">Submitted Proof:</p>
-                      {booking.proof_link && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <ExternalLink className="h-3 w-3" />
-                          <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                            View Proof Link
-                          </a>
-                        </div>
-                      )}
-                      {booking.proof_file_url && (
-                        <div className="flex items-center gap-2">
-                          <Upload className="h-3 w-3" />
-                          <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                            View Proof File
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Proof Submission Section - for in_progress bookings */}
-                  {booking.status === 'in_progress' && (
-                    <ProofSubmission
-                      bookingId={booking.id}
-                      currentProof={{
-                        link: booking.proof_link,
-                        fileUrl: booking.proof_file_url
-                      }}
-                      onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
-                      isSubmitting={updateBookingStatus.isPending}
-                    />
-                  )}
                 </div>
 
                 {/* Chat Component */}
