@@ -26,14 +26,14 @@ export default function Services() {
         .from('services')
         .select(`
           *,
-          creators!inner(
+          creators!services_creator_id_fkey(
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users!inner(handle, avatar_url)
+            users!creators_user_id_fkey(handle, avatar_url)
           )
         `)
         .eq('active', true);
@@ -146,6 +146,7 @@ export default function Services() {
         </div>
 
         <div className="flex-1">
+          {// ... keep existing loading skeleton}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
