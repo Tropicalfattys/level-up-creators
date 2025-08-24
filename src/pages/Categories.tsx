@@ -1,4 +1,6 @@
 
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,137 +10,46 @@ import {
   Instagram, Facebook, Target, Palette, Trophy, Zap, Music, MoreHorizontal
 } from 'lucide-react';
 
+const iconMap: Record<string, any> = {
+  ama: MessageSquare,
+  twitter: Hash,
+  video: Video,
+  tutorials: FileText,
+  reviews: Star,
+  spaces: Megaphone,
+  instagram: Instagram,
+  facebook: Facebook,
+  marketing: Target,
+  branding: Palette,
+  discord: Trophy,
+  blogs: FileText,
+  reddit: Hash,
+  memes: Zap,
+  music: Music,
+  other: MoreHorizontal
+};
+
 export default function Categories() {
-  const categories = [
-    {
-      id: 'ama',
-      name: 'Host an AMA',
-      description: 'Live Ask Me Anything sessions on Telegram, Twitter, Discord',
-      icon: MessageSquare,
-      creatorCount: 'Coming Soon',
-      avgPrice: 150
+  const { data: categories, isLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+      return data;
     },
-    {
-      id: 'twitter',
-      name: 'Tweet Campaigns & Threads',
-      description: 'Engaging Twitter content and viral thread creation',
-      icon: Hash,
-      creatorCount: 'Coming Soon',
-      avgPrice: 100
-    },
-    {
-      id: 'video',
-      name: 'Promo Videos',
-      description: 'TikTok, Reels, YouTube Shorts for maximum reach',
-      icon: Video,
-      creatorCount: 'Coming Soon',
-      avgPrice: 200
-    },
-    {
-      id: 'tutorials',
-      name: 'Product Tutorials',
-      description: 'Step-by-step walkthroughs and educational content',
-      icon: FileText,
-      creatorCount: 'Coming Soon',
-      avgPrice: 125
-    },
-    {
-      id: 'reviews',
-      name: 'Product Reviews',
-      description: 'Honest and detailed project reviews and analysis',
-      icon: Star,
-      creatorCount: 'Coming Soon',
-      avgPrice: 175
-    },
-    {
-      id: 'spaces',
-      name: 'Host Twitter Spaces',
-      description: 'Live audio engagement and community discussions',
-      icon: Megaphone,
-      creatorCount: 'Coming Soon',
-      avgPrice: 180
-    },
-    {
-      id: 'instagram',
-      name: 'Instagram Posts',
-      description: 'Visual content creation for Instagram marketing',
-      icon: Instagram,
-      creatorCount: 'Coming Soon',
-      avgPrice: 90
-    },
-    {
-      id: 'facebook',
-      name: 'Facebook Posts',
-      description: 'Social media content for Facebook reach',
-      icon: Facebook,
-      creatorCount: 'Coming Soon',
-      avgPrice: 85
-    },
-    {
-      id: 'marketing',
-      name: 'General Marketing',
-      description: 'Full marketing campaign strategies and execution',
-      icon: Target,
-      creatorCount: 'Coming Soon',
-      avgPrice: 250
-    },
-    {
-      id: 'branding',
-      name: 'Project Branding',
-      description: 'Brand identity development and visual design',
-      icon: Palette,
-      creatorCount: 'Coming Soon',
-      avgPrice: 300
-    },
-    {
-      id: 'discord',
-      name: 'Discord Contests',
-      description: 'Community engagement and contest management',
-      icon: Trophy,
-      creatorCount: 'Coming Soon',
-      avgPrice: 120
-    },
-    {
-      id: 'blogs',
-      name: 'Blogs & Articles',
-      description: 'Written content creation and thought leadership',
-      icon: FileText,
-      creatorCount: 'Coming Soon',
-      avgPrice: 140
-    },
-    {
-      id: 'reddit',
-      name: 'Reddit Posts',
-      description: 'Community discussions and Reddit engagement',
-      icon: Hash,
-      creatorCount: 'Coming Soon',
-      avgPrice: 75
-    },
-    {
-      id: 'memes',
-      name: 'Meme Creation',
-      description: 'Viral meme content and humorous marketing',
-      icon: Zap,
-      creatorCount: 'Coming Soon',
-      avgPrice: 60
-    },
-    {
-      id: 'music',
-      name: 'Music Production',
-      description: 'Custom music, beats, jingles, and audio content creation',
-      icon: Music,
-      creatorCount: 'Coming Soon',
-      avgPrice: 180
-    },
-    {
-      id: 'other',
-      name: 'Other Services',
-      description: 'Unique and specialized services not covered elsewhere',
-      icon: MoreHorizontal,
-      creatorCount: 'Coming Soon',
-      avgPrice: 120
-    }
-  ];
+  });
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -153,8 +64,8 @@ export default function Categories() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category) => {
-            const Icon = category.icon;
+          {categories?.map((category) => {
+            const Icon = iconMap[category.value] || MoreHorizontal;
             return (
               <Card key={category.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:shadow-lg transition-all">
                 <CardHeader>
@@ -163,10 +74,10 @@ export default function Categories() {
                       <Icon className="h-6 w-6 text-cyan-400" />
                     </div>
                     <Badge variant="secondary" className="bg-zinc-800 text-zinc-300">
-                      {category.creatorCount}
+                      Coming Soon
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl text-white">{category.name}</CardTitle>
+                  <CardTitle className="text-xl text-white">{category.label}</CardTitle>
                   <CardDescription className="text-zinc-400">{category.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -175,12 +86,12 @@ export default function Categories() {
                       Avg. starting at
                     </span>
                     <span className="font-semibold text-white">
-                      ${category.avgPrice} USDC
+                      $120 USDC
                     </span>
                   </div>
                   <Button asChild className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700">
-                    <Link to={`/browse?category=${category.id}`}>
-                      Browse {category.name}
+                    <Link to={`/browse?category=${category.value}`}>
+                      Browse {category.label}
                     </Link>
                   </Button>
                 </CardContent>

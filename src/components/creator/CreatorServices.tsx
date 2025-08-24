@@ -1,43 +1,24 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Link } from 'react-router-dom';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ServiceForm } from './ServiceForm';
@@ -52,39 +33,6 @@ interface Service {
   payment_method: string;
   active: boolean;
 }
-
-interface ServiceFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  service?: Service;
-}
-
-// Comprehensive category list matching the Categories page
-const CATEGORIES = [
-  { value: 'live-streams', label: 'Live Streams & AMAs' },
-  { value: 'social-media', label: 'Social Media Management' },
-  { value: 'content-creation', label: 'Content Creation' },
-  { value: 'marketing', label: 'Marketing & Promotion' },
-  { value: 'education', label: 'Education & Tutorials' },
-  { value: 'consulting', label: 'Consulting & Strategy' },
-  { value: 'community', label: 'Community Building' },
-  { value: 'development', label: 'Development & Technical' },
-  { value: 'design', label: 'Design & Creative' },
-  { value: 'writing', label: 'Writing & Content' },
-  { value: 'video', label: 'Video Production' },
-  { value: 'audio', label: 'Audio & Podcasting' },
-  { value: 'nft', label: 'NFT & Digital Art' },
-  { value: 'defi', label: 'DeFi & Trading' },
-  { value: 'gaming', label: 'Gaming & Metaverse' },
-  { value: 'music', label: 'Music Production' },
-  { value: 'other', label: 'Other Services' }
-];
-
-const PAYMENT_METHODS = {
-  ethereum_usdc: { displayName: 'Ethereum USDC', chain: 'ethereum' },
-  base_usdc: { displayName: 'Base USDC', chain: 'base' },
-  solana_usdc: { displayName: 'Solana USDC', chain: 'solana' }
-};
 
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);

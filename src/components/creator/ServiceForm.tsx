@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -29,26 +29,6 @@ interface ServiceFormProps {
   onClose: () => void;
 }
 
-// Comprehensive category list matching the Categories page
-const CATEGORIES = [
-  { value: 'ama', label: 'Host an AMA' },
-  { value: 'twitter', label: 'Tweet Campaigns & Threads' },
-  { value: 'video', label: 'Promo Videos' },
-  { value: 'tutorials', label: 'Product Tutorials' },
-  { value: 'reviews', label: 'Product Reviews' },
-  { value: 'spaces', label: 'Host Twitter Spaces' },
-  { value: 'instagram', label: 'Instagram Posts' },
-  { value: 'facebook', label: 'Facebook Posts' },
-  { value: 'marketing', label: 'General Marketing' },
-  { value: 'branding', label: 'Project Branding' },
-  { value: 'discord', label: 'Discord Contests' },
-  { value: 'blogs', label: 'Blogs & Articles' },
-  { value: 'reddit', label: 'Reddit Posts' },
-  { value: 'memes', label: 'Meme Creation' },
-  { value: 'music', label: 'Music Production' },
-  { value: 'other', label: 'Other Services' }
-];
-
 export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
   const [formData, setFormData] = useState<Service>({
     title: service?.title || '',
@@ -62,6 +42,24 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Fetch categories from database
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+      return data;
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: async (data: Service) => {
@@ -174,7 +172,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((category) => (
+                {categories?.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
                   </SelectItem>

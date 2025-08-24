@@ -1,4 +1,6 @@
 
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CategoryFilterProps {
@@ -7,24 +9,27 @@ interface CategoryFilterProps {
 }
 
 export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
-  const categories = [
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+      return data;
+    },
+  });
+
+  // Add "All Categories" option
+  const allCategories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'ama', label: 'Host an AMA' },
-    { value: 'twitter', label: 'Tweet Campaigns & Threads' },
-    { value: 'video', label: 'Promo Videos' },
-    { value: 'tutorials', label: 'Product Tutorials' },
-    { value: 'reviews', label: 'Product Reviews' },
-    { value: 'spaces', label: 'Host Twitter Spaces' },
-    { value: 'instagram', label: 'Instagram Posts' },
-    { value: 'facebook', label: 'Facebook Posts' },
-    { value: 'marketing', label: 'General Marketing' },
-    { value: 'branding', label: 'Project Branding' },
-    { value: 'discord', label: 'Discord Contests' },
-    { value: 'blogs', label: 'Blogs & Articles' },
-    { value: 'reddit', label: 'Reddit Posts' },
-    { value: 'memes', label: 'Meme Creation' },
-    { value: 'music', label: 'Music Production' },
-    { value: 'other', label: 'Other Services' }
+    ...(categories || []).map(cat => ({ value: cat.value, label: cat.label }))
   ];
 
   return (
@@ -33,7 +38,7 @@ export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
         <SelectValue placeholder="Filter by category" />
       </SelectTrigger>
       <SelectContent>
-        {categories.map((category) => (
+        {allCategories.map((category) => (
           <SelectItem key={category.value} value={category.value}>
             {category.label}
           </SelectItem>
