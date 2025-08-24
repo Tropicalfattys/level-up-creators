@@ -54,6 +54,17 @@ interface ServiceWithBookings {
   bookings?: ServiceBooking[];
 }
 
+const CATEGORIES = [
+  { value: 'trading', label: 'Trading' },
+  { value: 'nft', label: 'NFT' },
+  { value: 'defi', label: 'DeFi' },
+  { value: 'education', label: 'Education' },
+  { value: 'development', label: 'Development' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'music', label: 'Music' },
+  { value: 'other', label: 'Other' }
+];
+
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
   const [editService, setEditService] = useState<ServiceWithBookings | null>(null);
@@ -424,14 +435,11 @@ export const CreatorServices = () => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="trading">Trading</SelectItem>
-                  <SelectItem value="nft">NFT</SelectItem>
-                  <SelectItem value="defi">DeFi</SelectItem>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="development">Development</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="music">Music</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

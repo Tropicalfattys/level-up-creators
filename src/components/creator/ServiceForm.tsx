@@ -29,6 +29,17 @@ interface ServiceFormProps {
   onClose: () => void;
 }
 
+const CATEGORIES = [
+  { value: 'trading', label: 'Trading' },
+  { value: 'nft', label: 'NFT' },
+  { value: 'defi', label: 'DeFi' },
+  { value: 'education', label: 'Education' },
+  { value: 'development', label: 'Development' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'music', label: 'Music' },
+  { value: 'other', label: 'Other' }
+];
+
 export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
   const [formData, setFormData] = useState<Service>({
     title: service?.title || '',
@@ -148,20 +159,17 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
           </div>
 
           <div>
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Category *</Label>
             <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
               <SelectTrigger className="mt-1">
-                <SelectValue />
+                <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="trading">Trading</SelectItem>
-                <SelectItem value="nft">NFT</SelectItem>
-                <SelectItem value="defi">DeFi</SelectItem>
-                <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="development">Development</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="music">Music</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {CATEGORIES.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
