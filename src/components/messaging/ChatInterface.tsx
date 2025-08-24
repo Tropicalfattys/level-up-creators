@@ -12,7 +12,6 @@ import { Send, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { MessageAttachments } from './MessageAttachments';
-import { useBookingChat } from '@/hooks/useBookingChat';
 
 interface Message {
   id: string;
@@ -50,9 +49,6 @@ export const ChatInterface = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  // Use the booking chat hook for real-time updates
-  const { isConnected } = useBookingChat({ bookingId, userId: user?.id });
 
   // Determine the other user based on current user
   const isClient = user?.id === clientId;
@@ -144,6 +140,34 @@ export const ChatInterface = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Set up real-time subscription
+  useEffect(() => {
+    console.log('Setting up real-time subscription for booking:', bookingId);
+    const channel = supabase
+      .channel(`booking-messages-${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `booking_id=eq.${bookingId}`
+        },
+        (payload) => {
+          console.log('New message received via realtime:', payload);
+          queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [bookingId, queryClient]);
+
   if (isLoading) {
     return (
       <Card>
@@ -160,7 +184,6 @@ export const ChatInterface = ({
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
           {isAdmin ? `Chat: ${clientHandle} ↔ ${creatorHandle}` : `Chat with @${otherUserHandle}`}
-          {isConnected && <div className="h-2 w-2 rounded-full bg-green-500" />}
         </CardTitle>
         <CardDescription>
           {isAdmin 

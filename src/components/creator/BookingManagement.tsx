@@ -7,9 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -18,7 +16,6 @@ interface BookingWithDetails {
   id: string;
   status: string;
   usdc_amount: number;
-  tx_hash?: string;
   created_at: string;
   delivered_at?: string;
   accepted_at?: string;
@@ -35,9 +32,6 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [proofFiles, setProofFiles] = useState<{[key: string]: FileList | null}>({});
-  const [proofLinks, setProofLinks] = useState<{[key: string]: string}>({});
-  const [proofNotes, setProofNotes] = useState<{[key: string]: string}>({});
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -93,84 +87,6 @@ export const BookingManagement = () => {
     }
   });
 
-  const submitProof = useMutation({
-    mutationFn: async ({ bookingId, files, link, note }: { 
-      bookingId: string; 
-      files?: FileList; 
-      link?: string; 
-      note?: string; 
-    }) => {
-      let fileUrls: string[] = [];
-      
-      // Upload files to storage if provided
-      if (files && files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${bookingId}/${Date.now()}-${i}.${fileExt}`;
-
-          const { data, error } = await supabase.storage
-            .from('deliverables')
-            .upload(fileName, file);
-
-          if (error) throw error;
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('deliverables')
-            .getPublicUrl(fileName);
-
-          fileUrls.push(publicUrl);
-        }
-      }
-
-      // Prepare proof data
-      const proofData: any = {};
-      if (fileUrls.length > 0) proofData.files = fileUrls;
-      if (link) proofData.link = link;
-      if (note) proofData.note = note;
-
-      // Update booking with proof and mark as delivered
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          status: 'delivered',
-          delivered_at: new Date().toISOString(),
-          proof_data: proofData
-        })
-        .eq('id', bookingId);
-
-      if (error) throw error;
-
-      // Get the booking details to find the client_id
-      const booking = bookings?.find(b => b.id === bookingId);
-      const clientId = booking ? (booking as any).client_id : null;
-
-      // Send a message to the client with the proof
-      const messageBody = `Delivery completed! ${note || 'Work has been delivered.'}${link ? ` Link: ${link}` : ''}`;
-      
-      if (clientId) {
-        await supabase.from('messages').insert({
-          booking_id: bookingId,
-          from_user_id: user?.id,
-          to_user_id: clientId,
-          body: messageBody,
-          attachments: proofData
-        });
-      }
-    },
-    onSuccess: (_, { bookingId }) => {
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      setProofFiles(prev => ({ ...prev, [bookingId]: null }));
-      setProofLinks(prev => ({ ...prev, [bookingId]: '' }));
-      setProofNotes(prev => ({ ...prev, [bookingId]: '' }));
-      toast.success('Proof submitted and booking marked as delivered!');
-    },
-    onError: (error) => {
-      console.error('Submit proof error:', error);
-      toast.error('Failed to submit proof');
-    }
-  });
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
@@ -201,44 +117,18 @@ export const BookingManagement = () => {
         );
       case 'in_progress':
         return (
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="file"
-                multiple
-                onChange={(e) => setProofFiles(prev => ({ ...prev, [booking.id]: e.target.files }))}
-                accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.mp4,.mov"
-                className="text-xs"
-              />
-              <Input
-                placeholder="External link (optional)"
-                value={proofLinks[booking.id] || ''}
-                onChange={(e) => setProofLinks(prev => ({ ...prev, [booking.id]: e.target.value }))}
-                className="text-xs"
-              />
-            </div>
-            <Textarea
-              placeholder="Delivery notes..."
-              value={proofNotes[booking.id] || ''}
-              onChange={(e) => setProofNotes(prev => ({ ...prev, [booking.id]: e.target.value }))}
-              rows={2}
-              className="text-xs"
-            />
-            <Button 
-              size="sm"
-              onClick={() => submitProof.mutate({ 
-                bookingId: booking.id,
-                files: proofFiles[booking.id] || undefined,
-                link: proofLinks[booking.id] || undefined,
-                note: proofNotes[booking.id] || undefined
-              })}
-              disabled={submitProof.isPending || (!proofFiles[booking.id] && !proofLinks[booking.id])}
-              className="w-full"
-            >
-              <Upload className="h-3 w-3 mr-1" />
-              Submit Proof & Deliver
-            </Button>
-          </div>
+          <Button 
+            size="sm"
+            onClick={() => updateBookingStatus.mutate({ 
+              bookingId: booking.id, 
+              status: 'delivered',
+              deliveredAt: new Date().toISOString()
+            })}
+            disabled={updateBookingStatus.isPending}
+          >
+            <Upload className="h-3 w-3 mr-1" />
+            Mark as Delivered
+          </Button>
         );
       case 'delivered':
         return (
@@ -297,20 +187,6 @@ export const BookingManagement = () => {
                         <User className="h-3 w-3" />
                         Client: @{booking.client?.handle || 'Unknown'}
                       </CardDescription>
-                      {booking.tx_hash && (
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                          <Hash className="h-3 w-3" />
-                          TX: {booking.tx_hash.slice(0, 20)}...
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0"
-                            onClick={() => navigator.clipboard.writeText(booking.tx_hash || '')}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        </CardDescription>
-                      )}
                     </div>
                     <div className="text-right">
                       <Badge variant={getStatusColor(booking.status)}>
@@ -324,7 +200,7 @@ export const BookingManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -337,7 +213,6 @@ export const BookingManagement = () => {
                         </div>
                       )}
                     </div>
-                    
                     <div className="flex gap-2">
                       <Link to={`/chat/${booking.id}`}>
                         <Button size="sm" variant="outline">
@@ -345,9 +220,8 @@ export const BookingManagement = () => {
                           Chat
                         </Button>
                       </Link>
+                      {getStatusActions(booking)}
                     </div>
-                    
-                    {getStatusActions(booking)}
                   </div>
                 </CardContent>
               </Card>
