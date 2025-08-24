@@ -26,14 +26,14 @@ export default function Services() {
         .from('services')
         .select(`
           *,
-          creator:creator_id(
+          creators!inner(
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users:user_id(handle, avatar_url)
+            users!inner(handle, avatar_url)
           )
         `)
         .eq('active', true);
@@ -60,7 +60,7 @@ export default function Services() {
           query = query.order('price_usdc', { ascending: false });
           break;
         case 'rating':
-          query = query.order('creator(rating)', { ascending: false });
+          query = query.order('creators(rating)', { ascending: false });
           break;
         case 'delivery':
           query = query.order('delivery_days', { ascending: true });
@@ -70,7 +70,10 @@ export default function Services() {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Services query error:', error);
+        throw error;
+      }
       
       return data;
     }
@@ -169,9 +172,9 @@ export default function Services() {
                     category: service.category,
                     payment_method: service.payment_method,
                     creator: {
-                      handle: service.creator?.users?.handle || 'Unknown',
-                      avatar_url: service.creator?.users?.avatar_url || '',
-                      rating: service.creator?.rating || 0,
+                      handle: service.creators?.users?.handle || 'Unknown',
+                      avatar_url: service.creators?.users?.avatar_url || '',
+                      rating: service.creators?.rating || 0,
                     }
                   }}
                   onSelect={handleServiceSelect}
