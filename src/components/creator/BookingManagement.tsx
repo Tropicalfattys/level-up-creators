@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
+import { ProofSubmission } from './ProofSubmission';
 
 interface BookingWithDetails {
   id: string;
@@ -39,7 +38,6 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [proofData, setProofData] = useState<{[key: string]: {link: string, file: File | null}}>({});
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -120,13 +118,12 @@ export const BookingManagement = () => {
     return publicUrl;
   };
 
-  const handleDelivery = async (bookingId: string) => {
-    const proof = proofData[bookingId];
+  const handleProofSubmission = async (bookingId: string, proofData: { link: string; file: File | null; notes: string }) => {
     let proofFileUrl = null;
 
-    if (proof?.file) {
+    if (proofData.file) {
       try {
-        proofFileUrl = await handleFileUpload(bookingId, proof.file);
+        proofFileUrl = await handleFileUpload(bookingId, proofData.file);
       } catch (error) {
         toast.error('Failed to upload file');
         return;
@@ -137,7 +134,7 @@ export const BookingManagement = () => {
       bookingId,
       status: 'delivered',
       deliveredAt: new Date().toISOString(),
-      proofLink: proof?.link || null,
+      proofLink: proofData.link || null,
       proofFileUrl
     });
   };
@@ -177,38 +174,8 @@ export const BookingManagement = () => {
         );
       case 'in_progress':
         return (
-          <div className="space-y-2">
-            <div className="space-y-2">
-              <Label htmlFor={`proof-link-${booking.id}`}>Proof Link (optional)</Label>
-              <Input
-                id={`proof-link-${booking.id}`}
-                placeholder="https://twitter.com/post-link"
-                value={proofData[booking.id]?.link || ''}
-                onChange={(e) => setProofData(prev => ({
-                  ...prev,
-                  [booking.id]: { ...prev[booking.id], link: e.target.value }
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`proof-file-${booking.id}`}>Upload File (optional)</Label>
-              <Input
-                id={`proof-file-${booking.id}`}
-                type="file"
-                onChange={(e) => setProofData(prev => ({
-                  ...prev,
-                  [booking.id]: { ...prev[booking.id], file: e.target.files?.[0] || null }
-                }))}
-              />
-            </div>
-            <Button 
-              size="sm"
-              onClick={() => handleDelivery(booking.id)}
-              disabled={updateBookingStatus.isPending}
-            >
-              <Upload className="h-3 w-3 mr-1" />
-              Mark as Delivered
-            </Button>
+          <div className="text-sm text-blue-600 font-medium">
+            Submit proof above to deliver
           </div>
         );
       case 'delivered':
@@ -317,6 +284,19 @@ export const BookingManagement = () => {
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Proof Submission Section - Only for in_progress bookings */}
+                  {booking.status === 'in_progress' && (
+                    <ProofSubmission
+                      bookingId={booking.id}
+                      currentProof={{
+                        link: booking.proof_link,
+                        fileUrl: booking.proof_file_url
+                      }}
+                      onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
+                      isSubmitting={updateBookingStatus.isPending}
+                    />
                   )}
 
                   {/* Chat Component */}
