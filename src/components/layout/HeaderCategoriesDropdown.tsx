@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/navigation-menu";
 
 export const HeaderCategoriesDropdown = () => {
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ['header-categories'],
     queryFn: async () => {
+      console.log('Fetching categories for header dropdown...');
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -22,6 +23,7 @@ export const HeaderCategoriesDropdown = () => {
         console.error('Error fetching categories:', error);
         return [];
       }
+      console.log('Categories fetched for header:', data);
       return data;
     },
   });
@@ -34,16 +36,20 @@ export const HeaderCategoriesDropdown = () => {
       <NavigationMenuContent>
         <div className="w-80 p-4 bg-zinc-900 border-zinc-800">
           <div className="grid gap-2">
-            {categories?.map((category) => (
-              <Link
-                key={category.id}
-                to={`/browse?category=${category.value}`}
-                className="block px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
-              >
-                {category.label}
-              </Link>
-            )) || (
+            {isLoading ? (
               <div className="text-zinc-400 text-sm">Loading categories...</div>
+            ) : categories && categories.length > 0 ? (
+              categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/browse?category=${category.value}`}
+                  className="block px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+                >
+                  {category.label}
+                </Link>
+              ))
+            ) : (
+              <div className="text-zinc-400 text-sm">No categories available</div>
             )}
           </div>
           <div className="mt-4 pt-4 border-t border-zinc-800">
