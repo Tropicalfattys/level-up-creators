@@ -11,7 +11,20 @@ import { CheckCircle, XCircle, Eye, Star, Calendar, Wallet } from 'lucide-react'
 import { toast } from 'sonner';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 
-interface Creator {
+interface CreatorUser {
+  id: string;
+  handle: string | null;
+  email: string;
+  avatar_url: string | null;
+  bio: string | null;
+  payout_address_eth: string | null;
+  payout_address_sol: string | null;
+  payout_address_cardano: string | null;
+  payout_address_bsc: string | null;
+  payout_address_sui: string | null;
+}
+
+interface CreatorWithUser {
   id: string;
   user_id: string;
   approved: boolean;
@@ -24,28 +37,17 @@ interface Creator {
   rating: number;
   review_count: number;
   created_at: string;
-  users: {
-    id: string;
-    handle: string | null;
-    email: string;
-    avatar_url: string | null;
-    bio: string | null;
-    payout_address_eth: string | null;
-    payout_address_sol: string | null;
-    payout_address_cardano: string | null;
-    payout_address_bsc: string | null;
-    payout_address_sui: string | null;
-  };
+  users: CreatorUser;
 }
 
 export const AdminCreators = () => {
-  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<CreatorWithUser | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const queryClient = useQueryClient();
 
   const { data: creators = [], isLoading } = useQuery({
     queryKey: ['admin-creators', statusFilter],
-    queryFn: async (): Promise<Creator[]> => {
+    queryFn: async (): Promise<CreatorWithUser[]> => {
       let query = supabase
         .from('creators')
         .select(`
@@ -108,7 +110,7 @@ export const AdminCreators = () => {
     });
   };
 
-  const getWalletAddresses = (creator: Creator) => {
+  const getWalletAddresses = (creator: CreatorWithUser) => {
     const wallets = [
       { network: 'ethereum', address: creator.users.payout_address_eth },
       { network: 'solana', address: creator.users.payout_address_sol },

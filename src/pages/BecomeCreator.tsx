@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,8 +37,8 @@ export default function BecomeCreator() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'basic' | 'mid' | 'pro'>('basic');
-  const { user, session, isLoading } = useAuth();
-  const router = useRouter();
+  const { user, session } = useAuth();
+  const navigate = useNavigate();
 
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -71,7 +72,7 @@ export default function BecomeCreator() {
     },
     onSuccess: () => {
       toast.success('Profile updated successfully!');
-      router.push('/dashboard');
+      navigate('/dashboard');
     },
     onError: (error: any) => {
       toast.error('Failed to update profile: ' + error.message);
@@ -89,7 +90,7 @@ export default function BecomeCreator() {
     setCurrentStep(4);
   };
 
-  if (isLoading) {
+  if (!user) {
     return <div>Loading...</div>;
   }
 

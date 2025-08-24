@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash, Copy, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import {
@@ -19,9 +21,26 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from '@/hooks/useAuth';
-import { Booking } from '@/types/database';
+import type { Booking } from '@/types/database';
 
-interface Service {
+interface BookingUser {
+  handle: string | null;
+  email: string;
+}
+
+interface ServiceBooking {
+  id: string;
+  status: string;
+  usdc_amount: number;
+  created_at: string;
+  client_id: string;
+  creator_id: string;
+  service_id: string;
+  updated_at: string;
+  users: BookingUser;
+}
+
+interface ServiceWithBookings {
   id: string;
   creator_id: string;
   title: string;
@@ -33,19 +52,12 @@ interface Service {
   payment_method: string;
   created_at: string;
   updated_at: string;
-  bookings?: BookingWithClient[];
-}
-
-interface BookingWithClient extends Booking {
-  users: {
-    handle: string;
-    email: string;
-  };
+  bookings?: ServiceBooking[];
 }
 
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
-  const [editService, setEditService] = useState<Service | null>(null);
+  const [editService, setEditService] = useState<ServiceWithBookings | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priceUsdc, setPriceUsdc] = useState<number | undefined>(undefined);
@@ -69,6 +81,9 @@ export const CreatorServices = () => {
             usdc_amount,
             created_at,
             client_id,
+            creator_id,
+            service_id,
+            updated_at,
             users!bookings_client_id_fkey (handle, email)
           )
         `)
@@ -173,7 +188,7 @@ export const CreatorServices = () => {
   });
 
   const copyService = useMutation({
-    mutationFn: async (service: Service) => {
+    mutationFn: async (service: ServiceWithBookings) => {
       const { data, error } = await supabase
         .from('services')
         .insert({
@@ -217,7 +232,7 @@ export const CreatorServices = () => {
     setPaymentMethod('ethereum_usdc');
   };
 
-  const handleEdit = (service: Service) => {
+  const handleEdit = (service: ServiceWithBookings) => {
     setEditService(service);
     setTitle(service.title);
     setDescription(service.description || '');
@@ -241,10 +256,12 @@ export const CreatorServices = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>My Services</CardTitle>
-          <CardDescription>
-            Manage the services you offer to clients
-          </CardDescription>
+          <div>
+            <CardTitle>My Services</CardTitle>
+            <CardDescription>
+              Manage the services you offer to clients
+            </CardDescription>
+          </div>
           <Button onClick={openModal}>
             <Plus className="mr-2 h-4 w-4" />
             Add Service
@@ -304,9 +321,9 @@ export const CreatorServices = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => copyService.mutate(service)}
-                        disabled={copyService.isLoading}
+                        disabled={copyService.isPending}
                       >
-                        {copyService.isLoading ? (
+                        {copyService.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Copy className="mr-2 h-4 w-4" />
@@ -325,9 +342,9 @@ export const CreatorServices = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteService.mutate(service.id)}
-                        disabled={deleteService.isLoading}
+                        disabled={deleteService.isPending}
                       >
-                        {deleteService.isLoading ? (
+                        {deleteService.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Trash className="mr-2 h-4 w-4" />
@@ -444,8 +461,8 @@ export const CreatorServices = () => {
             <Button variant="secondary" onClick={closeModal}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={createService.isLoading || updateService.isLoading}>
-              {createService.isLoading || updateService.isLoading ? (
+            <Button onClick={handleSubmit} disabled={createService.isPending || updateService.isPending}>
+              {createService.isPending || updateService.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : editService ? (
                 <CheckCircle className="mr-2 h-4 w-4" />

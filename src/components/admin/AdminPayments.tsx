@@ -13,10 +13,23 @@ import { toast } from 'sonner';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 import { useAuth } from '@/hooks/useAuth';
 
-interface Payment {
+interface PaymentUser {
+  handle: string | null;
+  email: string;
+}
+
+interface PaymentService {
+  title: string;
+}
+
+interface PaymentBooking {
+  id: string;
+}
+
+interface PaymentWithRelations {
   id: string;
   user_id: string;
-  creator_id: string;
+  creator_id: string | null;
   service_id: string | null;
   booking_id: string | null;
   payment_type: 'service_booking' | 'creator_tier';
@@ -29,20 +42,10 @@ interface Payment {
   created_at: string;
   verified_by: string | null;
   verified_at: string | null;
-  users: {
-    handle: string;
-    email: string;
-  };
-  creator?: {
-    handle: string;
-    email: string;
-  };
-  services?: {
-    title: string;
-  };
-  bookings?: {
-    id: string;
-  };
+  users: PaymentUser;
+  creator?: PaymentUser;
+  services?: PaymentService;
+  bookings?: PaymentBooking;
 }
 
 export const AdminPayments = () => {
@@ -55,7 +58,7 @@ export const AdminPayments = () => {
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['admin-payments', statusFilter, networkFilter, typeFilter, searchQuery],
-    queryFn: async (): Promise<Payment[]> => {
+    queryFn: async (): Promise<PaymentWithRelations[]> => {
       let query = supabase
         .from('payments')
         .select(`
