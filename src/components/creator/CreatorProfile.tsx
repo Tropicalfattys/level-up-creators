@@ -125,6 +125,16 @@ export const CreatorProfile = () => {
     );
   }
 
+  // Transform creator data to match BookingModal expectations
+  const creatorForModal = {
+    id: creator.id,
+    user_id: creator.user_id,
+    users: {
+      handle: creator.user?.handle,
+      avatar_url: creator.user?.avatar_url
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -306,6 +316,7 @@ export const CreatorProfile = () => {
       {selectedService && (
         <BookingModal
           service={selectedService}
+          creator={creatorForModal}
           isOpen={isBookingModalOpen}
           onClose={() => {
             setIsBookingModalOpen(false);
