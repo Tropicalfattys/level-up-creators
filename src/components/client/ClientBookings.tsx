@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +25,7 @@ interface BookingWithDetails {
   services: {
     title: string;
   } | null;
-  creator: {
+  creators: {
     id: string;
     user_id: string;
     users: {
@@ -50,7 +51,7 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creator:creators!bookings_creator_id_fkey (
+          creators (
             id,
             user_id,
             users (handle, avatar_url)
@@ -171,7 +172,7 @@ export const ClientBookings = () => {
                   bookingId: booking.id,
                   rating: reviewRatings[booking.id] || 5,
                   comment: reviewTexts[booking.id] || '',
-                  creatorUserId: booking.creator?.user_id || ''
+                  creatorUserId: booking.creators?.user_id || ''
                 })}
                 disabled={submitReview.isPending || !reviewRatings[booking.id]}
                 className="w-full"
@@ -230,7 +231,7 @@ export const ClientBookings = () => {
                       <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Creator: @{booking.creator?.users?.handle || 'Unknown'}
+                        Creator: @{booking.creators?.users?.handle || 'Unknown'}
                       </CardDescription>
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">

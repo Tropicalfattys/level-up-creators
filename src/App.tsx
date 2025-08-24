@@ -20,7 +20,7 @@ import Categories from "@/pages/Categories";
 import Contact from "@/pages/Contact";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
-import ProtectedRoute from "@/components/layout/ProtectedRoute";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import BookingConfirmation from "@/pages/BookingConfirmation";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "sonner";
