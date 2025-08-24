@@ -27,7 +27,7 @@ interface Service {
     user_id: string;
     users: {
       handle: string;
-      avatar_url: string;
+      avatar_url?: string; // Make this optional to match ServiceDetailModal
     };
     rating: number;
     review_count?: number;
@@ -39,7 +39,7 @@ interface Creator {
   user_id: string;
   users: {
     handle: string;
-    avatar_url: string;
+    avatar_url?: string; // Make this optional to match ServiceDetailModal
   };
 }
 
@@ -60,8 +60,12 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
     mutationFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      // Get the correct creator_id - either from service.creator_id or from the nested creator structure
+      // Get the correct creator_id - prioritize service.creator_id, then nested creator structure, then fallback to creator prop
       const creatorId = service.creator_id || service.creator?.user_id || creator.user_id;
+      
+      if (!creatorId) {
+        throw new Error('Creator ID not found');
+      }
       
       console.log('Creating booking with data:', {
         client_id: user.id,
