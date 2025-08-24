@@ -5,22 +5,29 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, TrendingUp, Clock, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, Clock, Download, ExternalLink, Copy, Hash } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+
+interface PaymentEarning {
+  id: string;
+  amount: number;
+  tx_hash: string;
+  network: string;
+  currency: string;
+  created_at: string;
+  status: string;
+  service_title: string;
+  client_handle: string;
+  client_email: string;
+}
 
 interface EarningsData {
   totalEarnings: number;
   monthlyEarnings: number;
   pendingEarnings: number;
   completedBookings: number;
-  recentEarnings: {
-    id: string;
-    amount: number;
-    service_title: string;
-    client_handle: string;
-    completed_at: string;
-    status: string;
-  }[];
+  recentEarnings: PaymentEarning[];
 }
 
 export const EarningsTracker = () => {
@@ -37,52 +44,72 @@ export const EarningsTracker = () => {
         recentEarnings: []
       };
 
-      // Get all bookings for the creator using user_id as creator_id
-      const { data: bookings, error } = await supabase
+      // Get payments where this user is the creator
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          payer:users!payments_user_id_fkey (handle, email),
+          service:services!payments_service_id_fkey (title)
+        `)
+        .eq('creator_id', user.id)
+        .eq('status', 'verified')
+        .order('created_at', { ascending: false });
+
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+        throw paymentsError;
+      }
+
+      // Get bookings for pending earnings
+      const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
           *,
           services (title),
-          client:users!bookings_client_id_fkey (handle)
+          client:users!bookings_client_id_fkey (handle, email)
         `)
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching earnings:', error);
-        throw error;
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        throw bookingsError;
       }
 
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Calculate total earnings from completed bookings
-      const completedBookings = bookings?.filter(b => ['accepted', 'released'].includes(b.status)) || [];
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0);
+      // Calculate total earnings from verified payments (85% after platform fee)
+      const totalGross = payments?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0;
+      const totalEarnings = totalGross * 0.85; // Creator gets 85%
 
       // Calculate this month's earnings
-      const monthlyEarnings = completedBookings
-        .filter(b => new Date(b.accepted_at || b.created_at) >= thisMonth)
-        .reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0);
+      const thisMonthPayments = payments?.filter(p => new Date(p.created_at) >= thisMonth) || [];
+      const monthlyGross = thisMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      const monthlyEarnings = monthlyGross * 0.85;
 
       // Calculate pending earnings from active bookings
-      const pendingEarnings = bookings
-        ?.filter(b => ['paid', 'in_progress', 'delivered'].includes(b.status))
-        ?.reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0) || 0;
+      const pendingBookings = bookings?.filter(b => ['paid', 'in_progress', 'delivered'].includes(b.status)) || [];
+      const pendingGross = pendingBookings.reduce((sum, b) => sum + Number(b.usdc_amount || 0), 0);
+      const pendingEarnings = pendingGross * 0.85;
 
-      const completedBookingsCount = completedBookings.length;
+      // Get completed bookings count
+      const completedBookingsCount = bookings?.filter(b => ['accepted', 'released'].includes(b.status))?.length || 0;
 
-      // Get recent earnings for display
-      const recentEarnings = completedBookings
-        .slice(0, 5)
-        .map(b => ({
-          id: b.id,
-          amount: Number(b.usdc_amount || 0),
-          service_title: b.services?.title || 'Unknown Service',
-          client_handle: b.client?.handle || 'Unknown',
-          completed_at: b.accepted_at || b.created_at,
-          status: b.status
-        }));
+      // Format recent earnings from payments
+      const recentEarnings: PaymentEarning[] = payments?.slice(0, 10).map(p => ({
+        id: p.id,
+        amount: Number(p.amount || 0) * 0.85, // Show creator's 85% share
+        tx_hash: p.tx_hash,
+        network: p.network,
+        currency: p.currency,
+        created_at: p.created_at,
+        status: p.status,
+        service_title: p.service?.title || 'Unknown Service',
+        client_handle: p.payer?.handle || 'Unknown',
+        client_email: p.payer?.email || 'Unknown'
+      })) || [];
 
       return {
         totalEarnings,
@@ -95,6 +122,22 @@ export const EarningsTracker = () => {
     enabled: !!user?.id
   });
 
+  const copyTxHash = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    toast.success('Transaction hash copied to clipboard');
+  };
+
+  const getExplorerUrl = (network: string, txHash: string) => {
+    const explorers = {
+      ethereum: `https://etherscan.io/tx/${txHash}`,
+      solana: `https://explorer.solana.com/tx/${txHash}`,
+      bsc: `https://bscscan.com/tx/${txHash}`,
+      sui: `https://explorer.sui.io/txblock/${txHash}`,
+      cardano: `https://cardanoscan.io/transaction/${txHash}`
+    };
+    return explorers[network as keyof typeof explorers] || '#';
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading earnings data...</div>;
   }
@@ -106,7 +149,7 @@ export const EarningsTracker = () => {
       <div>
         <h3 className="text-lg font-semibold mb-2">Earnings Overview</h3>
         <p className="text-muted-foreground">
-          Track your earnings and payout history
+          Track your earnings and payment history (85% creator share after 15% platform fee)
         </p>
       </div>
 
@@ -170,35 +213,91 @@ export const EarningsTracker = () => {
         </Card>
       </div>
 
-      {/* Recent Earnings */}
+      {/* Recent Earnings with Transaction Details */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Earnings</CardTitle>
-          <CardDescription>Your latest completed bookings</CardDescription>
+          <CardDescription>Your latest verified payments with transaction details</CardDescription>
         </CardHeader>
         <CardContent>
           {earnings.recentEarnings.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {earnings.recentEarnings.map((earning) => (
-                <div key={earning.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">{earning.service_title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Client: @{earning.client_handle} • {format(new Date(earning.completed_at), 'MMM d, yyyy')}
-                    </p>
+                <div key={earning.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-lg">{earning.service_title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Client: @{earning.client_handle} ({earning.client_email})
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(earning.created_at), 'PPpp')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-green-600">
+                        ${earning.amount.toFixed(2)} {earning.currency?.toUpperCase()}
+                      </div>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {earning.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">${earning.amount.toFixed(2)} USDC</div>
-                    <Badge variant="outline" className="text-xs">
-                      {earning.status}
-                    </Badge>
+
+                  {/* Transaction Details */}
+                  <div className="bg-muted/50 rounded p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Transaction Hash:</span>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-background px-2 py-1 rounded">
+                          {earning.tx_hash.slice(0, 8)}...{earning.tx_hash.slice(-8)}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => copyTxHash(earning.tx_hash)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                          className="h-6 w-6 p-0"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Network:</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {earning.network?.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Full Transaction:</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                        className="h-6 text-xs"
+                      >
+                        <Hash className="h-3 w-3 mr-1" />
+                        View on Explorer
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No completed bookings yet</p>
+              <p className="text-muted-foreground">No verified payments yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Payments will appear here once they are verified by the admin
+              </p>
             </div>
           )}
         </CardContent>
