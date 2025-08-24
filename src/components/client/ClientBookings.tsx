@@ -1,46 +1,41 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Upload, Hash } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
-interface BookingWithDetails {
+interface ClientBookingWithDetails {
   id: string;
   status: string;
   usdc_amount: number;
   created_at: string;
   delivered_at?: string;
   accepted_at?: string;
-  release_at?: string;
   tx_hash?: string;
   proof_link?: string;
   proof_file_url?: string;
   services: {
     title: string;
   } | null;
-  client: {
+  creator: {
     handle: string;
     avatar_url?: string;
   } | null;
 }
 
-export const BookingManagement = () => {
+export const ClientBookings = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [proofData, setProofData] = useState<{[key: string]: {link: string, file: File | null}}>({});
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['creator-bookings', user?.id],
-    queryFn: async (): Promise<BookingWithDetails[]> => {
+    queryKey: ['client-bookings', user?.id],
+    queryFn: async (): Promise<ClientBookingWithDetails[]> => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
@@ -48,96 +43,19 @@ export const BookingManagement = () => {
         .select(`
           *,
           services (title),
-          client:users!bookings_client_id_fkey (handle, avatar_url)
+          creator:users!bookings_creator_id_fkey (handle, avatar_url)
         `)
-        .eq('creator_id', user.id)
+        .eq('client_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching bookings:', error);
+        console.error('Error fetching client bookings:', error);
         return [];
       }
       return data || [];
     },
     enabled: !!user?.id
   });
-
-  const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status, deliveredAt, proofLink, proofFileUrl }: { 
-      bookingId: string; 
-      status: string; 
-      deliveredAt?: string;
-      proofLink?: string;
-      proofFileUrl?: string;
-    }) => {
-      const updateData: any = { status, updated_at: new Date().toISOString() };
-      if (deliveredAt) {
-        updateData.delivered_at = deliveredAt;
-      }
-      if (proofLink) {
-        updateData.proof_link = proofLink;
-      }
-      if (proofFileUrl) {
-        updateData.proof_file_url = proofFileUrl;
-      }
-
-      const { error } = await supabase
-        .from('bookings')
-        .update(updateData)
-        .eq('id', bookingId);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      const statusText = status === 'in_progress' ? 'started' : 
-                        status === 'delivered' ? 'delivered' : 'updated';
-      toast.success(`Booking ${statusText} successfully!`);
-    },
-    onError: (error) => {
-      console.error('Update booking error:', error);
-      toast.error('Failed to update booking status');
-    }
-  });
-
-  const handleFileUpload = async (bookingId: string, file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${bookingId}-${Date.now()}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from('deliverables')
-      .upload(fileName, file);
-
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('deliverables')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
-  };
-
-  const handleDelivery = async (bookingId: string) => {
-    const proof = proofData[bookingId];
-    let proofFileUrl = null;
-
-    if (proof?.file) {
-      try {
-        proofFileUrl = await handleFileUpload(bookingId, proof.file);
-      } catch (error) {
-        toast.error('Failed to upload file');
-        return;
-      }
-    }
-
-    updateBookingStatus.mutate({
-      bookingId,
-      status: 'delivered',
-      deliveredAt: new Date().toISOString(),
-      proofLink: proof?.link || null,
-      proofFileUrl
-    });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -150,77 +68,6 @@ export const BookingManagement = () => {
     }
   };
 
-  const getStatusActions = (booking: BookingWithDetails) => {
-    switch (booking.status) {
-      case 'paid':
-        return (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => updateBookingStatus.mutate({ 
-              bookingId: booking.id, 
-              status: 'in_progress' 
-            })}
-            disabled={updateBookingStatus.isPending}
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Start Work
-          </Button>
-        );
-      case 'in_progress':
-        return (
-          <div className="space-y-2">
-            <div className="space-y-2">
-              <Label htmlFor={`proof-link-${booking.id}`}>Proof Link (optional)</Label>
-              <Input
-                id={`proof-link-${booking.id}`}
-                placeholder="https://twitter.com/post-link"
-                value={proofData[booking.id]?.link || ''}
-                onChange={(e) => setProofData(prev => ({
-                  ...prev,
-                  [booking.id]: { ...prev[booking.id], link: e.target.value }
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`proof-file-${booking.id}`}>Upload File (optional)</Label>
-              <Input
-                id={`proof-file-${booking.id}`}
-                type="file"
-                onChange={(e) => setProofData(prev => ({
-                  ...prev,
-                  [booking.id]: { ...prev[booking.id], file: e.target.files?.[0] || null }
-                }))}
-              />
-            </div>
-            <Button 
-              size="sm"
-              onClick={() => handleDelivery(booking.id)}
-              disabled={updateBookingStatus.isPending}
-            >
-              <Upload className="h-3 w-3 mr-1" />
-              Mark as Delivered
-            </Button>
-          </div>
-        );
-      case 'delivered':
-        return (
-          <div className="text-sm text-muted-foreground">
-            Waiting for client review
-          </div>
-        );
-      case 'accepted':
-      case 'released':
-        return (
-          <div className="text-sm text-green-600 font-medium">
-            Completed
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
@@ -228,22 +75,22 @@ export const BookingManagement = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading bookings...</div>;
+    return <div className="text-center py-8">Loading your bookings...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Booking Management</h3>
+        <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
         <p className="text-muted-foreground">
-          Manage your active bookings and deliverables
+          Track your booked services and communicate with creators
         </p>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({bookings?.length || 0})</TabsTrigger>
-          <TabsTrigger value="paid">New ({filterBookings('paid').length})</TabsTrigger>
+          <TabsTrigger value="paid">Paid ({filterBookings('paid').length})</TabsTrigger>
           <TabsTrigger value="in_progress">In Progress ({filterBookings('in_progress').length})</TabsTrigger>
           <TabsTrigger value="delivered">Delivered ({filterBookings('delivered').length})</TabsTrigger>
         </TabsList>
@@ -258,7 +105,7 @@ export const BookingManagement = () => {
                       <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Client: @{booking.client?.handle || 'Unknown'}
+                        Creator: @{booking.creator?.handle || 'Unknown'}
                       </CardDescription>
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">
@@ -279,6 +126,7 @@ export const BookingManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Display proof if delivered */}
                   {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
                     <div className="mb-4 p-3 bg-muted rounded">
                       <p className="text-sm font-medium mb-2">Proof of Completion:</p>
@@ -300,6 +148,19 @@ export const BookingManagement = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Review System for delivered bookings */}
+                  {booking.status === 'delivered' && (
+                    <div className="mb-4">
+                      <ReviewSystem 
+                        bookingId={booking.id}
+                        revieweeId={booking.creator?.handle || ''}
+                        onReviewSubmitted={() => {
+                          // Optional: refresh bookings or show success message
+                        }}
+                      />
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -314,16 +175,13 @@ export const BookingManagement = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2 items-end">
+                    <div className="flex gap-2">
                       <Link to={`/chat/${booking.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageSquare className="h-3 w-3 mr-1" />
                           Chat
                         </Button>
                       </Link>
-                      <div>
-                        {getStatusActions(booking)}
-                      </div>
                     </div>
                   </div>
                 </CardContent>

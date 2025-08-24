@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessagesList } from '@/components/messaging/MessagesList';
 import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
 import { UserDisputes } from '@/components/disputes/UserDisputes';
+import { ClientBookings } from '@/components/client/ClientBookings';
 import { 
   DollarSign, 
   Users, 
@@ -30,7 +31,6 @@ import { toast } from 'sonner';
 export default function Index() {
   const { user, userRole, loading } = useAuth();
 
-  // Check if user has a creator profile
   const { data: creatorProfile } = useQuery({
     queryKey: ['creator-profile', user?.id],
     queryFn: async () => {
@@ -52,7 +52,6 @@ export default function Index() {
     enabled: !!user?.id
   });
 
-  // Get user profile for referral info
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -100,7 +99,6 @@ export default function Index() {
     );
   }
 
-  // Determine creator status - check if user has an approved creator profile OR is creator role
   const hasCreatorProfile = !!creatorProfile;
   const isApprovedCreator = creatorProfile?.approved === true;
   const hasPendingApplication = hasCreatorProfile && !isApprovedCreator;
@@ -158,7 +156,6 @@ export default function Index() {
         </p>
       </div>
 
-      {/* Creator Application Status Cards */}
       {hasPendingApplication && (
         <Card className="mb-8 border-orange-200 bg-orange-50">
           <CardHeader>
@@ -197,7 +194,6 @@ export default function Index() {
         </Card>
       )}
 
-      {/* Creator Application CTA - Only show if not applied yet and not admin */}
       {!hasCreatorProfile && userRole !== 'admin' && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
@@ -225,6 +221,7 @@ export default function Index() {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="booked">Booked</TabsTrigger>
           {canAccessCreatorTools && (
             <TabsTrigger value="creator">Creator Tools</TabsTrigger>
           )}
@@ -322,6 +319,10 @@ export default function Index() {
 
             <CreatorsFollowedCard />
           </div>
+        </TabsContent>
+
+        <TabsContent value="booked" className="space-y-6">
+          <ClientBookings />
         </TabsContent>
 
         {canAccessCreatorTools && (
