@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,9 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
+import { BookingModal } from '@/components/services/BookingModal';
 
 export const CreatorProfile = () => {
   const { handle } = useParams();
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Fetch creator data by handle
   const { data: creator, isLoading } = useQuery({
@@ -19,8 +22,8 @@ export const CreatorProfile = () => {
     queryFn: async () => {
       console.log('Fetching creator profile for handle:', handle);
       
-      if (!handle) {
-        throw new Error('No handle provided');
+      if (!handle || handle === 'unknown') {
+        throw new Error('No valid handle provided');
       }
       
       // First get the user by handle
@@ -57,11 +60,11 @@ export const CreatorProfile = () => {
         throw new Error('Creator profile not found');
       }
 
-      // Get creator's services - fix the relationship
+      // Get creator's services
       const { data: services, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('creator_id', user.id) // Use user.id since services.creator_id references users.id
+        .eq('creator_id', user.id)
         .eq('active', true);
 
       if (servicesError) {
@@ -96,6 +99,11 @@ export const CreatorProfile = () => {
       return `https://${url}`;
     }
     return url;
+  };
+
+  const handleBookService = (service: any) => {
+    setSelectedService(service);
+    setIsBookingModalOpen(true);
   };
 
   if (isLoading) {
@@ -236,7 +244,7 @@ export const CreatorProfile = () => {
               {/* Bio Section */}
               {creator.user?.bio && (
                 <div>
-                  <p className="text-sm leading-relaxed">{creator.user.bio}</p>
+                  <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{creator.user.bio}</p>
                 </div>
               )}
 
@@ -277,7 +285,9 @@ export const CreatorProfile = () => {
                         <span className="text-sm text-muted-foreground">
                           Delivery: {service.delivery_days} days
                         </span>
-                        <Button size="sm">Book Now</Button>
+                        <Button size="sm" onClick={() => handleBookService(service)}>
+                          Book Now
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -291,6 +301,18 @@ export const CreatorProfile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      {selectedService && (
+        <BookingModal
+          service={selectedService}
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setSelectedService(null);
+          }}
+        />
+      )}
     </div>
   );
 };
