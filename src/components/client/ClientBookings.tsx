@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,16 +23,13 @@ interface BookingWithDetails {
   delivered_at?: string;
   accepted_at?: string;
   release_at?: string;
+  creator_id: string;
   services: {
     title: string;
   } | null;
-  creators: {
-    id: string;
-    user_id: string;
-    users: {
-      handle: string;
-      avatar_url?: string;
-    } | null;
+  creator_user: {
+    handle: string;
+    avatar_url?: string;
   } | null;
 }
 
@@ -51,11 +49,7 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creators (
-            id,
-            user_id,
-            users (handle, avatar_url)
-          )
+          creator_user:users!bookings_creator_id_fkey (handle, avatar_url)
         `)
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
@@ -172,7 +166,7 @@ export const ClientBookings = () => {
                   bookingId: booking.id,
                   rating: reviewRatings[booking.id] || 5,
                   comment: reviewTexts[booking.id] || '',
-                  creatorUserId: booking.creators?.user_id || ''
+                  creatorUserId: booking.creator_id
                 })}
                 disabled={submitReview.isPending || !reviewRatings[booking.id]}
                 className="w-full"
@@ -231,7 +225,7 @@ export const ClientBookings = () => {
                       <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Creator: @{booking.creators?.users?.handle || 'Unknown'}
+                        Creator: @{booking.creator_user?.handle || 'Unknown'}
                       </CardDescription>
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">
