@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,6 +77,12 @@ const CATEGORIES = [
   { value: 'music', label: 'Music Production' },
   { value: 'other', label: 'Other Services' }
 ];
+
+const PAYMENT_METHODS = {
+  ethereum_usdc: { displayName: 'Ethereum USDC', chain: 'ethereum' },
+  base_usdc: { displayName: 'Base USDC', chain: 'base' },
+  solana_usdc: { displayName: 'Solana USDC', chain: 'solana' }
+};
 
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
@@ -342,7 +349,8 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </div>
+            </Select>
+          </div>
 
           <div>
             <Label htmlFor="payment-method">Payment Method *</Label>
