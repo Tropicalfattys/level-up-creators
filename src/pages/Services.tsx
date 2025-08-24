@@ -6,15 +6,43 @@ import { ServiceCard } from '@/components/services/ServiceCard';
 import { CategoryFilter } from '@/components/services/CategoryFilter';
 import { SortBy } from '@/components/services/SortBy';
 import { AdvancedSearch } from '@/components/search/AdvancedSearch';
+import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Service } from '@/types/database';
+
+// Define the actual query result type based on what Supabase returns
+interface ServiceQueryResult {
+  id: string;
+  title: string;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
+  payment_method: string;
+  active: boolean;
+  creator_id: string;
+  created_at: string;
+  updated_at: string;
+  creators: {
+    id: string;
+    user_id: string;
+    headline: string;
+    tier: string;
+    rating: number;
+    review_count: number;
+    users: {
+      handle: string;
+      avatar_url: string;
+    } | null;
+  } | null;
+}
 
 export default function Services() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('newest');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [selectedService, setSelectedService] = useState<any>(null);
 
   const { data: services, isLoading, error } = useQuery({
     queryKey: ['services', selectedCategory, sortBy, searchQuery, priceRange],
@@ -69,9 +97,13 @@ export default function Services() {
       const { data, error } = await query;
       if (error) throw error;
       
-      return data as Service[];
+      return data as ServiceQueryResult[];
     }
   });
+
+  const handleServiceSelect = (service: any) => {
+    setSelectedService(service);
+  };
 
   if (error) {
     return (
@@ -140,11 +172,12 @@ export default function Services() {
                     category: service.category,
                     payment_method: service.payment_method,
                     creator: {
-                      handle: service.creators.users.handle,
-                      avatar_url: service.creators.users.avatar_url,
-                      rating: service.creators.rating,
+                      handle: service.creators?.users?.handle || 'Unknown',
+                      avatar_url: service.creators?.users?.avatar_url || '',
+                      rating: service.creators?.rating || 0,
                     }
                   }}
+                  onSelect={handleServiceSelect}
                 />
               ))}
             </div>
@@ -159,6 +192,14 @@ export default function Services() {
           )}
         </div>
       </div>
+
+      {selectedService && (
+        <ServiceDetailModal
+          service={selectedService}
+          isOpen={!!selectedService}
+          onClose={() => setSelectedService(null)}
+        />
+      )}
     </div>
   );
 }

@@ -10,7 +10,40 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ExternalLink, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Payment } from '@/types/database';
+
+// Define the actual query result type based on what Supabase returns
+interface PaymentQueryResult {
+  id: string;
+  user_id: string;
+  creator_id: string;
+  service_id: string;
+  booking_id: string;
+  amount: number;
+  currency: string;
+  network: string;
+  payment_type: string;
+  status: string;
+  tx_hash: string;
+  admin_wallet_address: string;
+  created_at: string;
+  updated_at: string;
+  verified_at: string | null;
+  verified_by: string | null;
+  users: {
+    handle: string;
+    email: string;
+  } | null;
+  creators: {
+    users: {
+      handle: string;
+      email: string;
+    } | null;
+  } | null;
+  services: {
+    title: string;
+    price_usdc: number;
+  } | null;
+}
 
 export const AdminPayments = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -48,7 +81,7 @@ export const AdminPayments = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      return data as Payment[];
+      return data as PaymentQueryResult[];
     }
   });
 
