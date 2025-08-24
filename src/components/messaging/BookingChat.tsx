@@ -45,6 +45,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   const { data: messages, isLoading } = useQuery({
     queryKey: ['booking-messages', bookingId],
     queryFn: async (): Promise<Message[]> => {
+      console.log('Fetching messages for booking:', bookingId);
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -54,14 +55,23 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      console.log('Fetched messages:', data);
       return data || [];
     }
   });
 
   const sendMessage = useMutation({
     mutationFn: async ({ messageBody, attachments }: { messageBody: string; attachments?: any }) => {
-      if (!user || (!messageBody.trim() && !attachments)) return;
+      if (!user || (!messageBody.trim() && !attachments)) {
+        console.log('Invalid message data:', { user: !!user, messageBody, attachments });
+        return;
+      }
+
+      console.log('Sending message:', { messageBody, attachments, bookingId, fromUserId: user.id, toUserId: otherUserId });
 
       const messageData: any = {
         booking_id: bookingId,
@@ -74,13 +84,21 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         messageData.attachments = attachments;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
-        .insert([messageData]);
+        .insert([messageData])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+
+      console.log('Message sent successfully:', data);
+      return data;
     },
     onSuccess: () => {
+      console.log('Message sent, clearing form');
       setMessage('');
       queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
     },
@@ -90,11 +108,17 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     }
   });
 
-  const handleFileUpload = async (file: File) => {
-    if (!file) return null;
+  const uploadFile = async (file: File) => {
+    console.log('Starting file upload:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      bookingId
+    });
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
+      console.error('File too large:', file.size);
       toast.error('File size must be less than 10MB');
       return null;
     }
@@ -111,17 +135,18 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     ];
 
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
       toast.error('File type not supported');
       return null;
     }
 
-    setUploading(true);
     try {
-      const fileName = `${bookingId}/${Date.now()}-${file.name}`;
+      setUploading(true);
+      const fileName = `chat/${bookingId}/${Date.now()}-${file.name}`;
       
-      console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
+      console.log('Uploading to path:', fileName);
 
-      // Upload to attachments bucket (private bucket)
+      // Upload to attachments bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(fileName, file, {
@@ -130,50 +155,77 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+        console.error('Upload error details:', {
+          error: uploadError,
+          message: uploadError.message,
+          statusCode: uploadError.statusCode
+        });
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.log('File uploaded successfully:', uploadData);
+      console.log('Upload successful:', uploadData);
 
+      // Create attachment object
       const attachment = {
-        files: [{
-          id: uploadData.path,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          path: uploadData.path
-        }]
+        id: uploadData.path,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        path: uploadData.path
       };
 
+      console.log('Created attachment object:', attachment);
       toast.success('File uploaded successfully');
       return attachment;
+
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload file');
+      console.error('File upload failed:', error);
+      toast.error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileSelect = () => {
+    console.log('File select clicked');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    console.log('File selected:', file);
     
-    const selectedFile = fileInputRef.current?.files?.[0];
-    let attachments = null;
-    
-    if (selectedFile) {
-      attachments = await handleFileUpload(selectedFile);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    if (!file) {
+      console.log('No file selected');
+      return;
     }
 
-    if (message.trim() || attachments) {
+    const attachment = await uploadFile(file);
+    
+    if (attachment) {
+      console.log('File uploaded, sending message with attachment');
+      // Send message with attachment
+      sendMessage.mutate({ 
+        messageBody: '',
+        attachments: { files: [attachment] }
+      });
+    }
+
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Send button clicked, message:', message);
+    
+    if (message.trim()) {
       sendMessage.mutate({ 
         messageBody: message,
-        attachments
+        attachments: null
       });
     }
   };
@@ -193,7 +245,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         return;
       }
 
-      console.log('Got signed URL:', signedUrlData.signedUrl);
+      console.log('Got signed URL for download');
 
       // Create a temporary link to download the file
       const link = document.createElement('a');
@@ -337,12 +389,13 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                 type="file"
                 className="hidden"
                 accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+                onChange={handleFileChange}
               />
               <Button 
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleFileSelect}
                 disabled={uploading || sendMessage.isPending}
               >
                 <Paperclip className="h-4 w-4" />
@@ -350,7 +403,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
               <Button 
                 size="icon" 
                 type="submit" 
-                disabled={sendMessage.isPending || uploading || (!message.trim() && !fileInputRef.current?.files?.[0])}
+                disabled={sendMessage.isPending || uploading || !message.trim()}
               >
                 <Send className="h-4 w-4" />
               </Button>
