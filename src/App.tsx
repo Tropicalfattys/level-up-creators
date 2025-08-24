@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from "@/pages/Index";
 import Home from "@/pages/Home";
 import Browse from "@/pages/Browse";
@@ -24,6 +25,16 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import BookingConfirmation from "@/pages/BookingConfirmation";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "sonner";
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const router = createBrowserRouter([
   {
@@ -102,10 +113,12 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-      <Toaster richColors />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster richColors />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
