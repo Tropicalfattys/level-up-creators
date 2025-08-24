@@ -25,15 +25,24 @@ export default function Services() {
       let query = supabase
         .from('services')
         .select(`
-          *,
-          creators (
+          id,
+          title,
+          description,
+          price_usdc,
+          delivery_days,
+          category,
+          payment_method,
+          active,
+          created_at,
+          creator_id,
+          creators!services_creator_id_fkey (
             id,
             user_id,
             headline,
             tier,
             rating,
             review_count,
-            users (
+            users!creators_user_id_fkey (
               handle,
               avatar_url
             )
