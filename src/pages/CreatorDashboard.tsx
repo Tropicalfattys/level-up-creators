@@ -10,7 +10,7 @@ import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
-import { Package, Calendar, DollarSign, RefreshCw, MessageSquare } from 'lucide-react';
+import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function CreatorDashboard() {
@@ -183,16 +183,16 @@ export default function CreatorDashboard() {
             </Card>
           </div>
 
-          {/* Dashboard Tabs - Using the exact same components as main dashboard */}
+          {/* Dashboard Tabs */}
           <Tabs defaultValue="services" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="services" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Services
               </TabsTrigger>
               <TabsTrigger value="bookings" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Bookings
+                <BookOpen className="h-4 w-4" />
+                Booked
               </TabsTrigger>
               <TabsTrigger value="earnings" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
