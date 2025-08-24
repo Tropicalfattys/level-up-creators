@@ -1,68 +1,72 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckCircle, XCircle, Eye, Star, Calendar, Wallet } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { NETWORK_CONFIG } from '@/lib/contracts';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface CreatorUser {
   id: string;
   handle: string | null;
-  email: string;
+  email: string | null;
   avatar_url: string | null;
   bio: string | null;
-  payout_address_eth: string | null;
-  payout_address_sol: string | null;
-  payout_address_cardano: string | null;
-  payout_address_bsc: string | null;
-  payout_address_sui: string | null;
+  created_at: string | null;
+  role: string | null;
+  social_links: any | null;
+  website_url: string | null;
+  portfolio_url: string | null;
+  youtube_url: string | null;
 }
 
 interface CreatorWithUser {
   id: string;
-  user_id: string;
-  approved: boolean;
-  approved_at: string | null;
+  user_id: string | null;
   headline: string | null;
-  tier: string;
-  priority_score: number;
-  intro_video_url: string | null;
   category: string | null;
-  rating: number;
-  review_count: number;
-  created_at: string;
+  tier: string | null;
+  approved: boolean | null;
+  approved_at: string | null;
+  created_at: string | null;
+  rating: number | null;
+  review_count: number | null;
+  payout_address_eth: string | null;
+  payout_address_sol: string | null;
+  payout_address_bsc: string | null;
+  payout_address_sui: string | null;
+  payout_address_cardano: string | null;
   users: CreatorUser;
 }
 
 export const AdminCreators = () => {
-  const [selectedCreator, setSelectedCreator] = useState<CreatorWithUser | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const queryClient = useQueryClient();
-
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const { data: creators = [], isLoading } = useQuery({
-    queryKey: ['admin-creators', statusFilter],
-    queryFn: async (): Promise<CreatorWithUser[]> => {
+    queryKey: ['admin-creators', statusFilter, searchQuery],
+    queryFn: async () => {
       let query = supabase
         .from('creators')
         .select(`
           *,
-          users (
+          users!creators_user_id_fkey (
             id,
             handle,
             email,
             avatar_url,
             bio,
-            payout_address_eth,
-            payout_address_sol,
-            payout_address_cardano,
-            payout_address_bsc,
-            payout_address_sui
+            created_at,
+            role,
+            social_links,
+            website_url,
+            portfolio_url,
+            youtube_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -73,21 +77,23 @@ export const AdminCreators = () => {
         query = query.eq('approved', false);
       }
 
+      if (searchQuery) {
+        query = query.or(`headline.ilike.%${searchQuery}%,users.handle.ilike.%${searchQuery}%,users.email.ilike.%${searchQuery}%`);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Filter out any results where users is null or has an error
+      return (data || []).filter(creator => creator.users && typeof creator.users === 'object' && !('error' in creator.users));
     }
   });
 
   const updateCreatorStatus = useMutation({
     mutationFn: async ({ creatorId, approved }: { creatorId: string; approved: boolean }) => {
-      const updateData = approved 
-        ? { approved: true, approved_at: new Date().toISOString() }
-        : { approved: false, approved_at: null };
-
       const { error } = await supabase
         .from('creators')
-        .update(updateData)
+        .update({ approved, approved_at: approved ? new Date().toISOString() : null })
         .eq('id', creatorId);
 
       if (error) throw error;
@@ -95,7 +101,6 @@ export const AdminCreators = () => {
     onSuccess: () => {
       toast.success('Creator status updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
-      queryClient.invalidateQueries({ queryKey: ['creators'] });
     },
     onError: (error: any) => {
       toast.error('Failed to update creator status: ' + error.message);
@@ -103,23 +108,14 @@ export const AdminCreators = () => {
   });
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-  };
-
-  const getWalletAddresses = (creator: CreatorWithUser) => {
-    const wallets = [
-      { network: 'ethereum', address: creator.users.payout_address_eth },
-      { network: 'solana', address: creator.users.payout_address_sol },
-      { network: 'bsc', address: creator.users.payout_address_bsc },
-      { network: 'sui', address: creator.users.payout_address_sui },
-      { network: 'cardano', address: creator.users.payout_address_cardano }
-    ].filter(wallet => wallet.address);
-
-    return wallets;
   };
 
   return (
@@ -132,21 +128,34 @@ export const AdminCreators = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-              </select>
+              <Label>Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-2">
+              <Label>Search</Label>
+              <Input
+                placeholder="Headline, user, email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
             </div>
           </div>
 
+          {/* Creators List */}
           <div className="space-y-4">
             {isLoading ? (
               <div className="text-center py-8">Loading creators...</div>
@@ -157,79 +166,136 @@ export const AdminCreators = () => {
             ) : (
               creators.map((creator) => (
                 <Card key={creator.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={creator.users.avatar_url || ''} alt={creator.users.handle || ''} />
-                        <AvatarFallback>
-                          {creator.users.handle?.[0]?.toUpperCase() || creator.users.email[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Creator Info */}
+                    <div className="lg:col-span-2 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={creator.users.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {creator.users.handle?.[0]?.toUpperCase() || creator.users.email?.[0]?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">
                             {creator.users.handle || creator.users.email}
-                          </h4>
-                          <Badge variant={creator.approved ? 'default' : 'secondary'}>
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {creator.headline || 'No headline'}
+                          </p>
+                        </div>
+                        <div className="ml-auto flex items-center gap-2">
+                          <Badge variant={creator.approved ? "default" : "secondary"}>
                             {creator.approved ? 'Approved' : 'Pending'}
                           </Badge>
-                          <Badge variant="outline" className="capitalize">
-                            {creator.tier}
+                          <Badge variant="outline">
+                            {creator.tier || 'basic'}
                           </Badge>
                         </div>
-                        
-                        <p className="text-sm text-muted-foreground">
-                          {creator.headline || 'No headline provided'}
-                        </p>
-                        
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3" />
-                            {creator.rating.toFixed(1)} ({creator.review_count} reviews)
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Applied {formatDate(creator.created_at)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Wallet className="h-3 w-3" />
-                            {getWalletAddresses(creator).length} wallet(s)
-                          </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Category:</span> {creator.category || 'Not specified'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Rating:</span> {creator.rating || 0}/5 ({creator.review_count || 0} reviews)
+                        </div>
+                        <div>
+                          <span className="font-medium">Applied:</span> {formatDate(creator.created_at || '')}
+                        </div>
+                        {creator.approved_at && (
+                          <div>
+                            <span className="font-medium">Approved:</span> {formatDate(creator.approved_at)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Payout Addresses */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Payout Addresses:</h4>
+                        <div className="grid grid-cols-1 gap-2 text-xs">
+                          {creator.payout_address_eth && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium w-16">ETH:</span>
+                              <code className="bg-muted px-2 py-1 rounded text-xs break-all">
+                                {creator.payout_address_eth}
+                              </code>
+                            </div>
+                          )}
+                          {creator.payout_address_sol && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium w-16">SOL:</span>
+                              <code className="bg-muted px-2 py-1 rounded text-xs break-all">
+                                {creator.payout_address_sol}
+                              </code>
+                            </div>
+                          )}
+                          {creator.payout_address_bsc && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium w-16">BSC:</span>
+                              <code className="bg-muted px-2 py-1 rounded text-xs break-all">
+                                {creator.payout_address_bsc}
+                              </code>
+                            </div>
+                          )}
+                          {creator.payout_address_sui && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium w-16">SUI:</span>
+                              <code className="bg-muted px-2 py-1 rounded text-xs break-all">
+                                {creator.payout_address_sui}
+                              </code>
+                            </div>
+                          )}
+                          {creator.payout_address_cardano && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium w-16">ADA:</span>
+                              <code className="bg-muted px-2 py-1 rounded text-xs break-all">
+                                {creator.payout_address_cardano}
+                              </code>
+                            </div>
+                          )}
+                          {!creator.payout_address_eth && !creator.payout_address_sol && 
+                           !creator.payout_address_bsc && !creator.payout_address_sui && 
+                           !creator.payout_address_cardano && (
+                            <div className="text-muted-foreground">No payout addresses configured</div>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedCreator(creator)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                      
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
                       {!creator.approved && (
-                        <Button
-                          size="sm"
-                          onClick={() => updateCreatorStatus.mutate({ creatorId: creator.id, approved: true })}
-                          disabled={updateCreatorStatus.isPending}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => updateCreatorStatus.mutate({ creatorId: creator.id, approved: true })}
+                            disabled={updateCreatorStatus.isPending}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => updateCreatorStatus.mutate({ creatorId: creator.id, approved: false })}
+                            disabled={updateCreatorStatus.isPending}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
                       )}
-                      
                       {creator.approved && (
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="outline"
                           onClick={() => updateCreatorStatus.mutate({ creatorId: creator.id, approved: false })}
                           disabled={updateCreatorStatus.isPending}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Revoke
+                          Revoke Approval
                         </Button>
                       )}
                     </div>
@@ -240,161 +306,6 @@ export const AdminCreators = () => {
           </div>
         </CardContent>
       </Card>
-
-      {selectedCreator && (
-        <Dialog open={!!selectedCreator} onOpenChange={() => setSelectedCreator(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Creator Details</DialogTitle>
-              <DialogDescription>
-                Review creator profile and application details
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedCreator.users.avatar_url || ''} alt={selectedCreator.users.handle || ''} />
-                  <AvatarFallback className="text-lg">
-                    {selectedCreator.users.handle?.[0]?.toUpperCase() || selectedCreator.users.email[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-semibold">
-                      {selectedCreator.users.handle || selectedCreator.users.email}
-                    </h3>
-                    <Badge variant={selectedCreator.approved ? 'default' : 'secondary'}>
-                      {selectedCreator.approved ? 'Approved' : 'Pending'}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCreator.users.email}
-                  </p>
-                  
-                  {selectedCreator.headline && (
-                    <p className="text-sm font-medium">
-                      {selectedCreator.headline}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {selectedCreator.users.bio && (
-                <div>
-                  <h4 className="font-semibold mb-2">Bio</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCreator.users.bio}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Payout Wallet Addresses
-                </h4>
-                <div className="space-y-3">
-                  {getWalletAddresses(selectedCreator).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No wallet addresses configured</p>
-                  ) : (
-                    getWalletAddresses(selectedCreator).map((wallet) => {
-                      const networkConfig = NETWORK_CONFIG[wallet.network as keyof typeof NETWORK_CONFIG];
-                      return (
-                        <div key={wallet.network} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{networkConfig?.icon}</span>
-                            <span className="font-medium text-sm">{networkConfig?.name}</span>
-                          </div>
-                          <code className="flex-1 text-xs bg-background px-2 py-1 rounded border break-all">
-                            {wallet.address}
-                          </code>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="text-2xl font-bold">{selectedCreator.rating.toFixed(1)}</div>
-                  <div className="text-sm text-muted-foreground">Rating</div>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="text-2xl font-bold">{selectedCreator.review_count}</div>
-                  <div className="text-sm text-muted-foreground">Reviews</div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-semibold">Application Details</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Tier:</span>
-                    <Badge variant="outline" className="ml-2 capitalize">
-                      {selectedCreator.tier}
-                    </Badge>
-                  </div>
-                  <div>
-                    <span className="font-medium">Category:</span>
-                    <span className="ml-2 capitalize">{selectedCreator.category || 'Not specified'}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium">Applied:</span>
-                    <span className="ml-2">{formatDate(selectedCreator.created_at)}</span>
-                  </div>
-                  {selectedCreator.approved_at && (
-                    <div>
-                      <span className="font-medium">Approved:</span>
-                      <span className="ml-2">{formatDate(selectedCreator.approved_at)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedCreator(null)}
-                  className="flex-1"
-                >
-                  Close
-                </Button>
-                
-                {!selectedCreator.approved ? (
-                  <Button
-                    onClick={() => {
-                      updateCreatorStatus.mutate({ creatorId: selectedCreator.id, approved: true });
-                      setSelectedCreator(null);
-                    }}
-                    disabled={updateCreatorStatus.isPending}
-                    className="flex-1"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Approve Creator
-                  </Button>
-                ) : (
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      updateCreatorStatus.mutate({ creatorId: selectedCreator.id, approved: false });
-                      setSelectedCreator(null);
-                    }}
-                    disabled={updateCreatorStatus.isPending}
-                    className="flex-1"
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    Revoke Approval
-                  </Button>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };

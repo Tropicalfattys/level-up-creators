@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +87,17 @@ export const AdminPayments = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Filter and type-cast the results properly
+      return (data || []).filter(payment => 
+        payment.users && 
+        typeof payment.users === 'object' && 
+        !('error' in payment.users)
+      ).map(payment => ({
+        ...payment,
+        payment_type: payment.payment_type as 'service_booking' | 'creator_tier',
+        status: payment.status as 'pending' | 'verified' | 'rejected'
+      }));
     }
   });
 
