@@ -63,8 +63,6 @@ export type Database = {
           delivered_at: string | null
           id: string
           payment_address: string | null
-          proof_file_url: string | null
-          proof_link: string | null
           release_at: string | null
           service_id: string | null
           status: string | null
@@ -81,8 +79,6 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           payment_address?: string | null
-          proof_file_url?: string | null
-          proof_link?: string | null
           release_at?: string | null
           service_id?: string | null
           status?: string | null
@@ -99,8 +95,6 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           payment_address?: string | null
-          proof_file_url?: string | null
-          proof_link?: string | null
           release_at?: string | null
           service_id?: string | null
           status?: string | null

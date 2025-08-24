@@ -5,14 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Link } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface BookingWithDetails {
   id: string;
@@ -22,10 +20,6 @@ interface BookingWithDetails {
   delivered_at?: string;
   accepted_at?: string;
   release_at?: string;
-  tx_hash?: string;
-  chain?: string;
-  proof_link?: string;
-  proof_file_url?: string;
   services: {
     title: string;
   } | null;
@@ -38,9 +32,6 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [proofLink, setProofLink] = useState('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [submittingProof, setSubmittingProof] = useState<string | null>(null);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -96,71 +87,6 @@ export const BookingManagement = () => {
     }
   });
 
-  const submitProof = useMutation({
-    mutationFn: async ({ bookingId, link, file }: { 
-      bookingId: string; 
-      link?: string; 
-      file?: File; 
-    }) => {
-      let fileUrl = null;
-      
-      // Upload file if provided
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${bookingId}_${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('deliverables')
-          .upload(fileName, file);
-        
-        if (uploadError) throw uploadError;
-        
-        // Get public URL
-        const { data } = supabase.storage
-          .from('deliverables')
-          .getPublicUrl(fileName);
-        
-        fileUrl = data.publicUrl;
-      }
-
-      // Update booking with proof
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          status: 'delivered',
-          delivered_at: new Date().toISOString(),
-          proof_link: link || null,
-          proof_file_url: fileUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', bookingId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      toast.success('Proof submitted and booking marked as delivered!');
-      setProofLink('');
-      setProofFile(null);
-      setSubmittingProof(null);
-    },
-    onError: (error) => {
-      console.error('Submit proof error:', error);
-      toast.error('Failed to submit proof');
-      setSubmittingProof(null);
-    }
-  });
-
-  const handleSubmitProof = (bookingId: string) => {
-    if (!proofLink && !proofFile) {
-      toast.error('Please provide either a link or upload a file as proof');
-      return;
-    }
-    
-    setSubmittingProof(bookingId);
-    submitProof.mutate({ bookingId, link: proofLink, file: proofFile || undefined });
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
@@ -191,35 +117,18 @@ export const BookingManagement = () => {
         );
       case 'in_progress':
         return (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Proof link (optional)"
-                value={submittingProof === booking.id ? proofLink : ''}
-                onChange={(e) => setProofLink(e.target.value)}
-                className="text-xs"
-              />
-              <input
-                type="file"
-                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                className="hidden"
-                id={`file-${booking.id}`}
-              />
-              <Label htmlFor={`file-${booking.id}`} className="cursor-pointer">
-                <Button size="sm" variant="outline" type="button">
-                  <Upload className="h-3 w-3" />
-                </Button>
-              </Label>
-            </div>
-            <Button 
-              size="sm"
-              onClick={() => handleSubmitProof(booking.id)}
-              disabled={submittingProof === booking.id}
-              className="w-full"
-            >
-              {submittingProof === booking.id ? 'Submitting...' : 'Submit Proof & Mark Delivered'}
-            </Button>
-          </div>
+          <Button 
+            size="sm"
+            onClick={() => updateBookingStatus.mutate({ 
+              bookingId: booking.id, 
+              status: 'delivered',
+              deliveredAt: new Date().toISOString()
+            })}
+            disabled={updateBookingStatus.isPending}
+          >
+            <Upload className="h-3 w-3 mr-1" />
+            Mark as Delivered
+          </Button>
         );
       case 'delivered':
         return (
@@ -243,19 +152,6 @@ export const BookingManagement = () => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     return bookings.filter(booking => booking.status === status);
-  };
-
-  const getExplorerUrl = (chain: string, txHash: string) => {
-    switch (chain?.toLowerCase()) {
-      case 'ethereum':
-        return `https://etherscan.io/tx/${txHash}`;
-      case 'base':
-        return `https://basescan.org/tx/${txHash}`;
-      case 'solana':
-        return `https://explorer.solana.com/tx/${txHash}`;
-      default:
-        return '#';
-    }
   };
 
   if (isLoading) {
@@ -304,75 +200,27 @@ export const BookingManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {/* Transaction Hash Display */}
-                    {booking.tx_hash && (
-                      <div className="flex items-center gap-2 text-sm bg-muted/50 p-2 rounded">
-                        <span className="font-medium">TX Hash:</span>
-                        <code className="flex-1 text-xs">{booking.tx_hash}</code>
-                        {booking.chain && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => window.open(getExplorerUrl(booking.chain!, booking.tx_hash!), '_blank')}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
                       </div>
-                    )}
-
-                    {/* Proof Display */}
-                    {(booking.proof_link || booking.proof_file_url) && (
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium">Proof of Completion:</span>
-                        <div className="flex gap-2">
-                          {booking.proof_link && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(booking.proof_link, '_blank')}
-                            >
-                              <Link className="h-3 w-3 mr-1" />
-                              View Link
-                            </Button>
-                          )}
-                          {booking.proof_file_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(booking.proof_file_url, '_blank')}
-                            >
-                              <Upload className="h-3 w-3 mr-1" />
-                              View File
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      {booking.delivered_at && (
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                          <Upload className="h-3 w-3" />
+                          Delivered {format(new Date(booking.delivered_at), 'MMM d')}
                         </div>
-                        {booking.delivered_at && (
-                          <div className="flex items-center gap-1">
-                            <Upload className="h-3 w-3" />
-                            Delivered {format(new Date(booking.delivered_at), 'MMM d')}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <RouterLink to={`/chat/${booking.id}`}>
-                          <Button size="sm" variant="outline">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            Chat
-                          </Button>
-                        </RouterLink>
-                        {getStatusActions(booking)}
-                      </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Link to={`/chat/${booking.id}`}>
+                        <Button size="sm" variant="outline">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Chat
+                        </Button>
+                      </Link>
+                      {getStatusActions(booking)}
                     </div>
                   </div>
                 </CardContent>
