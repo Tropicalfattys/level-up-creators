@@ -14,7 +14,9 @@ export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
     { value: 'defi', label: 'DeFi' },
     { value: 'education', label: 'Education' },
     { value: 'development', label: 'Development' },
-    { value: 'marketing', label: 'Marketing' }
+    { value: 'marketing', label: 'Marketing' },
+    { value: 'music', label: 'Music' },
+    { value: 'other', label: 'Other' }
   ];
 
   return (

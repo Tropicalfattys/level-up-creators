@@ -160,6 +160,8 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                 <SelectItem value="education">Education</SelectItem>
                 <SelectItem value="development">Development</SelectItem>
                 <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="music">Music</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>

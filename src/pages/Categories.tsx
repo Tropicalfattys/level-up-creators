@@ -1,11 +1,10 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
   MessageSquare, Hash, Video, FileText, Star, Megaphone, 
-  Instagram, Facebook, Target, Palette, Trophy, Zap 
+  Instagram, Facebook, Target, Palette, Trophy, Zap, Music, MoreHorizontal
 } from 'lucide-react';
 
 export default function Categories() {
@@ -121,6 +120,22 @@ export default function Categories() {
       icon: Zap,
       creatorCount: 'Coming Soon',
       avgPrice: 60
+    },
+    {
+      id: 'music',
+      name: 'Music Production',
+      description: 'Custom music, beats, jingles, and audio content creation',
+      icon: Music,
+      creatorCount: 'Coming Soon',
+      avgPrice: 180
+    },
+    {
+      id: 'other',
+      name: 'Other Services',
+      description: 'Unique and specialized services not covered elsewhere',
+      icon: MoreHorizontal,
+      creatorCount: 'Coming Soon',
+      avgPrice: 120
     }
   ];
 
