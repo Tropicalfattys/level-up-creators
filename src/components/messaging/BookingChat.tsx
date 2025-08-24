@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, ExternalLink } from 'lucide-react';
+import { Send, ExternalLink, Paperclip, Download, FileText, Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { MessageAttachments } from './MessageAttachments';
 import { Link } from 'react-router-dom';
 import { useBookingChat } from '@/hooks/useBookingChat';
 
@@ -35,8 +34,9 @@ interface BookingChatProps {
 
 export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: BookingChatProps) => {
   const [message, setMessage] = useState('');
-  const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -62,7 +62,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const sendMessage = useMutation({
     mutationFn: async ({ messageBody, attachments }: { messageBody: string; attachments?: any }) => {
-      if (!user || (!messageBody.trim() && (!attachments || attachments.length === 0))) return;
+      if (!user || (!messageBody.trim() && !attachments)) return;
 
       const messageData: any = {
         booking_id: bookingId,
@@ -71,8 +71,8 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         body: messageBody.trim() || 'Sent attachments'
       };
 
-      if (attachments && attachments.length > 0) {
-        messageData.attachments = { files: attachments };
+      if (attachments) {
+        messageData.attachments = attachments;
       }
 
       const { error } = await supabase
@@ -83,7 +83,6 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     },
     onSuccess: () => {
       setMessage('');
-      setPendingAttachments([]);
       queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
     },
     onError: (error) => {
@@ -92,22 +91,84 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     }
   });
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleFileUpload = async (file: File) => {
+    if (!file) return null;
+
+    setUploading(true);
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const filePath = `message-attachments/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+
+      return {
+        files: [{
+          id: uploadData.path,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          url: publicUrl
+        }]
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload file');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() || pendingAttachments.length > 0) {
+    if (message.trim() || fileInputRef.current?.files?.[0]) {
+      let attachments = null;
+      
+      if (fileInputRef.current?.files?.[0]) {
+        attachments = await handleFileUpload(fileInputRef.current.files[0]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+
       sendMessage.mutate({ 
         messageBody: message,
-        attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined
+        attachments
       });
     }
   };
 
-  const handleAttachmentAdd = (attachment: any) => {
-    setPendingAttachments(prev => [...prev, attachment]);
+  const downloadFile = async (attachment: any) => {
+    try {
+      const response = await fetch(attachment.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download file');
+    }
   };
 
-  const handleAttachmentRemove = (attachmentId: string) => {
-    setPendingAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  const getFileIcon = (type: string) => {
+    if (type?.startsWith('image/')) {
+      return <Image className="h-4 w-4" />;
+    }
+    return <FileText className="h-4 w-4" />;
   };
 
   useEffect(() => {
@@ -120,7 +181,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   return (
     <Card className="h-96 flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 border-b">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Chat with @{otherUserHandle}</CardTitle>
@@ -139,49 +200,55 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
       
       <CardContent className="flex-1 flex flex-col p-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-64">
           {messages && messages.length > 0 ? (
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 ${
+                className={`flex gap-2 max-w-full ${
                   msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-6 w-6 flex-shrink-0">
                   <AvatarImage src={msg.from_user?.avatar_url} />
-                  <AvatarFallback>
+                  <AvatarFallback className="text-xs">
                     {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
                   </AvatarFallback>
                 </Avatar>
-                <div
-                  className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                    msg.from_user_id === user?.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="text-sm">{msg.body}</p>
-                  
-                  {/* Message Attachments */}
-                  {msg.attachments?.files && (
-                    <div className="mt-2">
-                      <MessageAttachments 
-                        attachments={msg.attachments.files}
-                        canUpload={false}
-                      />
-                    </div>
-                  )}
-                  
-                  <p
-                    className={`text-xs mt-1 ${
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={`inline-block max-w-xs px-3 py-2 rounded-lg break-words ${
                       msg.from_user_id === user?.id
-                        ? 'text-primary-foreground/70'
-                        : 'text-muted-foreground'
+                        ? 'bg-primary text-primary-foreground ml-auto'
+                        : 'bg-muted text-foreground'
                     }`}
                   >
-                    {format(new Date(msg.created_at), 'MMM d, HH:mm')}
-                  </p>
+                    <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+                    
+                    {/* Message Attachments */}
+                    {msg.attachments?.files && Array.isArray(msg.attachments.files) && (
+                      <div className="mt-2 space-y-1">
+                        {msg.attachments.files.map((attachment: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-background/10 rounded text-xs">
+                            {getFileIcon(attachment.type)}
+                            <span className="flex-1 truncate">{attachment.name}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => downloadFile(attachment)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-xs mt-1 opacity-70">
+                      {format(new Date(msg.created_at), 'MMM d, HH:mm')}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))
@@ -193,49 +260,44 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Pending Attachments Preview */}
-        {pendingAttachments.length > 0 && (
-          <div className="border-t p-4 bg-muted/30">
-            <div className="space-y-2">
-              {pendingAttachments.map((attachment) => (
-                <div key={attachment.id} className="flex items-center justify-between p-2 bg-background rounded">
-                  <span className="text-sm truncate">{attachment.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleAttachmentRemove(attachment.id)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Message Input */}
-        <div className="border-t p-4">
-          <div className="mb-2">
-            <MessageAttachments
-              onAttachmentAdd={handleAttachmentAdd}
-              canUpload={true}
+        <div className="border-t p-3">
+          <form onSubmit={handleSend} className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1"
+                disabled={sendMessage.isPending || uploading}
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                type="submit" 
+                disabled={sendMessage.isPending || uploading || (!message.trim() && !fileInputRef.current?.files?.[0])}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={() => {}} // Handle on form submit
+              className="hidden"
+              accept="image/*,.pdf,.doc,.docx,.txt,.zip"
             />
-          </div>
-          <form onSubmit={handleSend} className="flex gap-2">
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1"
-              disabled={sendMessage.isPending}
-            />
-            <Button 
-              size="sm" 
-              type="submit" 
-              disabled={sendMessage.isPending || (!message.trim() && pendingAttachments.length === 0)}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {uploading && (
+              <p className="text-xs text-muted-foreground">Uploading file...</p>
+            )}
           </form>
         </div>
       </CardContent>

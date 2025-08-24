@@ -6,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Upload, Hash, Copy, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Upload, Hash, Copy, CheckCircle, AlertTriangle, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 import { toast } from 'sonner';
+import { BookingChat } from '@/components/messaging/BookingChat';
+import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
 interface ClientBookingWithDetails {
   id: string;
@@ -242,10 +243,10 @@ export const ClientBookings = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {/* Display proof if delivered */}
                   {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
-                    <div className="mb-4 p-3 bg-muted rounded">
+                    <div className="p-3 bg-muted rounded">
                       <p className="text-sm font-medium mb-2">Proof of Completion:</p>
                       {booking.proof_link && (
                         <div className="flex items-center gap-2 mb-1">
@@ -266,9 +267,20 @@ export const ClientBookings = () => {
                     </div>
                   )}
 
+                  {/* Chat Component */}
+                  {booking.creator && (
+                    <div>
+                      <BookingChat
+                        bookingId={booking.id}
+                        otherUserId={booking.creator.id}
+                        otherUserHandle={booking.creator.handle}
+                      />
+                    </div>
+                  )}
+
                   {/* Review System for accepted/completed bookings */}
                   {(booking.status === 'accepted' || booking.status === 'released') && booking.creator?.id && (
-                    <div className="mb-4">
+                    <div>
                       <ReviewSystem 
                         bookingId={booking.id}
                         revieweeId={booking.creator.id}
@@ -277,7 +289,7 @@ export const ClientBookings = () => {
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2 border-t">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -294,7 +306,7 @@ export const ClientBookings = () => {
                       <Link to={`/chat/${booking.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageSquare className="h-3 w-3 mr-1" />
-                          Chat
+                          Full Chat
                         </Button>
                       </Link>
                       {getStatusActions(booking)}

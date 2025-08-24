@@ -13,6 +13,7 @@ import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLi
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { BookingChat } from '@/components/messaging/BookingChat';
 
 interface BookingWithDetails {
   id: string;
@@ -29,6 +30,7 @@ interface BookingWithDetails {
     title: string;
   } | null;
   client: {
+    id: string;
     handle: string;
     avatar_url?: string;
   } | null;
@@ -49,7 +51,7 @@ export const BookingManagement = () => {
         .select(`
           *,
           services (title),
-          client:users!bookings_client_id_fkey (handle, avatar_url)
+          client:users!bookings_client_id_fkey (id, handle, avatar_url)
         `)
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
@@ -294,9 +296,9 @@ export const BookingManagement = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
-                    <div className="mb-4 p-3 bg-muted rounded">
+                    <div className="p-3 bg-muted rounded">
                       <p className="text-sm font-medium mb-2">Proof of Completion:</p>
                       {booking.proof_link && (
                         <div className="flex items-center gap-2 mb-1">
@@ -316,8 +318,19 @@ export const BookingManagement = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Chat Component */}
+                  {booking.client && (
+                    <div>
+                      <BookingChat
+                        bookingId={booking.id}
+                        otherUserId={booking.client.id}
+                        otherUserHandle={booking.client.handle}
+                      />
+                    </div>
+                  )}
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2 border-t">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -334,7 +347,7 @@ export const BookingManagement = () => {
                       <Link to={`/chat/${booking.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageSquare className="h-3 w-3 mr-1" />
-                          Chat
+                          Full Chat
                         </Button>
                       </Link>
                       <div>
