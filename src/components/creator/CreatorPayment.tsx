@@ -3,51 +3,102 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Wallet, Shield } from 'lucide-react';
-import { toast } from 'sonner';
-import { WalletConnectionManager } from '@/components/payments/WalletConnectionManager';
-import { SecurityWarning } from '@/components/payments/SecurityWarning';
+import { PaymentInstructions } from '@/components/payments/PaymentInstructions';
 import { PlanDisplay } from '@/components/payments/PlanDisplay';
 import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CreatorPaymentProps {
   isOpen: boolean;
   onClose: () => void;
-  onPaymentSuccess: (txHash: string, chain: string) => void;
-  tier: 'basic' | 'mid' | 'pro'; // Updated to match new tier structure
+  onPaymentSuccess: (paymentId: string) => void;
+  tier: 'basic' | 'mid' | 'pro';
 }
 
 export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: CreatorPaymentProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [securityWarningAccepted, setSecurityWarningAccepted] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('ethereum_usdc');
+  const [step, setStep] = useState<'select' | 'payment' | 'submitted'>('select');
   
   const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
+  const { user } = useAuth();
   
   // Use dynamic pricing
   const amount = dynamicTiers?.[tier]?.price || 0;
   const tierDisplayName = dynamicTiers?.[tier]?.displayName || tier;
 
-  if (isProcessing) {
+  const handlePaymentMethodSelect = (method: string) => {
+    setSelectedPaymentMethod(method);
+    setStep('payment');
+  };
+
+  const handlePaymentSubmitted = (paymentId: string) => {
+    setStep('submitted');
+    onPaymentSuccess(paymentId);
+  };
+
+  const handleClose = () => {
+    setStep('select');
+    setSelectedPaymentMethod('ethereum_usdc');
+    onClose();
+  };
+
+  if (step === 'submitted') {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Processing Secure Payment
+              Payment Submitted
             </DialogTitle>
             <DialogDescription>
-              Please wait while we securely process your {amount} USDC payment...
+              Your creator tier payment has been submitted for verification
             </DialogDescription>
           </DialogHeader>
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground mb-2">
-              Processing payment securely...
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Thank you!</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              We've received your {tierDisplayName} payment submission. Our team will verify your transaction and activate your creator tier within 24-48 hours.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Do not close this window or refresh the page.
+            <p className="text-xs text-muted-foreground">
+              You'll receive an email notification once your creator application is approved.
             </p>
           </div>
+          <Button onClick={handleClose} className="w-full">
+            Close
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (step === 'payment') {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              Complete {tierDisplayName} Payment
+            </DialogTitle>
+            <DialogDescription>
+              Follow the instructions below to complete your creator tier payment
+            </DialogDescription>
+          </DialogHeader>
+          <PaymentInstructions
+            paymentMethod={selectedPaymentMethod}
+            amount={amount}
+            creatorId={user?.id || ''}
+            paymentType="creator_tier"
+            onPaymentSubmitted={handlePaymentSubmitted}
+            onCancel={handleClose}
+          />
         </DialogContent>
       </Dialog>
     );
@@ -55,7 +106,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
 
   if (isLoading) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent>
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -68,7 +119,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
 
   if (error) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600">Error Loading Pricing</DialogTitle>
@@ -77,7 +128,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Close
             </Button>
           </div>
@@ -88,7 +139,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
 
   if (!dynamicTiers?.[tier]) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600">Plan Not Available</DialogTitle>
@@ -97,7 +148,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Close
             </Button>
           </div>
@@ -109,7 +160,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   // For basic tier or free tiers, skip payment
   if (amount === 0) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm {tierDisplayName}</DialogTitle>
@@ -119,10 +170,10 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
           </DialogHeader>
           <PlanDisplay tier={tier} amount={amount} />
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={() => onPaymentSuccess('free', 'none')} className="flex-1">
+            <Button onClick={() => handlePaymentSubmitted('free')} className="flex-1">
               Confirm Application
             </Button>
           </div>
@@ -131,38 +182,54 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
     );
   }
 
+  // Select payment method step
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
-            Secure Crypto Payment
+            Choose Payment Method
           </DialogTitle>
           <DialogDescription>
-            Choose your preferred wallet and network to pay {amount} USDC for the {tierDisplayName}
+            Select your preferred network to pay {amount} USDC for the {tierDisplayName}
           </DialogDescription>
         </DialogHeader>
 
-        <SecurityWarning
-          accepted={securityWarningAccepted}
-          onAcceptChange={setSecurityWarningAccepted}
-        />
-        
         <div className="grid md:grid-cols-2 gap-6">
           <PlanDisplay tier={tier} amount={amount} />
 
           <div className="space-y-4">
-            <WalletConnectionManager
-              onPaymentSuccess={onPaymentSuccess}
-              amount={amount}
-              securityWarningAccepted={securityWarningAccepted}
-              isProcessing={isProcessing}
-              setIsProcessing={setIsProcessing}
-            />
+            <h4 className="font-medium">Select Payment Network</h4>
+            <div className="grid gap-3">
+              {[
+                { key: 'ethereum_usdc', name: 'Ethereum', icon: '🦊', fees: 'High fees (~$15-50)' },
+                { key: 'solana_usdc', name: 'Solana', icon: '👻', fees: 'Very low fees (~$0.01)' },
+                { key: 'bsc_usdc', name: 'BSC', icon: '🟡', fees: 'Low fees (~$0.50)' },
+                { key: 'sui_usdc', name: 'Sui', icon: '🌊', fees: 'Very low fees (~$0.01)' },
+                { key: 'cardano_usdm', name: 'Cardano', icon: '🔵', fees: 'Low fees (~$0.30)' }
+              ].map((network) => (
+                <Button
+                  key={network.key}
+                  variant="outline"
+                  className="h-auto p-4 justify-start"
+                  onClick={() => handlePaymentMethodSelect(network.key)}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="text-2xl">{network.icon}</div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium">{network.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {network.fees}
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose} className="flex-1">
+              <Button variant="outline" onClick={handleClose} className="flex-1">
                 Cancel
               </Button>
               <Button 

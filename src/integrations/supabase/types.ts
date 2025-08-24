@@ -357,6 +357,99 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          admin_wallet_address: string
+          amount: number
+          booking_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          currency: string
+          id: string
+          network: string
+          payment_type: string
+          service_id: string | null
+          status: string | null
+          tx_hash: string
+          updated_at: string | null
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_wallet_address: string
+          amount: number
+          booking_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          currency: string
+          id?: string
+          network: string
+          payment_type: string
+          service_id?: string | null
+          status?: string | null
+          tx_hash: string
+          updated_at?: string | null
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_wallet_address?: string
+          amount?: number
+          booking_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string
+          id?: string
+          network?: string
+          payment_type?: string
+          service_id?: string | null
+          status?: string | null
+          tx_hash?: string
+          updated_at?: string | null
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_tiers: {
         Row: {
           active: boolean
@@ -451,6 +544,7 @@ export type Database = {
           delivery_days: number | null
           description: string | null
           id: string
+          payment_method: string | null
           price_usdc: number | null
           title: string
           updated_at: string | null
@@ -463,6 +557,7 @@ export type Database = {
           delivery_days?: number | null
           description?: string | null
           id?: string
+          payment_method?: string | null
           price_usdc?: number | null
           title: string
           updated_at?: string | null
@@ -475,6 +570,7 @@ export type Database = {
           delivery_days?: number | null
           description?: string | null
           id?: string
+          payment_method?: string | null
           price_usdc?: number | null
           title?: string
           updated_at?: string | null
@@ -536,6 +632,9 @@ export type Database = {
           email: string | null
           handle: string | null
           id: string
+          payout_address_bsc: string | null
+          payout_address_cardano: string | null
+          payout_address_sui: string | null
           portfolio_url: string | null
           referral_code: string | null
           referral_credits: number | null
@@ -553,6 +652,9 @@ export type Database = {
           email?: string | null
           handle?: string | null
           id: string
+          payout_address_bsc?: string | null
+          payout_address_cardano?: string | null
+          payout_address_sui?: string | null
           portfolio_url?: string | null
           referral_code?: string | null
           referral_credits?: number | null
@@ -570,6 +672,9 @@ export type Database = {
           email?: string | null
           handle?: string | null
           id?: string
+          payout_address_bsc?: string | null
+          payout_address_cardano?: string | null
+          payout_address_sui?: string | null
           portfolio_url?: string | null
           referral_code?: string | null
           referral_credits?: number | null

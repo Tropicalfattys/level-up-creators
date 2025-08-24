@@ -2,15 +2,16 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Clock, DollarSign, User, Shield } from 'lucide-react';
-import { WalletConnect } from '@/components/payments/WalletConnect';
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { getEscrowAddress, validateTransactionHash } from '@/lib/walletValidation';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar, Clock, DollarSign, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { PaymentInstructions } from '@/components/payments/PaymentInstructions';
+import { PAYMENT_METHODS } from '@/lib/contracts';
 
 interface Service {
   id: string;
@@ -18,6 +19,8 @@ interface Service {
   description: string;
   price_usdc: number;
   delivery_days: number;
+  category: string;
+  payment_method: string;
   creator_id: string;
 }
 
@@ -38,59 +41,49 @@ interface BookingModalProps {
 }
 
 export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModalProps) => {
-  const [step, setStep] = useState<'review' | 'payment' | 'success'>('review');
+  const [step, setStep] = useState<'review' | 'payment' | 'submitted'>('review');
   const [bookingId, setBookingId] = useState<string | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Platform takes 15%, client pays full service amount
-  const totalAmount = service.price_usdc;
-  const platformFee = service.price_usdc * 0.15;
-  const creatorAmount = service.price_usdc * 0.85;
-
   const createBooking = useMutation({
-    mutationFn: async ({ txHash, chain }: { txHash: string; chain: string }) => {
+    mutationFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      // Validate transaction hash before creating booking
-      if (!validateTransactionHash(txHash, chain)) {
-        throw new Error('Invalid transaction hash format');
-      }
-
-      const bookingData = {
-        service_id: service.id,
-        client_id: user.id,
-        creator_id: service.creator_id,
-        usdc_amount: totalAmount, // Full amount paid by client
-        status: 'paid',
-        chain,
-        tx_hash: txHash,
-        payment_address: getEscrowAddress(chain)
-      };
-
-      const { data, error } = await supabase
+      // Create booking with pending status
+      const { data: booking, error } = await supabase
         .from('bookings')
-        .insert([bookingData])
+        .insert({
+          client_id: user.id,
+          creator_id: service.creator_id,
+          service_id: service.id,
+          usdc_amount: service.price_usdc,
+          status: 'pending'
+        })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return booking;
     },
-    onSuccess: (data) => {
-      setBookingId(data.id);
-      setStep('success');
-      queryClient.invalidateQueries({ queryKey: ['user-bookings'] });
-      toast.success('Booking created successfully!');
+    onSuccess: (booking) => {
+      setBookingId(booking.id);
+      setStep('payment');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Booking creation error:', error);
-      toast.error('Failed to create booking. Please contact support.');
+      toast.error('Failed to create booking: ' + error.message);
     }
   });
 
-  const handlePaymentSuccess = (txHash: string, chain: string) => {
-    createBooking.mutate({ txHash, chain });
+  const handleProceedToPayment = () => {
+    createBooking.mutate();
+  };
+
+  const handlePaymentSubmitted = (paymentId: string) => {
+    setStep('submitted');
+    queryClient.invalidateQueries({ queryKey: ['user-bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
   };
 
   const handleClose = () => {
@@ -99,148 +92,161 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
     onClose();
   };
 
-  if (!user) {
+  const paymentConfig = PAYMENT_METHODS[service.payment_method as keyof typeof PAYMENT_METHODS];
+
+  if (step === 'submitted') {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Sign In Required</DialogTitle>
+            <DialogTitle>Payment Submitted!</DialogTitle>
             <DialogDescription>
-              Please sign in to book this service
+              Your payment has been submitted for verification
             </DialogDescription>
           </DialogHeader>
-          <Button onClick={handleClose}>Close</Button>
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Thank you!</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              We've received your payment submission. Our team will verify your transaction and confirm your booking within 24-48 hours.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              You'll receive an email notification once your booking is confirmed.
+            </p>
+          </div>
+          <Button onClick={handleClose} className="w-full">
+            Close
+          </Button>
         </DialogContent>
       </Dialog>
     );
   }
 
-  return (
-    <ErrorBoundary>
+  if (step === 'payment' && bookingId) {
+    return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {step === 'review' && 'Review Booking'}
-              {step === 'payment' && 'Complete Payment'}
-              {step === 'success' && 'Booking Confirmed!'}
-            </DialogTitle>
+            <DialogTitle>Complete Payment</DialogTitle>
             <DialogDescription>
-              {step === 'review' && 'Review the details before booking'}
-              {step === 'payment' && 'Choose your payment method'}
-              {step === 'success' && 'Your booking has been created successfully'}
+              Follow the instructions below to complete your booking
             </DialogDescription>
           </DialogHeader>
-
-          {step === 'review' && (
-            <div className="space-y-6">
-              {/* Service Details */}
-              <div>
-                <h3 className="font-semibold mb-3">Service Details</h3>
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">{service.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {service.description}
-                  </p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{service.delivery_days} days delivery</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>@{creator.users.handle}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 font-semibold">
-                      <DollarSign className="h-4 w-4" />
-                      {service.price_usdc} USDC
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Escrow Information */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <h4 className="font-medium mb-1">Secure Escrow Protection</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Your payment is held securely until the creator delivers your service. 
-                      You have 3 days to review and accept the delivery.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pricing Breakdown */}
-              <div>
-                <h3 className="font-semibold mb-3">Pricing</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Service Price</span>
-                    <span>{service.price_usdc.toFixed(2)} USDC</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground text-xs">
-                    <span>Platform Fee (15%)</span>
-                    <span>{platformFee.toFixed(2)} USDC</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground text-xs">
-                    <span>Creator Receives</span>
-                    <span>{creatorAmount.toFixed(2)} USDC</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-medium">
-                    <span>You Pay</span>
-                    <span>{totalAmount.toFixed(2)} USDC</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={handleClose} className="flex-1">
-                  Cancel
-                </Button>
-                <Button onClick={() => setStep('payment')} className="flex-1">
-                  Continue to Payment
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 'payment' && (
-            <WalletConnect
-              amount={totalAmount}
-              currency="USDC"
-              onPaymentSuccess={handlePaymentSuccess}
-              onCancel={() => setStep('review')}
-            />
-          )}
-
-          {step === 'success' && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Booking Confirmed!</h3>
-              <p className="text-muted-foreground mb-6">
-                Your booking has been created and the creator has been notified. 
-                You can track the progress in your dashboard.
-              </p>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={handleClose}>
-                  Close
-                </Button>
-                <Button onClick={() => window.location.href = '/dashboard'}>
-                  View Dashboard
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaymentInstructions
+            paymentMethod={service.payment_method}
+            amount={service.price_usdc}
+            serviceId={service.id}
+            creatorId={service.creator_id}
+            bookingId={bookingId}
+            paymentType="service_booking"
+            onPaymentSubmitted={handlePaymentSubmitted}
+            onCancel={handleClose}
+          />
         </DialogContent>
       </Dialog>
-    </ErrorBoundary>
+    );
+  }
+
+  // Review step (default)
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Book Service</DialogTitle>
+          <DialogDescription>
+            Review the service details before proceeding with payment
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Service Details */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
+                    <AvatarFallback>
+                      {creator.users.handle?.[0]?.toUpperCase() || 'C'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{service.title}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <User className="h-3 w-3" />
+                      by {creator.users.handle}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{service.category}</Badge>
+                </div>
+
+                <p className="text-sm text-muted-foreground">{service.description}</p>
+
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-lg font-semibold">
+                      <DollarSign className="h-4 w-4" />
+                      {service.price_usdc}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {paymentConfig?.currency || 'USDC'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-lg font-semibold">
+                      <Clock className="h-4 w-4" />
+                      {service.delivery_days}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Days</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-lg font-semibold">
+                      <Calendar className="h-4 w-4" />
+                      {paymentConfig?.displayName?.split(' ')[1] || 'Network'}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Payment</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment Information */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">Payment Process:</h4>
+            <ol className="text-sm text-blue-800 space-y-1 list-decimal ml-4">
+              <li>You'll receive payment instructions for {paymentConfig?.displayName}</li>
+              <li>Send the exact amount to the provided admin wallet address</li>
+              <li>Submit your transaction hash for verification</li>
+              <li>Our team will verify and confirm your booking within 24-48 hours</li>
+            </ol>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleProceedToPayment} 
+              disabled={createBooking.isPending}
+              className="flex-1"
+            >
+              {createBooking.isPending ? 'Creating Booking...' : 'Proceed to Payment'}
+            </Button>
+          </div>
+
+          {/* Terms Notice */}
+          <div className="text-xs text-muted-foreground text-center space-y-1">
+            <p>By proceeding, you agree to our Terms of Service and Payment Policy.</p>
+            <p>Payments are held in escrow until service delivery is complete.</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

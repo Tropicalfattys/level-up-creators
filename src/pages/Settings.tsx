@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin } from 'lucide-react';
+import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin, Wallet } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { NETWORK_CONFIG } from '@/lib/contracts';
 
 export default function Settings() {
   const { userProfile, refreshProfile } = useAuth();
@@ -24,7 +25,12 @@ export default function Settings() {
     website_url: '',
     portfolio_url: '',
     youtube_url: '',
-    social_links: {}
+    social_links: {},
+    payout_address_eth: '',
+    payout_address_sol: '',
+    payout_address_cardano: '',
+    payout_address_bsc: '',
+    payout_address_sui: ''
   });
 
   // Initialize profile data when userProfile changes
@@ -37,21 +43,18 @@ export default function Settings() {
         website_url: userProfile.website_url || '',
         portfolio_url: userProfile.portfolio_url || '',
         youtube_url: userProfile.youtube_url || '',
-        social_links: userProfile.social_links || {}
+        social_links: userProfile.social_links || {},
+        payout_address_eth: (userProfile as any).payout_address_eth || '',
+        payout_address_sol: (userProfile as any).payout_address_sol || '',
+        payout_address_cardano: (userProfile as any).payout_address_cardano || '',
+        payout_address_bsc: (userProfile as any).payout_address_bsc || '',
+        payout_address_sui: (userProfile as any).payout_address_sui || ''
       });
     }
   }, [userProfile]);
 
   const updateProfile = useMutation({
-    mutationFn: async (data: { 
-      handle: string; 
-      bio: string; 
-      avatar_url?: string;
-      website_url?: string;
-      portfolio_url?: string;
-      youtube_url?: string;
-      social_links?: any;
-    }) => {
+    mutationFn: async (data: any) => {
       if (!userProfile?.id) throw new Error('No user profile');
       
       const { error } = await supabase
@@ -64,6 +67,11 @@ export default function Settings() {
           portfolio_url: data.portfolio_url,
           youtube_url: data.youtube_url,
           social_links: data.social_links,
+          payout_address_eth: data.payout_address_eth,
+          payout_address_sol: data.payout_address_sol,
+          payout_address_cardano: data.payout_address_cardano,
+          payout_address_bsc: data.payout_address_bsc,
+          payout_address_sui: data.payout_address_sui,
           updated_at: new Date().toISOString()
         })
         .eq('id', userProfile.id);
@@ -119,6 +127,42 @@ export default function Settings() {
     }));
   };
 
+  // Wallet validation functions
+  const validateWalletAddress = (address: string, network: string): boolean => {
+    if (!address) return true; // Empty addresses are allowed
+    switch (network) {
+      case 'ethereum':
+      case 'bsc':
+        return /^0x[a-fA-F0-9]{40}$/.test(address);
+      case 'solana':
+      case 'sui':
+        return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+      case 'cardano':
+        return /^addr1[a-z0-9]{98,}$/.test(address);
+      default:
+        return false;
+    }
+  };
+
+  const getWalletValidationError = (address: string, network: string): string | null => {
+    if (!address) return null;
+    if (!validateWalletAddress(address, network)) {
+      switch (network) {
+        case 'ethereum':
+        case 'bsc':
+          return 'Invalid Ethereum/BSC address format (must start with 0x)';
+        case 'solana':
+        case 'sui':
+          return 'Invalid Solana/Sui address format';
+        case 'cardano':
+          return 'Invalid Cardano address format (must start with addr1)';
+        default:
+          return 'Invalid address format';
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -132,8 +176,8 @@ export default function Settings() {
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="social">Social & Links</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
@@ -423,29 +467,129 @@ export default function Settings() {
         <TabsContent value="payments" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Payment Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Payout Wallet Addresses
+              </CardTitle>
               <CardDescription>
-                Manage your wallet addresses for payouts
+                Configure your wallet addresses for receiving payouts after services are completed.
+                These addresses will be used by admins to send your earnings.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="eth-wallet">Ethereum Wallet Address</Label>
+            <CardContent className="space-y-6">
+              {/* Ethereum Wallet */}
+              <div className="space-y-2">
+                <Label htmlFor="eth-wallet" className="flex items-center gap-2">
+                  <span className="text-lg">{NETWORK_CONFIG.ethereum.icon}</span>
+                  Ethereum Wallet Address
+                </Label>
                 <Input
                   id="eth-wallet"
                   placeholder="0x..."
+                  value={profileData.payout_address_eth}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_eth: e.target.value }))}
+                  className={getWalletValidationError(profileData.payout_address_eth, 'ethereum') ? 'border-red-500' : ''}
                 />
+                {getWalletValidationError(profileData.payout_address_eth, 'ethereum') && (
+                  <p className="text-sm text-red-500">
+                    {getWalletValidationError(profileData.payout_address_eth, 'ethereum')}
+                  </p>
+                )}
               </div>
 
-              <div>
-                <Label htmlFor="sol-wallet">Solana Wallet Address</Label>
+              {/* Solana Wallet */}
+              <div className="space-y-2">
+                <Label htmlFor="sol-wallet" className="flex items-center gap-2">
+                  <span className="text-lg">{NETWORK_CONFIG.solana.icon}</span>
+                  Solana Wallet Address
+                </Label>
                 <Input
                   id="sol-wallet"
                   placeholder="Enter Solana address..."
+                  value={profileData.payout_address_sol}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_sol: e.target.value }))}
+                  className={getWalletValidationError(profileData.payout_address_sol, 'solana') ? 'border-red-500' : ''}
                 />
+                {getWalletValidationError(profileData.payout_address_sol, 'solana') && (
+                  <p className="text-sm text-red-500">
+                    {getWalletValidationError(profileData.payout_address_sol, 'solana')}
+                  </p>
+                )}
               </div>
 
-              <Button>Save Wallet Addresses</Button>
+              {/* BSC Wallet */}
+              <div className="space-y-2">
+                <Label htmlFor="bsc-wallet" className="flex items-center gap-2">
+                  <span className="text-lg">{NETWORK_CONFIG.bsc.icon}</span>
+                  BSC Wallet Address
+                </Label>
+                <Input
+                  id="bsc-wallet"
+                  placeholder="0x..."
+                  value={profileData.payout_address_bsc}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_bsc: e.target.value }))}
+                  className={getWalletValidationError(profileData.payout_address_bsc, 'bsc') ? 'border-red-500' : ''}
+                />
+                {getWalletValidationError(profileData.payout_address_bsc, 'bsc') && (
+                  <p className="text-sm text-red-500">
+                    {getWalletValidationError(profileData.payout_address_bsc, 'bsc')}
+                  </p>
+                )}
+              </div>
+
+              {/* Sui Wallet */}
+              <div className="space-y-2">
+                <Label htmlFor="sui-wallet" className="flex items-center gap-2">
+                  <span className="text-lg">{NETWORK_CONFIG.sui.icon}</span>
+                  Sui Wallet Address
+                </Label>
+                <Input
+                  id="sui-wallet"
+                  placeholder="Enter Sui address..."
+                  value={profileData.payout_address_sui}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_sui: e.target.value }))}
+                  className={getWalletValidationError(profileData.payout_address_sui, 'sui') ? 'border-red-500' : ''}
+                />
+                {getWalletValidationError(profileData.payout_address_sui, 'sui') && (
+                  <p className="text-sm text-red-500">
+                    {getWalletValidationError(profileData.payout_address_sui, 'sui')}
+                  </p>
+                )}
+              </div>
+
+              {/* Cardano Wallet */}
+              <div className="space-y-2">
+                <Label htmlFor="cardano-wallet" className="flex items-center gap-2">
+                  <span className="text-lg">{NETWORK_CONFIG.cardano.icon}</span>
+                  Cardano Wallet Address
+                </Label>
+                <Input
+                  id="cardano-wallet"
+                  placeholder="addr1..."
+                  value={profileData.payout_address_cardano}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_cardano: e.target.value }))}
+                  className={getWalletValidationError(profileData.payout_address_cardano, 'cardano') ? 'border-red-500' : ''}
+                />
+                {getWalletValidationError(profileData.payout_address_cardano, 'cardano') && (
+                  <p className="text-sm text-red-500">
+                    {getWalletValidationError(profileData.payout_address_cardano, 'cardano')}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Important Notes:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• These addresses are used for receiving payouts after completing services</li>
+                  <li>• Make sure you control these wallet addresses</li>
+                  <li>• Double-check addresses before saving - incorrect addresses may result in lost funds</li>
+                  <li>• You only need to provide addresses for networks you plan to accept payments on</li>
+                </ul>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+                {updateProfile.isPending ? 'Saving...' : 'Save Wallet Addresses'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

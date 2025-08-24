@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { PAYMENT_METHODS } from '@/lib/contracts';
 
 interface Service {
   id?: string;
@@ -18,6 +19,7 @@ interface Service {
   price_usdc: number;
   delivery_days: number;
   category: string;
+  payment_method: string;
   active: boolean;
 }
 
@@ -34,6 +36,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
     price_usdc: service?.price_usdc || 0,
     delivery_days: service?.delivery_days || 3,
     category: service?.category || 'trading',
+    payment_method: service?.payment_method || 'ethereum_usdc',
     active: service?.active ?? true,
   });
 
@@ -159,6 +162,25 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                 <SelectItem value="marketing">Marketing</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="payment-method">Payment Method *</Label>
+            <Select value={formData.payment_method} onValueChange={(value) => handleChange('payment_method', value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
+                  <SelectItem key={key} value={key}>
+                    {method.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choose which network/token you want to receive for this service
+            </p>
           </div>
 
           <div className="flex gap-3">
