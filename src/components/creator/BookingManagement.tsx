@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -155,47 +155,6 @@ export const BookingManagement = () => {
     }
   };
 
-  const getStatusActions = (booking: BookingWithDetails) => {
-    switch (booking.status) {
-      case 'paid':
-        return (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => updateBookingStatus.mutate({ 
-              bookingId: booking.id, 
-              status: 'in_progress' 
-            })}
-            disabled={updateBookingStatus.isPending}
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Start Work
-          </Button>
-        );
-      case 'in_progress':
-        return (
-          <div className="text-sm text-blue-600 font-medium">
-            Submit proof below to deliver
-          </div>
-        );
-      case 'delivered':
-        return (
-          <div className="text-sm text-muted-foreground">
-            Waiting for client review
-          </div>
-        );
-      case 'accepted':
-      case 'released':
-        return (
-          <div className="text-sm text-green-600 font-medium">
-            Completed
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
@@ -275,45 +234,95 @@ export const BookingManagement = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Existing Proof Display - for delivered bookings */}
-                {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
-                  <div className="p-3 bg-muted rounded">
-                    <p className="text-sm font-medium mb-2">Proof of Completion:</p>
-                    {booking.proof_link && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <ExternalLink className="h-3 w-3" />
-                        <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                          View Proof Link
-                        </a>
-                      </div>
-                    )}
-                    {booking.proof_file_url && (
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-3 w-3" />
-                        <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                          View Proof File
-                        </a>
-                      </div>
-                    )}
+                {/* Action Buttons Section - Above Chat */}
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Project Actions
+                    </h4>
+                    <div className="flex gap-2">
+                      {booking.status === 'paid' && (
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          onClick={() => updateBookingStatus.mutate({ 
+                            bookingId: booking.id, 
+                            status: 'in_progress' 
+                          })}
+                          disabled={updateBookingStatus.isPending}
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Start Work
+                        </Button>
+                      )}
+                      
+                      {booking.status === 'in_progress' && (
+                        <div className="text-sm text-blue-600 font-medium">
+                          Add proof links below to mark as delivered
+                        </div>
+                      )}
+                      
+                      {booking.status === 'delivered' && (
+                        <div className="text-sm text-orange-600 font-medium">
+                          Waiting for client review
+                        </div>
+                      )}
+                      
+                      {(booking.status === 'accepted' || booking.status === 'released') && (
+                        <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Completed
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* Proof Submission Section - for in_progress bookings */}
-                {booking.status === 'in_progress' && (
-                  <ProofSubmission
-                    bookingId={booking.id}
-                    currentProof={{
-                      link: booking.proof_link,
-                      fileUrl: booking.proof_file_url
-                    }}
-                    onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
-                    isSubmitting={updateBookingStatus.isPending}
-                  />
-                )}
+                  {/* Existing Proof Display - for delivered bookings */}
+                  {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
+                    <div className="p-3 bg-background rounded border">
+                      <p className="text-sm font-medium mb-2">Submitted Proof:</p>
+                      {booking.proof_link && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <ExternalLink className="h-3 w-3" />
+                          <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                            View Proof Link
+                          </a>
+                        </div>
+                      )}
+                      {booking.proof_file_url && (
+                        <div className="flex items-center gap-2">
+                          <Upload className="h-3 w-3" />
+                          <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                            View Proof File
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Proof Submission Section - for in_progress bookings */}
+                  {booking.status === 'in_progress' && (
+                    <ProofSubmission
+                      bookingId={booking.id}
+                      currentProof={{
+                        link: booking.proof_link,
+                        fileUrl: booking.proof_file_url
+                      }}
+                      onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
+                      isSubmitting={updateBookingStatus.isPending}
+                    />
+                  )}
+                </div>
 
                 {/* Chat Component */}
                 {booking.client && (
                   <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <MessageSquare className="h-4 w-4" />
+                      <h4 className="font-medium">Chat with @{booking.client.handle}</h4>
+                      <span className="text-sm text-muted-foreground">Discuss project details and deliverables</span>
+                    </div>
                     <BookingChat
                       bookingId={booking.id}
                       otherUserId={booking.client.id}
@@ -342,9 +351,6 @@ export const BookingManagement = () => {
                         Full Chat
                       </Button>
                     </Link>
-                    <div>
-                      {getStatusActions(booking)}
-                    </div>
                   </div>
                 </div>
               </CardContent>
