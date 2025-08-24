@@ -67,7 +67,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         booking_id: bookingId,
         from_user_id: user.id,
         to_user_id: otherUserId,
-        body: messageBody.trim() || 'Sent attachments'
+        body: messageBody.trim() || (attachments ? 'Sent attachment' : '')
       };
 
       if (attachments) {
@@ -93,30 +93,66 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   const handleFileUpload = async (file: File) => {
     if (!file) return null;
 
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return null;
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/zip',
+      'application/x-zip-compressed'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('File type not supported');
+      return null;
+    }
+
     setUploading(true);
     try {
       const fileName = `${Date.now()}-${file.name}`;
       const filePath = `message-attachments/${fileName}`;
 
+      // Upload to attachments bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      // Get signed URL for download (valid for 1 hour)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('attachments')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600);
 
-      return {
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw signedUrlError;
+      }
+
+      const attachment = {
         files: [{
           id: uploadData.path,
           name: file.name,
           size: file.size,
           type: file.type,
-          url: publicUrl
+          url: signedUrlData.signedUrl,
+          path: filePath
         }]
       };
+
+      toast.success('File uploaded successfully');
+      return attachment;
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload file');
@@ -128,16 +164,18 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() || fileInputRef.current?.files?.[0]) {
-      let attachments = null;
-      
-      if (fileInputRef.current?.files?.[0]) {
-        attachments = await handleFileUpload(fileInputRef.current.files[0]);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+    
+    const selectedFile = fileInputRef.current?.files?.[0];
+    let attachments = null;
+    
+    if (selectedFile) {
+      attachments = await handleFileUpload(selectedFile);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
+    }
 
+    if (message.trim() || attachments) {
       sendMessage.mutate({ 
         messageBody: message,
         attachments
@@ -147,7 +185,23 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const downloadFile = async (attachment: any) => {
     try {
-      const response = await fetch(attachment.url);
+      // Get a fresh signed URL for download
+      const { data: signedUrlData, error } = await supabase.storage
+        .from('attachments')
+        .createSignedUrl(attachment.path || attachment.id, 300); // 5 minutes
+
+      if (error) {
+        console.error('Error getting signed URL:', error);
+        toast.error('Failed to get download link');
+        return;
+      }
+
+      // Download the file
+      const response = await fetch(signedUrlData.signedUrl);
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
@@ -158,7 +212,10 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast.success('File downloaded successfully');
     } catch (error) {
+      console.error('Download error:', error);
       toast.error('Failed to download file');
     }
   };
@@ -168,6 +225,14 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
       return <Image className="h-4 w-4" />;
     }
     return <FileText className="h-4 w-4" />;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   useEffect(() => {
@@ -195,46 +260,69 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
           {/* Messages Area - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages && messages.length > 0 ? (
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-2 ${
+                  className={`flex gap-3 ${
                     msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'
                   }`}
                 >
-                  <Avatar className="h-6 w-6 flex-shrink-0">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={msg.from_user?.avatar_url} />
                     <AvatarFallback className="text-xs">
                       {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 max-w-xs">
+                  <div className={`flex-1 max-w-xs ${msg.from_user_id === user?.id ? 'text-right' : 'text-left'}`}>
                     <div
-                      className={`inline-block px-3 py-2 rounded-lg ${
+                      className={`inline-block px-4 py-2 rounded-lg ${
                         msg.from_user_id === user?.id
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-900'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                      {msg.body && (
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                      )}
                       
                       {/* Message Attachments */}
                       {msg.attachments?.files && Array.isArray(msg.attachments.files) && (
-                        <div className="mt-2 space-y-1">
+                        <div className="mt-2 space-y-2">
                           {msg.attachments.files.map((attachment: any, index: number) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-white/10 rounded text-xs">
-                              {getFileIcon(attachment.type)}
-                              <span className="flex-1 truncate">{attachment.name}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => downloadFile(attachment)}
-                                className="h-6 w-6 p-0 hover:bg-white/20"
-                              >
-                                <Download className="h-3 w-3" />
-                              </Button>
+                            <div key={index} className={`p-2 rounded border ${
+                              msg.from_user_id === user?.id 
+                                ? 'bg-white/10 border-white/20' 
+                                : 'bg-white border-gray-200'
+                            }`}>
+                              <div className="flex items-center gap-2 text-xs">
+                                {getFileIcon(attachment.type)}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{attachment.name}</p>
+                                  <p className="text-xs opacity-70">{formatFileSize(attachment.size)}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => downloadFile(attachment)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              {/* Image Preview */}
+                              {attachment.type?.startsWith('image/') && attachment.url && (
+                                <div className="mt-2">
+                                  <img
+                                    src={attachment.url}
+                                    alt={attachment.name}
+                                    className="max-w-full max-h-32 rounded object-contain"
+                                    loading="lazy"
+                                  />
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -265,12 +353,18 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                 className="flex-1"
                 disabled={sendMessage.isPending || uploading}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+              />
               <Button 
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || sendMessage.isPending}
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -282,13 +376,6 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={() => {}} // Handle on form submit
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.txt,.zip"
-            />
             {uploading && (
               <p className="text-xs text-muted-foreground mt-2">Uploading file...</p>
             )}
