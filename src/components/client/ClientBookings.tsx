@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Clock, MessageSquare, Star, DollarSign, User, Hash, ExternalLink } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, Star, Hash, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { Textarea } from '@/components/ui/textarea';
 
 interface BookingWithDetails {
   id: string;
@@ -22,21 +21,24 @@ interface BookingWithDetails {
   delivered_at?: string;
   accepted_at?: string;
   release_at?: string;
-  proof_data?: any;
   services: {
     title: string;
   } | null;
   creator: {
-    handle: string;
-    avatar_url?: string;
+    id: string;
+    user_id: string;
+    users: {
+      handle: string;
+      avatar_url?: string;
+    } | null;
   } | null;
 }
 
 export const ClientBookings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [reviewTexts, setReviewTexts] = useState<{[key: string]: string}>({});
   const [reviewRatings, setReviewRatings] = useState<{[key: string]: number}>({});
-  const [reviewComments, setReviewComments] = useState<{[key: string]: string}>({});
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['client-bookings', user?.id],
@@ -48,7 +50,11 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creator:users!bookings_creator_id_fkey (handle, avatar_url)
+          creator:creators!bookings_creator_id_fkey (
+            id,
+            user_id,
+            users (handle, avatar_url)
+          )
         `)
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
@@ -62,7 +68,7 @@ export const ClientBookings = () => {
     enabled: !!user?.id
   });
 
-  const acceptDelivery = useMutation({
+  const acceptBooking = useMutation({
     mutationFn: async (bookingId: string) => {
       const { error } = await supabase
         .from('bookings')
@@ -76,29 +82,27 @@ export const ClientBookings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
-      toast.success('Delivery accepted!');
+      toast.success('Booking accepted successfully!');
     },
     onError: (error) => {
-      console.error('Accept delivery error:', error);
-      toast.error('Failed to accept delivery');
+      console.error('Accept booking error:', error);
+      toast.error('Failed to accept booking');
     }
   });
 
   const submitReview = useMutation({
-    mutationFn: async ({ bookingId, rating, comment }: { 
+    mutationFn: async ({ bookingId, rating, comment, creatorUserId }: { 
       bookingId: string; 
       rating: number; 
-      comment: string; 
+      comment: string;
+      creatorUserId: string;
     }) => {
-      const booking = bookings?.find(b => b.id === bookingId);
-      if (!booking) throw new Error('Booking not found');
-
       const { error } = await supabase
         .from('reviews')
         .insert({
           booking_id: bookingId,
           reviewer_id: user?.id,
-          reviewee_id: booking.creator_id,
+          reviewee_id: creatorUserId,
           rating,
           comment
         });
@@ -107,8 +111,8 @@ export const ClientBookings = () => {
     },
     onSuccess: (_, { bookingId }) => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      setReviewTexts(prev => ({ ...prev, [bookingId]: '' }));
       setReviewRatings(prev => ({ ...prev, [bookingId]: 0 }));
-      setReviewComments(prev => ({ ...prev, [bookingId]: '' }));
       toast.success('Review submitted successfully!');
     },
     onError: (error) => {
@@ -133,66 +137,22 @@ export const ClientBookings = () => {
       case 'delivered':
         return (
           <div className="space-y-3">
-            {booking.proof_data && (
-              <div className="p-3 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Delivery Proof:</h4>
-                {booking.proof_data.note && (
-                  <p className="text-sm mb-2">{booking.proof_data.note}</p>
-                )}
-                {booking.proof_data.link && (
-                  <a
-                    href={booking.proof_data.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View Work
-                  </a>
-                )}
-                {booking.proof_data.files && (
-                  <div className="space-y-1">
-                    {booking.proof_data.files.map((file: string, index: number) => (
-                      <a
-                        key={index}
-                        href={file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm block"
-                      >
-                        Download File {index + 1}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
             <Button 
               size="sm"
-              onClick={() => acceptDelivery.mutate(booking.id)}
-              disabled={acceptDelivery.isPending}
+              onClick={() => acceptBooking.mutate(booking.id)}
+              disabled={acceptBooking.isPending}
+              className="w-full"
             >
               Accept Delivery
             </Button>
-          </div>
-        );
-      case 'accepted':
-        return (
-          <div className="space-y-3">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">Delivery accepted! Leave a review below.</p>
-            </div>
+            
             <div className="space-y-2">
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     onClick={() => setReviewRatings(prev => ({ ...prev, [booking.id]: star }))}
-                    className={`p-1 ${
-                      (reviewRatings[booking.id] || 0) >= star
-                        ? 'text-yellow-500'
-                        : 'text-gray-300'
-                    }`}
+                    className={`p-1 ${reviewRatings[booking.id] >= star ? 'text-yellow-500' : 'text-gray-300'}`}
                   >
                     <Star className="h-4 w-4 fill-current" />
                   </button>
@@ -200,24 +160,28 @@ export const ClientBookings = () => {
               </div>
               <Textarea
                 placeholder="Leave a review..."
-                value={reviewComments[booking.id] || ''}
-                onChange={(e) => setReviewComments(prev => ({ ...prev, [booking.id]: e.target.value }))}
-                rows={3}
+                value={reviewTexts[booking.id] || ''}
+                onChange={(e) => setReviewTexts(prev => ({ ...prev, [booking.id]: e.target.value }))}
+                rows={2}
+                className="text-xs"
               />
-              <Button
+              <Button 
                 size="sm"
-                onClick={() => submitReview.mutate({
+                onClick={() => submitReview.mutate({ 
                   bookingId: booking.id,
                   rating: reviewRatings[booking.id] || 5,
-                  comment: reviewComments[booking.id] || ''
+                  comment: reviewTexts[booking.id] || '',
+                  creatorUserId: booking.creator?.user_id || ''
                 })}
                 disabled={submitReview.isPending || !reviewRatings[booking.id]}
+                className="w-full"
               >
                 Submit Review
               </Button>
             </div>
           </div>
         );
+      case 'accepted':
       case 'released':
         return (
           <div className="text-sm text-green-600 font-medium">
@@ -251,20 +215,14 @@ export const ClientBookings = () => {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({bookings?.length || 0})</TabsTrigger>
-          <TabsTrigger value="paid">Active ({filterBookings('paid').length + filterBookings('in_progress').length})</TabsTrigger>
+          <TabsTrigger value="paid">Paid ({filterBookings('paid').length})</TabsTrigger>
+          <TabsTrigger value="in_progress">In Progress ({filterBookings('in_progress').length})</TabsTrigger>
           <TabsTrigger value="delivered">Delivered ({filterBookings('delivered').length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({filterBookings('accepted').length + filterBookings('released').length})</TabsTrigger>
         </TabsList>
 
-        {['all', 'paid', 'delivered', 'completed'].map(status => (
+        {['all', 'paid', 'in_progress', 'delivered'].map(status => (
           <TabsContent key={status} value={status} className="space-y-4">
-            {filterBookings(status === 'paid' ? 'all' : status === 'completed' ? 'all' : status)
-              .filter(booking => {
-                if (status === 'paid') return ['paid', 'in_progress'].includes(booking.status);
-                if (status === 'completed') return ['accepted', 'released'].includes(booking.status);
-                return status === 'all' || booking.status === status;
-              })
-              .map((booking) => (
+            {filterBookings(status).map((booking) => (
               <Card key={booking.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -272,7 +230,7 @@ export const ClientBookings = () => {
                       <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3" />
-                        Creator: @{booking.creator?.handle || 'Unknown'}
+                        Creator: @{booking.creator?.users?.handle || 'Unknown'}
                       </CardDescription>
                       {booking.tx_hash && (
                         <CardDescription className="flex items-center gap-2 mt-1">
@@ -309,7 +267,7 @@ export const ClientBookings = () => {
                       </div>
                       {booking.delivered_at && (
                         <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3" />
+                          <Clock className="h-3 w-3" />
                           Delivered {format(new Date(booking.delivered_at), 'MMM d')}
                         </div>
                       )}
@@ -330,12 +288,7 @@ export const ClientBookings = () => {
               </Card>
             ))}
 
-            {filterBookings(status === 'paid' ? 'all' : status === 'completed' ? 'all' : status)
-              .filter(booking => {
-                if (status === 'paid') return ['paid', 'in_progress'].includes(booking.status);
-                if (status === 'completed') return ['accepted', 'released'].includes(booking.status);
-                return status === 'all' || booking.status === status;
-              }).length === 0 && (
+            {filterBookings(status).length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   No bookings in this category yet

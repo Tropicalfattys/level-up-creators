@@ -141,16 +141,22 @@ export const BookingManagement = () => {
 
       if (error) throw error;
 
+      // Get the booking details to find the client_id
+      const booking = bookings?.find(b => b.id === bookingId);
+      const clientId = booking ? (booking as any).client_id : null;
+
       // Send a message to the client with the proof
       const messageBody = `Delivery completed! ${note || 'Work has been delivered.'}${link ? ` Link: ${link}` : ''}`;
       
-      await supabase.from('messages').insert({
-        booking_id: bookingId,
-        from_user_id: user?.id,
-        to_user_id: bookings?.find(b => b.id === bookingId)?.client?.id,
-        body: messageBody,
-        attachments: proofData
-      });
+      if (clientId) {
+        await supabase.from('messages').insert({
+          booking_id: bookingId,
+          from_user_id: user?.id,
+          to_user_id: clientId,
+          body: messageBody,
+          attachments: proofData
+        });
+      }
     },
     onSuccess: (_, { bookingId }) => {
       queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
