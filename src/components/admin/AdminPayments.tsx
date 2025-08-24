@@ -24,11 +24,7 @@ export const AdminPayments = () => {
         .from('payments')
         .select(`
           *,
-          users!payments_user_id_fkey(handle, email),
-          creators!payments_creator_id_fkey(
-            users!creators_user_id_fkey(handle, email)
-          ),
-          services!payments_service_id_fkey(title, price_usdc)
+          users!payments_user_id_fkey(handle, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -49,6 +45,50 @@ export const AdminPayments = () => {
       
       return data;
     }
+  });
+
+  // Separate query to get creator and service details
+  const { data: enrichedPayments, isLoading: isEnriching } = useQuery({
+    queryKey: ['enriched-payments', payments],
+    queryFn: async () => {
+      if (!payments || payments.length === 0) return [];
+      
+      const enriched = await Promise.all(
+        payments.map(async (payment) => {
+          let creatorInfo = null;
+          let serviceInfo = null;
+          
+          // Get creator info if creator_id exists
+          if (payment.creator_id) {
+            const { data: creator } = await supabase
+              .from('creators')
+              .select('users!creators_user_id_fkey(handle, email)')
+              .eq('id', payment.creator_id)
+              .single();
+            creatorInfo = creator;
+          }
+          
+          // Get service info if service_id exists
+          if (payment.service_id) {
+            const { data: service } = await supabase
+              .from('services')
+              .select('title, price_usdc')
+              .eq('id', payment.service_id)
+              .single();
+            serviceInfo = service;
+          }
+          
+          return {
+            ...payment,
+            creator: creatorInfo,
+            service: serviceInfo
+          };
+        })
+      );
+      
+      return enriched;
+    },
+    enabled: !!payments
   });
 
   const updatePaymentStatus = async (paymentId: string, status: string) => {
@@ -82,7 +122,10 @@ export const AdminPayments = () => {
     return explorers[network as keyof typeof explorers] || '#';
   };
 
-  if (isLoading) {
+  const displayPayments = enrichedPayments || payments || [];
+  const loading = isLoading || isEnriching;
+
+  if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -156,7 +199,7 @@ export const AdminPayments = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments?.map((payment) => (
+              {displayPayments?.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -180,14 +223,14 @@ export const AdminPayments = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{payment.creators?.users?.handle || 'Unknown'}</div>
-                      <div className="text-sm text-muted-foreground">{payment.creators?.users?.email}</div>
+                      <div className="font-medium">{payment.creator?.users?.handle || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">{payment.creator?.users?.email}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{payment.services?.title}</div>
-                      <div className="text-sm text-muted-foreground">${payment.services?.price_usdc}</div>
+                      <div className="font-medium">{payment.service?.title || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">${payment.service?.price_usdc || payment.amount}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -235,7 +278,7 @@ export const AdminPayments = () => {
             </TableBody>
           </Table>
 
-          {(!payments || payments.length === 0) && (
+          {(!displayPayments || displayPayments.length === 0) && (
             <div className="text-center py-8 text-muted-foreground">
               No payments found matching your criteria.
             </div>
