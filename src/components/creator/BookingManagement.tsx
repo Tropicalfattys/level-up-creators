@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +37,7 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('all');
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -175,7 +175,7 @@ export const BookingManagement = () => {
       case 'in_progress':
         return (
           <div className="text-sm text-blue-600 font-medium">
-            Submit proof above to deliver
+            Submit proof below to deliver
           </div>
         );
       case 'delivered':
@@ -202,9 +202,21 @@ export const BookingManagement = () => {
     return bookings.filter(booking => booking.status === status);
   };
 
+  const getTabCounts = () => {
+    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
+    return {
+      all: bookings.length,
+      paid: bookings.filter(b => b.status === 'paid').length,
+      in_progress: bookings.filter(b => b.status === 'in_progress').length,
+      delivered: bookings.filter(b => b.status === 'delivered').length,
+    };
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
   }
+
+  const tabCounts = getTabCounts();
 
   return (
     <div className="space-y-6">
@@ -215,139 +227,138 @@ export const BookingManagement = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">All ({bookings?.length || 0})</TabsTrigger>
-          <TabsTrigger value="paid">New ({filterBookings('paid').length})</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress ({filterBookings('in_progress').length})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({filterBookings('delivered').length})</TabsTrigger>
+          <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
+          <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
+          <TabsTrigger value="in_progress">In Progress ({tabCounts.in_progress})</TabsTrigger>
+          <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
         </TabsList>
 
-        {['all', 'paid', 'in_progress', 'delivered'].map(status => (
-          <TabsContent key={status} value={status} className="space-y-4">
-            {filterBookings(status).map((booking) => (
-              <Card key={booking.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
+        <TabsContent value={activeTab} className="space-y-4">
+          {filterBookings(activeTab).map((booking) => (
+            <Card key={booking.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 mt-1">
+                      <User className="h-3 w-3" />
+                      Client: @{booking.client?.handle || 'Unknown'}
+                    </CardDescription>
+                    {booking.tx_hash && (
                       <CardDescription className="flex items-center gap-2 mt-1">
-                        <User className="h-3 w-3" />
-                        Client: @{booking.client?.handle || 'Unknown'}
-                      </CardDescription>
-                      {booking.tx_hash && (
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                          <Hash className="h-3 w-3" />
-                          <span className="font-mono text-xs">
-                            TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
-                          </span>
-                          <Button
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => copyTxHash(booking.tx_hash!)}
-                            className="h-4 w-4 p-0"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </CardDescription>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={getStatusColor(booking.status)}>
-                        {booking.status.replace('_', ' ')}
-                      </Badge>
-                      <p className="font-semibold mt-1">
-                        <DollarSign className="h-3 w-3 inline mr-1" />
-                        {booking.usdc_amount} USDC
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
-                    <div className="p-3 bg-muted rounded">
-                      <p className="text-sm font-medium mb-2">Proof of Completion:</p>
-                      {booking.proof_link && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <ExternalLink className="h-3 w-3" />
-                          <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                            View Link
-                          </a>
-                        </div>
-                      )}
-                      {booking.proof_file_url && (
-                        <div className="flex items-center gap-2">
-                          <Upload className="h-3 w-3" />
-                          <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                            Download File
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Proof Submission Section - Only for in_progress bookings */}
-                  {booking.status === 'in_progress' && (
-                    <ProofSubmission
-                      bookingId={booking.id}
-                      currentProof={{
-                        link: booking.proof_link,
-                        fileUrl: booking.proof_file_url
-                      }}
-                      onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
-                      isSubmitting={updateBookingStatus.isPending}
-                    />
-                  )}
-
-                  {/* Chat Component */}
-                  {booking.client && (
-                    <div>
-                      <BookingChat
-                        bookingId={booking.id}
-                        otherUserId={booking.client.id}
-                        otherUserHandle={booking.client.handle}
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
-                      </div>
-                      {booking.delivered_at && (
-                        <div className="flex items-center gap-1">
-                          <Upload className="h-3 w-3" />
-                          Delivered {format(new Date(booking.delivered_at), 'MMM d')}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 items-end">
-                      <Link to={`/chat/${booking.id}`}>
-                        <Button size="sm" variant="outline">
-                          <MessageSquare className="h-3 w-3 mr-1" />
-                          Full Chat
+                        <Hash className="h-3 w-3" />
+                        <span className="font-mono text-xs">
+                          TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                        </span>
+                        <Button
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => copyTxHash(booking.tx_hash!)}
+                          className="h-4 w-4 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
                         </Button>
-                      </Link>
-                      <div>
-                        {getStatusActions(booking)}
+                      </CardDescription>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={getStatusColor(booking.status)}>
+                      {booking.status.replace('_', ' ')}
+                    </Badge>
+                    <p className="font-semibold mt-1">
+                      <DollarSign className="h-3 w-3 inline mr-1" />
+                      {booking.usdc_amount} USDC
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Existing Proof Display - for delivered bookings */}
+                {booking.status === 'delivered' && (booking.proof_link || booking.proof_file_url) && (
+                  <div className="p-3 bg-muted rounded">
+                    <p className="text-sm font-medium mb-2">Proof of Completion:</p>
+                    {booking.proof_link && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <ExternalLink className="h-3 w-3" />
+                        <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                          View Proof Link
+                        </a>
                       </div>
+                    )}
+                    {booking.proof_file_url && (
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-3 w-3" />
+                        <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                          View Proof File
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Proof Submission Section - for in_progress bookings */}
+                {booking.status === 'in_progress' && (
+                  <ProofSubmission
+                    bookingId={booking.id}
+                    currentProof={{
+                      link: booking.proof_link,
+                      fileUrl: booking.proof_file_url
+                    }}
+                    onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
+                    isSubmitting={updateBookingStatus.isPending}
+                  />
+                )}
+
+                {/* Chat Component */}
+                {booking.client && (
+                  <div>
+                    <BookingChat
+                      bookingId={booking.id}
+                      otherUserId={booking.client.id}
+                      otherUserHandle={booking.client.handle}
+                    />
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                    </div>
+                    {booking.delivered_at && (
+                      <div className="flex items-center gap-1">
+                        <Upload className="h-3 w-3" />
+                        Delivered {format(new Date(booking.delivered_at), 'MMM d')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 items-end">
+                    <Link to={`/chat/${booking.id}`}>
+                      <Button size="sm" variant="outline">
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Full Chat
+                      </Button>
+                    </Link>
+                    <div>
+                      {getStatusActions(booking)}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
 
-            {filterBookings(status).length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  No bookings in this category yet
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        ))}
+          {filterBookings(activeTab).length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No bookings in this category yet
+              </p>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );
