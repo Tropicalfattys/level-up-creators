@@ -25,6 +25,7 @@ interface ClientBookingWithDetails {
     title: string;
   } | null;
   creator: {
+    id: string;
     handle: string;
     avatar_url?: string;
   } | null;
@@ -43,7 +44,7 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creator:users!bookings_creator_id_fkey (handle, avatar_url)
+          creator:users!bookings_creator_id_fkey (id, handle, avatar_url)
         `)
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
@@ -150,14 +151,12 @@ export const ClientBookings = () => {
                   )}
 
                   {/* Review System for delivered bookings */}
-                  {booking.status === 'delivered' && (
+                  {booking.status === 'delivered' && booking.creator?.id && (
                     <div className="mb-4">
                       <ReviewSystem 
                         bookingId={booking.id}
-                        revieweeId={booking.creator?.handle || ''}
-                        onReviewSubmitted={() => {
-                          // Optional: refresh bookings or show success message
-                        }}
+                        revieweeId={booking.creator.id}
+                        canReview={true}
                       />
                     </div>
                   )}
