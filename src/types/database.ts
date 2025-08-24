@@ -41,6 +41,7 @@ export interface Service {
   delivery_days?: number;
   category?: string;
   active: boolean;
+  payment_method: string; // Added this field
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +76,11 @@ export interface User {
   website_url?: string;
   portfolio_url?: string;
   youtube_url?: string;
+  payout_address_eth?: string; // Added wallet fields
+  payout_address_sol?: string;
+  payout_address_cardano?: string;
+  payout_address_bsc?: string;
+  payout_address_sui?: string;
   social_links?: {
     twitter?: string;
     facebook?: string;
@@ -146,4 +152,24 @@ export interface PricingTier {
   active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// New Payment interface
+export interface Payment {
+  id: string;
+  user_id: string;
+  creator_id?: string;
+  service_id?: string;
+  booking_id?: string;
+  payment_type: 'service_booking' | 'creator_tier';
+  network: string;
+  amount: number;
+  currency: string;
+  tx_hash: string;
+  status: 'pending' | 'verified' | 'rejected';
+  admin_wallet_address: string;
+  created_at: string;
+  updated_at: string;
+  verified_by?: string;
+  verified_at?: string;
 }

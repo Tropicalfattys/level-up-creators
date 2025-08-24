@@ -1,176 +1,127 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, MoreVertical, Eye, EyeOff } from 'lucide-react';
-import { ServiceForm } from '@/components/creator/ServiceForm';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category: string;
-  active: boolean;
-  created_at: string;
-}
+import { ServiceCard } from '@/components/service/ServiceCard';
+import { CategoryFilter } from '@/components/service/CategoryFilter';
+import { SortBy } from '@/components/service/SortBy';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Search } from 'lucide-react';
 
 export default function Services() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingService, setEditingService] = useState<Service | undefined>();
-  const { user } = useAuth();
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('priority');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: services, isLoading, refetch } = useQuery({
-    queryKey: ['creator-services', user?.id],
-    queryFn: async (): Promise<Service[]> => {
-      if (!user) return [];
-
-      const { data, error } = await supabase
+  const { data: services = [], isLoading } = useQuery({
+    queryKey: ['services', categoryFilter, sortBy],
+    queryFn: async () => {
+      let query = supabase
         .from('services')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          creators!inner (
+            id,
+            approved,
+            user_id,
+            headline,
+            tier,
+            priority_score,
+            rating,
+            review_count,
+            users!creators_user_id_fkey (
+              id,
+              handle,
+              avatar_url,
+              bio
+            )
+          )
+        `)
+        .eq('active', true)
+        .eq('creators.approved', true);
 
+      if (categoryFilter !== 'all') {
+        query = query.eq('category', categoryFilter);
+      }
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'price_low':
+          query = query.order('price_usdc', { ascending: true });
+          break;
+        case 'price_high':
+          query = query.order('price_usdc', { ascending: false });
+          break;
+        case 'rating':
+          query = query.order('creators.rating', { ascending: false });
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        default:
+          query = query.order('creators.priority_score', { ascending: false });
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user
+      
+      // Ensure all services have payment_method field
+      return (data || []).map(service => ({
+        ...service,
+        payment_method: service.payment_method || 'ethereum_usdc'
+      }));
+    }
   });
 
-  const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('services')
-      .update({ active: !currentStatus })
-      .eq('id', serviceId);
-
-    if (error) {
-      toast.error('Failed to update service status');
-    } else {
-      toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      refetch();
-    }
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  const handleEdit = (service: Service) => {
-    setEditingService(service);
-    setIsFormOpen(true);
-  };
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingService(undefined);
-  };
+  const filteredServices = searchQuery
+    ? services.filter(service =>
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : services;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Manage Services</h1>
-        <p className="text-muted-foreground">
-          Create and manage your service offerings
-        </p>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Explore Services</h1>
+
+      {/* Filters and Sorting */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <CategoryFilter onCategoryChange={setCategoryFilter} />
+        <SortBy onSortByChange={setSortBy} />
+        <div>
+          <Label htmlFor="search">Search Services</Label>
+          <div className="relative">
+            <Input
+              id="search"
+              type="search"
+              placeholder="Search by title or description..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="pl-10"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Your Services</CardTitle>
-              <CardDescription>
-                Services you offer to clients on the platform
-              </CardDescription>
-            </div>
-            <Button onClick={() => setIsFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Service
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading services...</div>
-          ) : services && services.length > 0 ? (
-            <div className="grid gap-4">
-              {services.map((service) => (
-                <Card key={service.id} className="border">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <CardTitle className="text-lg">{service.title}</CardTitle>
-                          <Badge variant={service.active ? 'default' : 'secondary'}>
-                            {service.active ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <Badge variant="outline">{service.category}</Badge>
-                        </div>
-                        <CardDescription className="mb-3">
-                          {service.description}
-                        </CardDescription>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="font-semibold">${service.price_usdc} USDC</span>
-                          <span className="text-muted-foreground">
-                            {service.delivery_days} days delivery
-                          </span>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(service)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Service
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => toggleServiceStatus(service.id, service.active)}
-                          >
-                            {service.active ? (
-                              <>
-                                <EyeOff className="h-4 w-4 mr-2" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Activate
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                You haven't created any services yet
-              </p>
-              <Button onClick={() => setIsFormOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Service
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <ServiceForm
-        service={editingService}
-        isOpen={isFormOpen}
-        onClose={handleCloseForm}
-      />
+      {/* Services List */}
+      {isLoading ? (
+        <div className="text-center py-8">Loading services...</div>
+      ) : filteredServices.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          No services found matching your criteria
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredServices.map((service) => (
+            <ServiceCard key={service.id} service={service} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
