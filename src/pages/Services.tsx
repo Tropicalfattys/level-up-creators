@@ -22,7 +22,10 @@ export default function Services() {
   const { data: services, isLoading, error } = useQuery({
     queryKey: ['services', selectedCategory, sortBy, searchQuery, priceRange],
     queryFn: async () => {
-      let query = supabase
+      console.log('Fetching services with filters:', { selectedCategory, sortBy, searchQuery, priceRange });
+      
+      // First get services with basic filtering
+      let servicesQuery = supabase
         .from('services')
         .select(`
           id,
@@ -34,60 +37,113 @@ export default function Services() {
           payment_method,
           active,
           created_at,
-          creator_id,
-          creators!services_creator_id_fkey (
-            id,
-            user_id,
-            headline,
-            tier,
-            rating,
-            review_count,
-            users!creators_user_id_fkey (
-              handle,
-              avatar_url
-            )
-          )
+          creator_id
         `)
         .eq('active', true);
 
       // Apply category filter
       if (selectedCategory) {
-        query = query.eq('category', selectedCategory);
+        servicesQuery = servicesQuery.eq('category', selectedCategory);
       }
 
       // Apply search query
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%, description.ilike.%${searchQuery}%`);
+        servicesQuery = servicesQuery.or(`title.ilike.%${searchQuery}%, description.ilike.%${searchQuery}%`);
       }
 
       // Apply price range filter
-      query = query.gte('price_usdc', priceRange[0]).lte('price_usdc', priceRange[1]);
+      servicesQuery = servicesQuery.gte('price_usdc', priceRange[0]).lte('price_usdc', priceRange[1]);
 
       // Apply sorting
       switch (sortBy) {
         case 'price-low':
-          query = query.order('price_usdc', { ascending: true });
+          servicesQuery = servicesQuery.order('price_usdc', { ascending: true });
           break;
         case 'price-high':
-          query = query.order('price_usdc', { ascending: false });
-          break;
-        case 'rating':
-          query = query.order('creators(rating)', { ascending: false });
+          servicesQuery = servicesQuery.order('price_usdc', { ascending: false });
           break;
         case 'delivery':
-          query = query.order('delivery_days', { ascending: true });
+          servicesQuery = servicesQuery.order('delivery_days', { ascending: true });
           break;
         default:
-          query = query.order('created_at', { ascending: false });
+          servicesQuery = servicesQuery.order('created_at', { ascending: false });
       }
 
-      const { data, error } = await query;
-      if (error) {
-        console.error('Services query error:', error);
-        throw error;
+      const { data: servicesData, error: servicesError } = await servicesQuery;
+      
+      if (servicesError) {
+        console.error('Services query error:', servicesError);
+        throw servicesError;
+      }
+
+      if (!servicesData || servicesData.length === 0) {
+        return [];
+      }
+
+      // Get unique creator IDs
+      const creatorIds = [...new Set(servicesData.map(service => service.creator_id).filter(Boolean))];
+      
+      if (creatorIds.length === 0) {
+        return servicesData.map(service => ({
+          ...service,
+          creator: {
+            handle: 'Unknown',
+            avatar_url: '',
+            rating: 0,
+          }
+        }));
+      }
+
+      // Get creators data
+      const { data: creatorsData, error: creatorsError } = await supabase
+        .from('creators')
+        .select(`
+          id,
+          user_id,
+          rating,
+          review_count
+        `)
+        .in('user_id', creatorIds);
+
+      if (creatorsError) {
+        console.error('Creators query error:', creatorsError);
+      }
+
+      // Get users data for the creators
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          handle,
+          avatar_url
+        `)
+        .in('id', creatorIds);
+
+      if (usersError) {
+        console.error('Users query error:', usersError);
+      }
+
+      // Combine the data
+      const servicesWithCreators = servicesData.map(service => {
+        const creator = creatorsData?.find(c => c.user_id === service.creator_id);
+        const user = usersData?.find(u => u.id === service.creator_id);
+        
+        return {
+          ...service,
+          creator: {
+            handle: user?.handle || 'Unknown',
+            avatar_url: user?.avatar_url || '',
+            rating: creator?.rating || 0,
+          }
+        };
+      });
+
+      // Apply rating sort if needed (after we have the rating data)
+      if (sortBy === 'rating') {
+        servicesWithCreators.sort((a, b) => (b.creator.rating || 0) - (a.creator.rating || 0));
       }
       
-      return data;
+      return servicesWithCreators;
     }
   });
 
@@ -174,20 +230,7 @@ export default function Services() {
               {services.map((service) => (
                 <ServiceCard
                   key={service.id}
-                  service={{
-                    id: service.id,
-                    title: service.title,
-                    description: service.description,
-                    price_usdc: service.price_usdc,
-                    delivery_days: service.delivery_days,
-                    category: service.category,
-                    payment_method: service.payment_method,
-                    creator: {
-                      handle: service.creators?.users?.handle || 'Unknown',
-                      avatar_url: service.creators?.users?.avatar_url || '',
-                      rating: service.creators?.rating || 0,
-                    }
-                  }}
+                  service={service}
                   onSelect={handleServiceSelect}
                 />
               ))}
