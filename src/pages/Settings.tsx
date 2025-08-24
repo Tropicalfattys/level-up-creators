@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,14 +18,29 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [profileData, setProfileData] = useState({
-    handle: userProfile?.handle || '',
-    bio: userProfile?.bio || '',
-    avatar_url: userProfile?.avatar_url || '',
-    website_url: userProfile?.website_url || '',
-    portfolio_url: userProfile?.portfolio_url || '',
-    youtube_url: userProfile?.youtube_url || '',
-    social_links: userProfile?.social_links || {}
+    handle: '',
+    bio: '',
+    avatar_url: '',
+    website_url: '',
+    portfolio_url: '',
+    youtube_url: '',
+    social_links: {}
   });
+
+  // Initialize profile data when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfileData({
+        handle: userProfile.handle || '',
+        bio: userProfile.bio || '',
+        avatar_url: userProfile.avatar_url || '',
+        website_url: userProfile.website_url || '',
+        portfolio_url: userProfile.portfolio_url || '',
+        youtube_url: userProfile.youtube_url || '',
+        social_links: userProfile.social_links || {}
+      });
+    }
+  }, [userProfile]);
 
   const updateProfile = useMutation({
     mutationFn: async (data: { 
@@ -73,20 +88,15 @@ export default function Settings() {
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userProfile?.id}-${Math.random()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Create a temporary URL for immediate preview
-      const tempUrl = URL.createObjectURL(file);
-      setProfileData(prev => ({ ...prev, avatar_url: tempUrl }));
-
-      // For now, we'll use a placeholder URL since storage buckets aren't set up
-      // In production, you would upload to Supabase Storage here
-      const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile?.handle || 'user'}`;
-      setProfileData(prev => ({ ...prev, avatar_url: placeholderUrl }));
       
-      toast.success('Profile picture updated! Click Save Changes to apply.');
+      // Create a data URL for the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setProfileData(prev => ({ ...prev, avatar_url: dataUrl }));
+        toast.success('Profile picture updated! Click Save Changes to apply.');
+      };
+      reader.readAsDataURL(file);
       
     } catch (error: any) {
       toast.error('Error uploading avatar: ' + error.message);
@@ -141,7 +151,7 @@ export default function Settings() {
                 <Avatar className="h-20 w-20">
                   <AvatarImage src={profileData.avatar_url} alt="Profile" />
                   <AvatarFallback className="text-lg">
-                    {profileData.handle?.[0]?.toUpperCase() || 'U'}
+                    {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -273,7 +283,7 @@ export default function Settings() {
                     <Input
                       id="twitter"
                       type="url"
-                      value={profileData.social_links?.twitter || ''}
+                      value={(profileData.social_links as any)?.twitter || ''}
                       onChange={(e) => updateSocialLink('twitter', e.target.value)}
                       placeholder="https://twitter.com/username"
                     />
@@ -286,7 +296,7 @@ export default function Settings() {
                     <Input
                       id="facebook"
                       type="url"
-                      value={profileData.social_links?.facebook || ''}
+                      value={(profileData.social_links as any)?.facebook || ''}
                       onChange={(e) => updateSocialLink('facebook', e.target.value)}
                       placeholder="https://facebook.com/username"
                     />
@@ -299,7 +309,7 @@ export default function Settings() {
                     <Input
                       id="instagram"
                       type="url"
-                      value={profileData.social_links?.instagram || ''}
+                      value={(profileData.social_links as any)?.instagram || ''}
                       onChange={(e) => updateSocialLink('instagram', e.target.value)}
                       placeholder="https://instagram.com/username"
                     />
@@ -312,7 +322,7 @@ export default function Settings() {
                     <Input
                       id="telegram"
                       type="url"
-                      value={profileData.social_links?.telegram || ''}
+                      value={(profileData.social_links as any)?.telegram || ''}
                       onChange={(e) => updateSocialLink('telegram', e.target.value)}
                       placeholder="https://t.me/username"
                     />
@@ -325,7 +335,7 @@ export default function Settings() {
                     <Input
                       id="discord"
                       type="text"
-                      value={profileData.social_links?.discord || ''}
+                      value={(profileData.social_links as any)?.discord || ''}
                       onChange={(e) => updateSocialLink('discord', e.target.value)}
                       placeholder="username#1234"
                     />
@@ -338,7 +348,7 @@ export default function Settings() {
                     <Input
                       id="medium"
                       type="url"
-                      value={profileData.social_links?.medium || ''}
+                      value={(profileData.social_links as any)?.medium || ''}
                       onChange={(e) => updateSocialLink('medium', e.target.value)}
                       placeholder="https://medium.com/@username"
                     />
@@ -351,7 +361,7 @@ export default function Settings() {
                     <Input
                       id="linkedin"
                       type="url"
-                      value={profileData.social_links?.linkedin || ''}
+                      value={(profileData.social_links as any)?.linkedin || ''}
                       onChange={(e) => updateSocialLink('linkedin', e.target.value)}
                       placeholder="https://linkedin.com/in/username"
                     />

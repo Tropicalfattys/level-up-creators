@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,15 +19,24 @@ export const CreatorProfile = () => {
     queryFn: async () => {
       console.log('Fetching creator profile for handle:', handle);
       
+      if (!handle) {
+        throw new Error('No handle provided');
+      }
+      
       // First get the user by handle
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('handle', handle)
-        .single();
+        .maybeSingle();
 
-      if (userError || !user) {
+      if (userError) {
         console.error('Error fetching user:', userError);
+        throw new Error('Error fetching user: ' + userError.message);
+      }
+      
+      if (!user) {
+        console.error('User not found for handle:', handle);
         throw new Error('User not found');
       }
 
@@ -35,18 +45,23 @@ export const CreatorProfile = () => {
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (creatorError || !creatorData) {
+      if (creatorError) {
         console.error('Error fetching creator:', creatorError);
-        throw new Error('Creator not found');
+        throw new Error('Creator profile error: ' + creatorError.message);
+      }
+      
+      if (!creatorData) {
+        console.error('Creator profile not found for user:', user.id);
+        throw new Error('Creator profile not found');
       }
 
-      // Get creator's services
+      // Get creator's services - fix the relationship
       const { data: services, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('creator_id', creatorData.id)
+        .eq('creator_id', user.id) // Use user.id since services.creator_id references users.id
         .eq('active', true);
 
       if (servicesError) {
@@ -59,7 +74,7 @@ export const CreatorProfile = () => {
         services: services || []
       };
     },
-    enabled: !!handle
+    enabled: !!handle && handle !== 'unknown'
   });
 
   // Social media icons mapping
@@ -73,6 +88,16 @@ export const CreatorProfile = () => {
     linkedin: Linkedin
   };
 
+  // Helper function to format URLs properly
+  const formatUrl = (url: string) => {
+    if (!url) return '';
+    // If URL doesn't start with http:// or https://, add https://
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return `https://${url}`;
+    }
+    return url;
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -84,7 +109,10 @@ export const CreatorProfile = () => {
   if (!creator) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Creator not found</div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Creator not found</h2>
+          <p className="text-muted-foreground">The creator profile you're looking for doesn't exist or has been removed.</p>
+        </div>
       </div>
     );
   }
@@ -115,15 +143,15 @@ export const CreatorProfile = () => {
                 <div className="flex justify-center items-center gap-2">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{creator.rating.toFixed(1)}</span>
+                    <span className="font-medium">{creator.rating ? creator.rating.toFixed(1) : '0.0'}</span>
                   </div>
                   <span className="text-muted-foreground">
-                    ({creator.review_count} reviews)
+                    ({creator.review_count || 0} reviews)
                   </span>
                 </div>
 
                 <Badge variant={creator.tier === 'pro' ? 'default' : 'secondary'}>
-                  {creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1)} Creator
+                  {creator.tier ? creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1) : 'Basic'} Creator
                 </Badge>
               </div>
             </CardContent>
@@ -143,7 +171,7 @@ export const CreatorProfile = () => {
                     {/* Professional Links */}
                     {creator.user?.website_url && (
                       <a 
-                        href={creator.user.website_url} 
+                        href={formatUrl(creator.user.website_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -156,7 +184,7 @@ export const CreatorProfile = () => {
                     
                     {creator.user?.portfolio_url && (
                       <a 
-                        href={creator.user.portfolio_url} 
+                        href={formatUrl(creator.user.portfolio_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -169,7 +197,7 @@ export const CreatorProfile = () => {
                     
                     {creator.user?.youtube_url && (
                       <a 
-                        href={creator.user.youtube_url} 
+                        href={formatUrl(creator.user.youtube_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -189,7 +217,7 @@ export const CreatorProfile = () => {
                       return (
                         <a 
                           key={platform}
-                          href={url} 
+                          href={formatUrl(url as string)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -219,7 +247,7 @@ export const CreatorProfile = () => {
                   <div className="text-xs text-muted-foreground">Services</div>
                 </div>
                 <div>
-                  <div className="font-semibold">{creator.review_count}</div>
+                  <div className="font-semibold">{creator.review_count || 0}</div>
                   <div className="text-xs text-muted-foreground">Reviews</div>
                 </div>
               </div>
