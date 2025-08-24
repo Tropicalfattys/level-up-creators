@@ -117,28 +117,24 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
     setUploading(true);
     try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = `message-attachments/${fileName}`;
+      const fileName = `${bookingId}/${Date.now()}-${file.name}`;
+      
+      console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
 
-      // Upload to attachments bucket
+      // Upload to attachments bucket (private bucket)
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
-        .upload(filePath, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
-      // Get signed URL for download (valid for 1 hour)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('attachments')
-        .createSignedUrl(filePath, 3600);
-
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw signedUrlError;
-      }
+      console.log('File uploaded successfully:', uploadData);
 
       const attachment = {
         files: [{
@@ -146,8 +142,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
           name: file.name,
           size: file.size,
           type: file.type,
-          url: signedUrlData.signedUrl,
-          path: filePath
+          path: uploadData.path
         }]
       };
 
@@ -185,10 +180,12 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
 
   const downloadFile = async (attachment: any) => {
     try {
-      // Get a fresh signed URL for download
+      console.log('Downloading file:', attachment);
+      
+      // Create a signed URL for download (valid for 5 minutes)
       const { data: signedUrlData, error } = await supabase.storage
         .from('attachments')
-        .createSignedUrl(attachment.path || attachment.id, 300); // 5 minutes
+        .createSignedUrl(attachment.path || attachment.id, 300);
 
       if (error) {
         console.error('Error getting signed URL:', error);
@@ -196,24 +193,18 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         return;
       }
 
-      // Download the file
-      const response = await fetch(signedUrlData.signedUrl);
-      if (!response.ok) {
-        throw new Error('Failed to download file');
-      }
+      console.log('Got signed URL:', signedUrlData.signedUrl);
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      
+      // Create a temporary link to download the file
       const link = document.createElement('a');
-      link.href = url;
+      link.href = signedUrlData.signedUrl;
       link.download = attachment.name;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
       
-      toast.success('File downloaded successfully');
+      toast.success('Download started');
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
@@ -311,18 +302,6 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                                   <Download className="h-3 w-3" />
                                 </Button>
                               </div>
-                              
-                              {/* Image Preview */}
-                              {attachment.type?.startsWith('image/') && attachment.url && (
-                                <div className="mt-2">
-                                  <img
-                                    src={attachment.url}
-                                    alt={attachment.name}
-                                    className="max-w-full max-h-32 rounded object-contain"
-                                    loading="lazy"
-                                  />
-                                </div>
-                              )}
                             </div>
                           ))}
                         </div>
