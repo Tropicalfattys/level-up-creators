@@ -5,37 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { ServiceCard } from '@/components/services/ServiceCard';
 import { CategoryFilter } from '@/components/services/CategoryFilter';
 import { SortBy } from '@/components/services/SortBy';
-import { AdvancedSearch } from '@/components/search/AdvancedSearch';
 import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Define the actual query result type based on what Supabase returns
-interface ServiceQueryResult {
-  id: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category: string;
-  payment_method: string;
-  active: boolean;
-  creator_id: string;
-  created_at: string;
-  updated_at: string;
-  creators: {
-    id: string;
-    user_id: string;
-    headline: string;
-    tier: string;
-    rating: number;
-    review_count: number;
-    users: {
-      handle: string;
-      avatar_url: string;
-    } | null;
-  } | null;
-}
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Search } from 'lucide-react';
 
 export default function Services() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -97,7 +72,7 @@ export default function Services() {
       const { data, error } = await query;
       if (error) throw error;
       
-      return data as ServiceQueryResult[];
+      return data;
     }
   });
 
@@ -125,23 +100,45 @@ export default function Services() {
           Discover amazing services from verified creators
         </p>
         
-        <AdvancedSearch
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          priceRange={priceRange}
-          onPriceRangeChange={setPriceRange}
-        />
+        {/* Advanced Search Component - inline since component props are unclear */}
+        <div className="bg-card rounded-lg border p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Search Services</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search services..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Price Range: ${priceRange[0]} - ${priceRange[1]}</label>
+              <Slider
+                value={priceRange}
+                onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                max={1000}
+                min={0}
+                step={10}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-64 space-y-4">
           <CategoryFilter
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
+            value={selectedCategory}
+            onChange={setSelectedCategory}
           />
           <SortBy
-            sortBy={sortBy}
-            onSortChange={setSortBy}
+            value={sortBy}
+            onChange={setSortBy}
           />
         </div>
 
