@@ -29,15 +29,24 @@ interface ServiceFormProps {
   onClose: () => void;
 }
 
+// Comprehensive category list matching the Categories page
 const CATEGORIES = [
-  { value: 'trading', label: 'Trading' },
-  { value: 'nft', label: 'NFT' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'education', label: 'Education' },
-  { value: 'development', label: 'Development' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'music', label: 'Music' },
-  { value: 'other', label: 'Other' }
+  { value: 'ama', label: 'Host an AMA' },
+  { value: 'twitter', label: 'Tweet Campaigns & Threads' },
+  { value: 'video', label: 'Promo Videos' },
+  { value: 'tutorials', label: 'Product Tutorials' },
+  { value: 'reviews', label: 'Product Reviews' },
+  { value: 'spaces', label: 'Host Twitter Spaces' },
+  { value: 'instagram', label: 'Instagram Posts' },
+  { value: 'facebook', label: 'Facebook Posts' },
+  { value: 'marketing', label: 'General Marketing' },
+  { value: 'branding', label: 'Project Branding' },
+  { value: 'discord', label: 'Discord Contests' },
+  { value: 'blogs', label: 'Blogs & Articles' },
+  { value: 'reddit', label: 'Reddit Posts' },
+  { value: 'memes', label: 'Meme Creation' },
+  { value: 'music', label: 'Music Production' },
+  { value: 'other', label: 'Other Services' }
 ];
 
 export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
@@ -46,7 +55,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
     description: service?.description || '',
     price_usdc: service?.price_usdc || 0,
     delivery_days: service?.delivery_days || 3,
-    category: service?.category || 'trading',
+    category: service?.category || 'ama',
     payment_method: service?.payment_method || 'ethereum_usdc',
     active: service?.active ?? true,
   });

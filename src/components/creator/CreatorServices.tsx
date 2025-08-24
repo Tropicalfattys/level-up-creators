@@ -1,494 +1,378 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { Plus, Edit, Trash, Copy, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from '@/hooks/useAuth';
-import type { Booking } from '@/types/database';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Link } from 'react-router-dom';
+import { MoreVertical, Edit, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-interface BookingUser {
-  handle: string | null;
-  email: string;
-}
-
-interface ServiceBooking {
+interface Service {
   id: string;
-  status: string;
-  usdc_amount: number;
-  created_at: string;
-  client_id: string;
-  creator_id: string;
-  service_id: string;
-  updated_at: string;
-  users: BookingUser;
-}
-
-interface ServiceWithBookings {
-  id: string;
-  creator_id: string;
   title: string;
-  description?: string;
-  price_usdc?: number;
-  delivery_days?: number;
-  category?: string;
-  active: boolean;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
   payment_method: string;
-  created_at: string;
-  updated_at: string;
-  bookings?: ServiceBooking[];
+  active: boolean;
+}
+
+interface ServiceFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  service?: Service;
 }
 
 const CATEGORIES = [
-  { value: 'trading', label: 'Trading' },
-  { value: 'nft', label: 'NFT' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'education', label: 'Education' },
-  { value: 'development', label: 'Development' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'music', label: 'Music' },
-  { value: 'other', label: 'Other' }
+  { value: 'ama', label: 'Host an AMA' },
+  { value: 'twitter', label: 'Tweet Campaigns & Threads' },
+  { value: 'video', label: 'Promo Videos' },
+  { value: 'tutorials', label: 'Product Tutorials' },
+  { value: 'reviews', label: 'Product Reviews' },
+  { value: 'spaces', label: 'Host Twitter Spaces' },
+  { value: 'instagram', label: 'Instagram Posts' },
+  { value: 'facebook', label: 'Facebook Posts' },
+  { value: 'marketing', label: 'General Marketing' },
+  { value: 'branding', label: 'Project Branding' },
+  { value: 'discord', label: 'Discord Contests' },
+  { value: 'blogs', label: 'Blogs & Articles' },
+  { value: 'reddit', label: 'Reddit Posts' },
+  { value: 'memes', label: 'Meme Creation' },
+  { value: 'music', label: 'Music Production' },
+  { value: 'other', label: 'Other Services' }
 ];
 
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
-  const [editService, setEditService] = useState<ServiceWithBookings | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priceUsdc, setPriceUsdc] = useState<number | undefined>(undefined);
-  const [deliveryDays, setDeliveryDays] = useState<number | undefined>(undefined);
-  const [category, setCategory] = useState<string | undefined>(undefined);
-  const [active, setActive] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState('ethereum_usdc');
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: services = [], isLoading } = useQuery({
-    queryKey: ['creator-services', user?.id],
+  const { data: services, isLoading, isError } = useQuery({
+    queryKey: ['creator-services'],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from('services')
-        .select(`
-          *,
-          bookings (
-            id,
-            status,
-            usdc_amount,
-            created_at,
-            client_id,
-            creator_id,
-            service_id,
-            updated_at,
-            users!bookings_client_id_fkey (handle, email)
-          )
-        `)
-        .eq('creator_id', user?.id)
-        .order('created_at', { ascending: false });
+        .select('*')
+        .eq('creator_id', user.id);
 
-      if (error) throw error;
-      
-      // Ensure all services have payment_method field
-      return (data || []).map(service => ({
-        ...service,
-        payment_method: service.payment_method || 'ethereum_usdc'
-      }));
-    },
-    enabled: !!user?.id
-  });
-
-  const createService = useMutation({
-    mutationFn: async () => {
-      if (!title || !priceUsdc || !deliveryDays || !category) {
-        throw new Error('Please fill in all fields.');
+      if (error) {
+        console.error('Error fetching services:', error);
+        throw error;
       }
-
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          creator_id: user?.id,
-          title,
-          description,
-          price_usdc: priceUsdc,
-          delivery_days: deliveryDays,
-          category,
-          active,
-          payment_method: paymentMethod
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return data as Service[];
     },
-    onSuccess: () => {
-      toast.success('Service created successfully!');
-      queryClient.invalidateQueries({ queryKey: ['creator-services', user?.id] });
-      closeModal();
-    },
-    onError: (error: any) => {
-      toast.error('Failed to create service: ' + error.message);
-    }
   });
 
-  const updateService = useMutation({
-    mutationFn: async () => {
-      if (!editService?.id) {
-        throw new Error('Service ID is missing.');
-      }
-
-      const { data, error } = await supabase
-        .from('services')
-        .update({
-          title,
-          description,
-          price_usdc: priceUsdc,
-          delivery_days: deliveryDays,
-          category,
-          active,
-          payment_method: paymentMethod
-        })
-        .eq('id', editService.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('Service updated successfully!');
-      queryClient.invalidateQueries({ queryKey: ['creator-services', user?.id] });
-      closeModal();
-    },
-    onError: (error: any) => {
-      toast.error('Failed to update service: ' + error.message);
-    }
-  });
-
-  const deleteService = useMutation({
+  const mutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('services')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Service deleted successfully!');
-      queryClient.invalidateQueries({ queryKey: ['creator-services', user?.id] });
-    },
-    onError: (error: any) => {
-      toast.error('Failed to delete service: ' + error.message);
-    }
-  });
-
-  const copyService = useMutation({
-    mutationFn: async (service: ServiceWithBookings) => {
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          creator_id: user?.id,
-          title: `${service.title} (Copy)`,
-          description: service.description,
-          price_usdc: service.price_usdc,
-          delivery_days: service.delivery_days,
-          category: service.category,
-          active: service.active,
-          payment_method: service.payment_method
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting service:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
-      toast.success('Service copied successfully!');
-      queryClient.invalidateQueries({ queryKey: ['creator-services', user?.id] });
+      toast.success('Service deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['creator-services'] });
     },
-    onError: (error: any) => {
-      toast.error('Failed to copy service: ' + error.message);
+    onError: (error) => {
+      console.error('Service delete error:', error);
+      toast.error('Failed to delete service. Please try again.');
     }
   });
 
-  const openModal = () => {
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedService(null);
+  };
+
+  const handleEdit = (service: Service) => {
+    setSelectedService(service);
     setOpen(true);
   };
 
-  const closeModal = () => {
-    setOpen(false);
-    setEditService(null);
-    setTitle('');
-    setDescription('');
-    setPriceUsdc(undefined);
-    setDeliveryDays(undefined);
-    setCategory(undefined);
-    setActive(true);
-    setPaymentMethod('ethereum_usdc');
+  const handleDelete = (id: string) => {
+    mutation.mutate(id);
   };
 
-  const handleEdit = (service: ServiceWithBookings) => {
-    setEditService(service);
-    setTitle(service.title);
-    setDescription(service.description || '');
-    setPriceUsdc(service.price_usdc);
-    setDeliveryDays(service.delivery_days);
-    setCategory(service.category);
-    setActive(service.active);
-    setPaymentMethod(service.payment_method);
-    openModal();
-  };
+  if (isLoading) return <div>Loading services...</div>;
+  if (isError) return <div>Error fetching services.</div>;
 
-  const handleSubmit = async () => {
-    if (editService) {
-      await updateService.mutateAsync();
-    } else {
-      await createService.mutateAsync();
+  return (
+    <div className="container mx-auto py-8">
+      <div className="mb-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">My Services</h1>
+        <Button onClick={handleOpen}>Add Service</Button>
+      </div>
+
+      {services && services.length > 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Price (USDC)</TableHead>
+                <TableHead>Delivery (Days)</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {services.map((service) => (
+                <TableRow key={service.id}>
+                  <TableCell>{service.title}</TableCell>
+                  <TableCell>{service.category}</TableCell>
+                  <TableCell>{service.price_usdc}</TableCell>
+                  <TableCell>{service.delivery_days}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleEdit(service)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(service.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <p>No services created yet.</p>
+      )}
+
+      <ServiceForm isOpen={open} onClose={handleClose} service={selectedService || undefined} />
+    </div>
+  );
+};
+
+interface Service {
+  id?: string;
+  title: string;
+  description: string;
+  price_usdc: number;
+  delivery_days: number;
+  category: string;
+  payment_method: string;
+  active: boolean;
+}
+
+export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
+  const [formData, setFormData] = useState<Service>({
+    title: service?.title || '',
+    description: service?.description || '',
+    price_usdc: service?.price_usdc || 0,
+    delivery_days: service?.delivery_days || 3,
+    category: service?.category || 'ama',
+    payment_method: service?.payment_method || 'ethereum_usdc',
+    active: service?.active ?? true,
+  });
+
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (data: Service) => {
+      if (!user) throw new Error('User not authenticated');
+
+      if (service?.id) {
+        // Update existing service
+        const { error } = await supabase
+          .from('services')
+          .update(data)
+          .eq('id', service.id);
+        if (error) throw error;
+      } else {
+        // Create new service
+        const { error } = await supabase
+          .from('services')
+          .insert([{ ...data, creator_id: user.id }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(service?.id ? 'Service updated successfully!' : 'Service created successfully!');
+      queryClient.invalidateQueries({ queryKey: ['creator-services'] });
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Service form error:', error);
+      toast.error('Failed to save service. Please try again.');
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.description || formData.price_usdc <= 0) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    mutation.mutate(formData);
+  };
+
+  const handleChange = (field: keyof Service, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle>My Services</CardTitle>
-            <CardDescription>
-              Manage the services you offer to clients
-            </CardDescription>
-          </div>
-          <Button onClick={openModal}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Service
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            {isLoading ? (
-              <div className="text-center py-8">Loading services...</div>
-            ) : services.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No services created yet
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {services.map((service) => (
-                  <Card key={service.id} className="shadow-sm">
-                    <CardHeader>
-                      <CardTitle>{service.title}</CardTitle>
-                      <CardDescription>
-                        {service.description || 'No description'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Price:</span> ${service.price_usdc}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Delivery:</span> {service.delivery_days} days
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Category:</span> {service.category}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">Status:</span>
-                        {service.active ? (
-                          <Badge variant="outline">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </div>
-                      {service.bookings && service.bookings.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm font-medium">Recent Bookings:</p>
-                          <ul className="list-disc pl-4 text-sm">
-                            {service.bookings.map((booking) => (
-                              <li key={booking.id}>
-                                {booking.users?.handle || booking.users?.email} - ${booking.usdc_amount} ({booking.status})
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </CardContent>
-                    <div className="flex justify-end space-x-2 p-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyService.mutate(service)}
-                        disabled={copyService.isPending}
-                      >
-                        {copyService.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Copy className="mr-2 h-4 w-4" />
-                        )}
-                        Copy
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(service)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteService.mutate(service.id)}
-                        disabled={deleteService.isPending}
-                      >
-                        {deleteService.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash className="mr-2 h-4 w-4" />
-                        )}
-                        Delete
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{service?.id ? 'Edit Service' : 'Create New Service'}</DialogTitle>
+          <DialogDescription>
+            {service?.id ? 'Update your service details' : 'Add a new service to your profile'}
+          </DialogDescription>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editService ? 'Edit Service' : 'Add Service'}</DialogTitle>
-            <DialogDescription>
-              {editService ? 'Edit your service details' : 'Create a new service to offer to clients'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Service Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleChange('title', e.target.value)}
+              placeholder="e.g., Trading Strategy Review"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description *</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Describe what you'll deliver to clients..."
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="price">Price (USDC) *</Label>
               <Input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price (USDC)
-              </Label>
-              <Input
-                type="number"
                 id="price"
-                value={priceUsdc}
-                onChange={(e) => setPriceUsdc(e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="delivery" className="text-right">
-                Delivery Days
-              </Label>
-              <Input
                 type="number"
-                id="delivery"
-                value={deliveryDays}
-                onChange={(e) => setDeliveryDays(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="col-span-3"
+                min="1"
+                step="0.01"
+                value={formData.price_usdc}
+                onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 0)}
+                className="mt-1"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category" className="text-right">
-                Category
-              </Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="paymentMethod" className="text-right">
-                Payment Method
-              </Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ethereum_usdc">Ethereum (USDC)</SelectItem>
-                  <SelectItem value="solana_usdc">Solana (USDC)</SelectItem>
-                  <SelectItem value="bsc_usdc">BSC (USDC)</SelectItem>
-                  <SelectItem value="sui_usdc">Sui (USDC)</SelectItem>
-                  <SelectItem value="cardano_usdm">Cardano (USDM)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="active" className="text-right">
-                Active
-              </Label>
-              <Switch
-                id="active"
-                checked={active}
-                onCheckedChange={setActive}
-                className="col-span-3"
+            <div>
+              <Label htmlFor="delivery">Delivery (Days)</Label>
+              <Input
+                id="delivery"
+                type="number"
+                min="1"
+                max="30"
+                value={formData.delivery_days}
+                onChange={(e) => handleChange('delivery_days', parseInt(e.target.value) || 3)}
+                className="mt-1"
               />
             </div>
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="secondary" onClick={closeModal}>
+
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </div>
+
+          <div>
+            <Label htmlFor="payment-method">Payment Method *</Label>
+            <Select value={formData.payment_method} onValueChange={(value) => handleChange('payment_method', value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
+                  <SelectItem key={key} value={key}>
+                    {method.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choose which network/token you want to receive for this service
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" type="button" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={createService.isPending || updateService.isPending}>
-              {createService.isPending || updateService.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : editService ? (
-                <CheckCircle className="mr-2 h-4 w-4" />
-              ) : (
-                <Plus className="mr-2 h-4 w-4" />
-              )}
-              {editService ? 'Update Service' : 'Create Service'}
+            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Saving...' : (service?.id ? 'Update' : 'Create')}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
