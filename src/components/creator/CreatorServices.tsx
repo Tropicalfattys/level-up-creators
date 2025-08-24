@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,21 +58,23 @@ interface ServiceFormProps {
   service?: Service;
 }
 
+// Comprehensive category list matching the Categories page
 const CATEGORIES = [
-  { value: 'ama', label: 'Host an AMA' },
-  { value: 'twitter', label: 'Tweet Campaigns & Threads' },
-  { value: 'video', label: 'Promo Videos' },
-  { value: 'tutorials', label: 'Product Tutorials' },
-  { value: 'reviews', label: 'Product Reviews' },
-  { value: 'spaces', label: 'Host Twitter Spaces' },
-  { value: 'instagram', label: 'Instagram Posts' },
-  { value: 'facebook', label: 'Facebook Posts' },
-  { value: 'marketing', label: 'General Marketing' },
-  { value: 'branding', label: 'Project Branding' },
-  { value: 'discord', label: 'Discord Contests' },
-  { value: 'blogs', label: 'Blogs & Articles' },
-  { value: 'reddit', label: 'Reddit Posts' },
-  { value: 'memes', label: 'Meme Creation' },
+  { value: 'live-streams', label: 'Live Streams & AMAs' },
+  { value: 'social-media', label: 'Social Media Management' },
+  { value: 'content-creation', label: 'Content Creation' },
+  { value: 'marketing', label: 'Marketing & Promotion' },
+  { value: 'education', label: 'Education & Tutorials' },
+  { value: 'consulting', label: 'Consulting & Strategy' },
+  { value: 'community', label: 'Community Building' },
+  { value: 'development', label: 'Development & Technical' },
+  { value: 'design', label: 'Design & Creative' },
+  { value: 'writing', label: 'Writing & Content' },
+  { value: 'video', label: 'Video Production' },
+  { value: 'audio', label: 'Audio & Podcasting' },
+  { value: 'nft', label: 'NFT & Digital Art' },
+  { value: 'defi', label: 'DeFi & Trading' },
+  { value: 'gaming', label: 'Gaming & Metaverse' },
   { value: 'music', label: 'Music Production' },
   { value: 'other', label: 'Other Services' }
 ];
@@ -204,183 +205,5 @@ export const CreatorServices = () => {
 
       <ServiceForm isOpen={open} onClose={handleClose} service={selectedService || undefined} />
     </div>
-  );
-};
-
-interface Service {
-  id?: string;
-  title: string;
-  description: string;
-  price_usdc: number;
-  delivery_days: number;
-  category: string;
-  payment_method: string;
-  active: boolean;
-}
-
-export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
-  const [formData, setFormData] = useState<Service>({
-    title: service?.title || '',
-    description: service?.description || '',
-    price_usdc: service?.price_usdc || 0,
-    delivery_days: service?.delivery_days || 3,
-    category: service?.category || 'ama',
-    payment_method: service?.payment_method || 'ethereum_usdc',
-    active: service?.active ?? true,
-  });
-
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (data: Service) => {
-      if (!user) throw new Error('User not authenticated');
-
-      if (service?.id) {
-        // Update existing service
-        const { error } = await supabase
-          .from('services')
-          .update(data)
-          .eq('id', service.id);
-        if (error) throw error;
-      } else {
-        // Create new service
-        const { error } = await supabase
-          .from('services')
-          .insert([{ ...data, creator_id: user.id }]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast.success(service?.id ? 'Service updated successfully!' : 'Service created successfully!');
-      queryClient.invalidateQueries({ queryKey: ['creator-services'] });
-      onClose();
-    },
-    onError: (error) => {
-      console.error('Service form error:', error);
-      toast.error('Failed to save service. Please try again.');
-    }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title || !formData.description || formData.price_usdc <= 0) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    mutation.mutate(formData);
-  };
-
-  const handleChange = (field: keyof Service, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{service?.id ? 'Edit Service' : 'Create New Service'}</DialogTitle>
-          <DialogDescription>
-            {service?.id ? 'Update your service details' : 'Add a new service to your profile'}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Service Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="e.g., Trading Strategy Review"
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Describe what you'll deliver to clients..."
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price">Price (USDC) *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="1"
-                step="0.01"
-                value={formData.price_usdc}
-                onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 0)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="delivery">Delivery (Days)</Label>
-              <Input
-                id="delivery"
-                type="number"
-                min="1"
-                max="30"
-                value={formData.delivery_days}
-                onChange={(e) => handleChange('delivery_days', parseInt(e.target.value) || 3)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="payment-method">Payment Method *</Label>
-            <Select value={formData.payment_method} onValueChange={(value) => handleChange('payment_method', value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
-                  <SelectItem key={key} value={key}>
-                    {method.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Choose which network/token you want to receive for this service
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button variant="outline" type="button" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Saving...' : (service?.id ? 'Update' : 'Create')}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 };
