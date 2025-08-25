@@ -58,7 +58,14 @@ export const ClientBookings = () => {
         console.error('Error fetching client bookings:', error);
         return [];
       }
-      return data || [];
+      
+      // Safely transform the data to match our interface
+      return (data || []).map(booking => ({
+        ...booking,
+        proof_links: Array.isArray(booking.proof_links) 
+          ? booking.proof_links as Array<{ url: string; label: string }>
+          : []
+      }));
     },
     enabled: !!user?.id
   });
@@ -126,7 +133,6 @@ export const ClientBookings = () => {
   // Prevent auto-scroll when changing tabs
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Don't scroll, just change the tab
   };
 
   if (isLoading) {

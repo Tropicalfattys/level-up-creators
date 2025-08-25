@@ -59,7 +59,14 @@ export const BookingManagement = () => {
         console.error('Error fetching bookings:', error);
         return [];
       }
-      return data || [];
+      
+      // Safely transform the data to match our interface
+      return (data || []).map(booking => ({
+        ...booking,
+        proof_links: Array.isArray(booking.proof_links) 
+          ? booking.proof_links as Array<{ url: string; label: string }>
+          : []
+      }));
     },
     enabled: !!user?.id
   });
@@ -227,6 +234,11 @@ export const BookingManagement = () => {
     return bookings.filter(booking => booking.status === status);
   };
 
+  // Prevent auto-scroll when changing tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
   }
@@ -242,7 +254,7 @@ export const BookingManagement = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
           <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
