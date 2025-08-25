@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,26 +35,43 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Fetch existing reviews for this booking
   const { data: reviews } = useQuery({
     queryKey: ['booking-reviews', bookingId],
     queryFn: async (): Promise<Review[]> => {
+      console.log('Fetching reviews for booking:', bookingId);
+      
       const { data, error } = await supabase
         .from('reviews')
         .select(`
-          *,
-          reviewer:users!reviews_reviewer_id_fkey (handle, avatar_url)
+          id,
+          rating,
+          comment,
+          created_at,
+          reviewer:users!reviews_reviewer_id_fkey (
+            handle,
+            avatar_url
+          )
         `)
         .eq('booking_id', bookingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        throw error;
+      }
+      
+      console.log('Fetched reviews:', data);
       return data || [];
     }
   });
 
+  // Check if current user already left a review
   const { data: existingReview } = useQuery({
     queryKey: ['user-review', bookingId, user?.id],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user?.id) return null;
+      
+      console.log('Checking existing review for user:', user.id, 'booking:', bookingId);
       
       const { data, error } = await supabase
         .from('reviews')
@@ -62,37 +80,91 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
         .eq('reviewer_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking existing review:', error);
+        throw error;
+      }
+      
+      console.log('Existing review:', data);
       return data;
     },
-    enabled: !!user && canReview
+    enabled: !!user?.id && canReview
+  });
+
+  // Check booking status to ensure it's completed
+  const { data: bookingStatus } = useQuery({
+    queryKey: ['booking-status', bookingId],
+    queryFn: async () => {
+      console.log('Checking booking status for:', bookingId);
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('status, client_id, creator_id')
+        .eq('id', bookingId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching booking status:', error);
+        throw error;
+      }
+      
+      console.log('Booking status:', data);
+      return data;
+    },
+    enabled: !!bookingId
   });
 
   const submitReview = useMutation({
     mutationFn: async () => {
-      if (!user || rating === 0) return;
+      if (!user?.id || rating === 0) {
+        throw new Error('User ID or rating missing');
+      }
+
+      // Verify booking is in correct status
+      if (!bookingStatus || !['accepted', 'released'].includes(bookingStatus.status)) {
+        throw new Error('Booking must be completed before reviewing');
+      }
+
+      // Verify user is part of this booking
+      if (user.id !== bookingStatus.client_id && user.id !== bookingStatus.creator_id) {
+        throw new Error('User not authorized to review this booking');
+      }
+
+      console.log('Submitting review:', {
+        booking_id: bookingId,
+        reviewer_id: user.id,
+        reviewee_id: revieweeId,
+        rating,
+        comment: comment.trim() || null
+      });
 
       const { error } = await supabase
         .from('reviews')
-        .insert([{
+        .insert({
           booking_id: bookingId,
           reviewer_id: user.id,
           reviewee_id: revieweeId,
           rating,
           comment: comment.trim() || null
-        }]);
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Review submission error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log('Review submitted successfully');
       toast.success('Review submitted successfully!');
       setRating(0);
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['booking-reviews', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['user-review', bookingId, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-reviews', revieweeId] });
     },
-    onError: () => {
-      toast.error('Failed to submit review');
+    onError: (error: Error) => {
+      console.error('Review submission failed:', error);
+      toast.error(`Failed to submit review: ${error.message}`);
     }
   });
 
@@ -102,17 +174,37 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (rating === 0) {
       toast.error('Please select a rating');
       return;
     }
+
+    if (!bookingStatus) {
+      toast.error('Unable to verify booking status');
+      return;
+    }
+
+    if (!['accepted', 'released'].includes(bookingStatus.status)) {
+      toast.error('Reviews can only be submitted for completed bookings');
+      return;
+    }
+
+    if (existingReview) {
+      toast.error('You have already reviewed this booking');
+      return;
+    }
+
     submitReview.mutate();
   };
+
+  // Don't show review form if user already reviewed or can't review
+  const showReviewForm = canReview && !existingReview && bookingStatus && ['accepted', 'released'].includes(bookingStatus.status);
 
   return (
     <div className="space-y-6">
       {/* Review Form */}
-      {canReview && !existingReview && (
+      {showReviewForm && (
         <Card>
           <CardHeader>
             <CardTitle>Leave a Review</CardTitle>
@@ -161,6 +253,16 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
               </Button>
             </form>
           </CardContent>
+        </Card>
+      )}
+
+      {/* Show message if already reviewed */}
+      {existingReview && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Review Submitted</CardTitle>
+            <CardDescription>You have already reviewed this booking</CardDescription>
+          </CardHeader>
         </Card>
       )}
 
