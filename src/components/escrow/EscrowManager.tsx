@@ -40,6 +40,21 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
     }
   });
 
+  // Fetch any existing dispute for this booking
+  const { data: existingDispute } = useQuery({
+    queryKey: ['booking-dispute', bookingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('disputes')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  });
+
   const acceptDelivery = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -84,6 +99,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
       toast.success('Dispute opened. Admin will review within 24 hours.');
       setDisputing(false);
       queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['booking-dispute', bookingId] });
     },
     onError: () => {
       toast.error('Failed to open dispute');
@@ -173,8 +189,29 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
           </div>
         )}
 
+        {/* Show dispute resolution if dispute exists and is resolved */}
+        {existingDispute && existingDispute.status === 'resolved' && (
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Dispute Resolved
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium">Resolution:</span>
+                <p className="text-gray-700 mt-1">{existingDispute.resolution_note}</p>
+              </div>
+              {existingDispute.resolved_at && (
+                <p className="text-xs text-gray-500">
+                  Resolved: {format(new Date(existingDispute.resolved_at), 'MMM d, yyyy HH:mm')}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Client Actions */}
-        {isClient && booking.status === 'delivered' && (
+        {isClient && booking.status === 'delivered' && !existingDispute && (
           <div className="flex gap-2">
             <Button 
               onClick={() => acceptDelivery.mutate()}
@@ -206,7 +243,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
             </CardHeader>
             <CardContent>
               <textarea
-                className="w-full p-3 border rounded-lg resize-none"
+                className="w-full p-3 border rounded-lg resize-none text-gray-900 bg-white placeholder-gray-500"
                 rows={4}
                 placeholder="Please describe the issue with the delivery..."
                 id="dispute-reason"

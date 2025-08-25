@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Plus, Clock, Shield } from 'lucide-react';
+import { AlertTriangle, Plus, Clock, Shield, CheckCircle, XCircle, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, differenceInHours } from 'date-fns';
 
@@ -37,6 +37,9 @@ interface ExistingDispute {
   opened_by: string;
   status: string;
   created_at: string;
+  resolved_at?: string;
+  resolved_by?: string;
+  resolution_note?: string;
   bookings: BookingForDispute;
 }
 
@@ -109,6 +112,9 @@ export const UserDisputes = () => {
           opened_by,
           status,
           created_at,
+          resolved_at,
+          resolved_by,
+          resolution_note,
           bookings (
             id,
             usdc_amount,
@@ -186,6 +192,18 @@ export const UserDisputes = () => {
     }
   };
 
+  const getDisputeOutcome = (dispute: ExistingDispute) => {
+    if (dispute.status !== 'resolved' || !dispute.bookings) return null;
+    
+    const bookingStatus = dispute.bookings.status;
+    if (bookingStatus === 'refunded') {
+      return { winner: 'client', text: 'Ruled in favor of Client' };
+    } else if (bookingStatus === 'released') {
+      return { winner: 'creator', text: 'Ruled in favor of Creator' };
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -238,6 +256,7 @@ export const UserDisputes = () => {
                       value={disputeReason}
                       onChange={(e) => setDisputeReason(e.target.value)}
                       rows={4}
+                      className="text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
 
@@ -256,35 +275,77 @@ export const UserDisputes = () => {
         <CardContent>
           {existingDisputes && existingDisputes.length > 0 ? (
             <div className="space-y-4">
-              {existingDisputes.map((dispute) => (
-                <div key={dispute.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
+              {existingDisputes.map((dispute) => {
+                const outcome = getDisputeOutcome(dispute);
+                return (
+                  <div key={dispute.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{dispute.bookings.services.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Amount: ${dispute.bookings.usdc_amount} USDC
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Between: {dispute.bookings.client.handle} ↔ {dispute.bookings.creator.handle}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Opened by: {dispute.opened_by}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Created: {format(new Date(dispute.created_at), 'PPp')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getStatusColor(dispute.status)}>
+                          {dispute.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{dispute.bookings.services.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Amount: ${dispute.bookings.usdc_amount} USDC
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Between: {dispute.bookings.client.handle} ↔ {dispute.bookings.creator.handle}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Opened by: {dispute.opened_by}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Created: {format(new Date(dispute.created_at), 'PPp')}
-                      </p>
-                    </div>
+
+                    {/* Show resolution details if resolved */}
+                    {dispute.status === 'resolved' && (
+                      <div className="bg-gray-50 border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <h4 className="font-medium text-gray-900">Resolution</h4>
+                        </div>
+                        
+                        {outcome && (
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-gray-500" />
+                            <Badge 
+                              variant={outcome.winner === 'client' ? 'destructive' : 'default'}
+                              className="text-xs"
+                            >
+                              {outcome.text}
+                            </Badge>
+                          </div>
+                        )}
+                        
+                        {dispute.resolution_note && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-1">Admin Comment:</p>
+                            <p className="text-sm text-gray-600 bg-white p-2 rounded border">
+                              {dispute.resolution_note}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {dispute.resolved_at && (
+                          <p className="text-xs text-gray-500">
+                            Resolved: {format(new Date(dispute.resolved_at), 'PPp')}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getStatusColor(dispute.status)}>
-                      {dispute.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
