@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,40 +19,43 @@ export const AuthPage = () => {
   const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  useState(() => {
+  // Set referral code from URL params
+  useEffect(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {
       setReferralCode(refParam);
+      console.log('Referral code from URL:', refParam);
     }
-  });
+  }, [searchParams]);
 
   const validateForm = (isSignUp: boolean = false) => {
     const newErrors: Record<string, string> = {};
 
-    // Email validation with proper type checking
+    // Email validation
     const emailValidation = validateInput(emailSchema, email);
     if (emailValidation.success === false) {
       newErrors.email = emailValidation.errors[0];
     }
 
-    // Password validation with proper type checking
+    // Password validation
     const passwordValidation = validateInput(passwordSchema, password);
     if (passwordValidation.success === false) {
       newErrors.password = passwordValidation.errors[0];
     }
 
-    // Handle validation (sign up only) with proper type checking
+    // Handle validation (sign up only)
     if (isSignUp) {
       const handleValidation = validateInput(handleSchema, handle);
       if (handleValidation.success === false) {
         newErrors.handle = handleValidation.errors[0];
       }
 
-      // Referral code validation (optional) with proper type checking
+      // Referral code validation (optional)
       if (referralCode) {
         const referralValidation = validateInput(referralCodeSchema, referralCode);
         if (referralValidation.success === false) {
@@ -68,19 +71,39 @@ export const AuthPage = () => {
   // handleSignIn function
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (loading) return; // Prevent double submission
     if (!validateForm()) return;
 
     setLoading(true);
+    setErrors({}); // Clear any previous errors
+    
     try {
-      const { error } = await signIn(email, password);
+      console.log('Attempting sign in for:', email);
+      const { data, error } = await signIn(email, password);
+      
       if (error) {
-        toast.error(error.message);
-      } else {
+        console.error('Sign in error:', error);
+        
+        // Handle specific auth errors
+        if (error.message.includes('Email not confirmed')) {
+          toast.error('Please check your email and click the confirmation link before signing in.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password. Please check your credentials.');
+        } else {
+          toast.error(error.message);
+        }
+      } else if (data.session) {
+        console.log('Sign in successful');
         toast.success('Welcome back!');
         navigate('/');
+      } else {
+        console.warn('Sign in returned no session');
+        toast.error('Sign in failed. Please try again.');
       }
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      console.error('Sign in exception:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -89,18 +112,41 @@ export const AuthPage = () => {
   // handleSignUp function
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (loading) return; // Prevent double submission
     if (!validateForm(true)) return;
 
     setLoading(true);
+    setErrors({}); // Clear any previous errors
+    
     try {
-      const { error } = await signUp(email, password, referralCode, handle);
+      console.log('Attempting sign up for:', email, 'with referral:', referralCode);
+      const { data, error } = await signUp(email, password, referralCode, handle);
+      
       if (error) {
-        toast.error(error.message);
+        console.error('Sign up error:', error);
+        
+        // Handle specific signup errors
+        if (error.message.includes('already registered')) {
+          toast.error('An account with this email already exists. Please sign in instead.');
+        } else if (error.message.includes('Password should be at least')) {
+          toast.error('Password must be at least 6 characters long.');
+        } else {
+          toast.error(error.message);
+        }
+      } else if (data.user) {
+        console.log('Sign up successful, user created:', data.user.id);
+        toast.success('Account created successfully! Please check your email to confirm your account before signing in.');
+        
+        // Clear form but keep on signup tab for user convenience
+        setPassword('');
       } else {
-        toast.success('Account created! Please check your email to confirm your account.');
+        console.warn('Sign up returned no user data');
+        toast.error('Account creation failed. Please try again.');
       }
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      console.error('Sign up exception:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -108,16 +154,22 @@ export const AuthPage = () => {
 
   // handleSocialLogin function
   const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
-    setLoading(true);
+    if (socialLoading) return; // Prevent multiple social logins
+    
+    setSocialLoading(provider);
     try {
+      console.log('Attempting social login with:', provider);
       const { error } = await signInWithProvider(provider);
       if (error) {
-        toast.error(error.message);
+        console.error('Social login error:', error);
+        toast.error(`${provider} login failed: ${error.message}`);
       }
+      // Success will be handled by auth state change
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      console.error('Social login exception:', error);
+      toast.error('Social login failed. Please try again.');
     } finally {
-      setLoading(false);
+      setSocialLoading(null);
     }
   };
 
@@ -148,6 +200,7 @@ export const AuthPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
+                    required
                   />
                   {errors.email && (
                     <Alert className="py-2">
@@ -166,6 +219,7 @@ export const AuthPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading}
+                      required
                     />
                     <Button
                       type="button"
@@ -207,6 +261,7 @@ export const AuthPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
+                    required
                   />
                   {errors.email && (
                     <Alert className="py-2">
@@ -224,6 +279,7 @@ export const AuthPage = () => {
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
                     disabled={loading}
+                    required
                   />
                   {errors.handle && (
                     <Alert className="py-2">
@@ -242,6 +298,7 @@ export const AuthPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading}
+                      required
                     />
                     <Button
                       type="button"
@@ -265,22 +322,24 @@ export const AuthPage = () => {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-referral">Referral Code (Optional)</Label>
-                  <Input
-                    id="signup-referral"
-                    type="text"
-                    placeholder="Enter referral code"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    disabled={loading}
-                  />
-                  {errors.referralCode && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.referralCode}</AlertDescription>
-                    </Alert>
-                  )}
-                </div>
+                {referralCode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-referral">Referral Code</Label>
+                    <Input
+                      id="signup-referral"
+                      type="text"
+                      placeholder="Enter referral code"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      disabled={loading}
+                    />
+                    {errors.referralCode && (
+                      <Alert className="py-2">
+                        <AlertDescription className="text-sm">{errors.referralCode}</AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -304,26 +363,38 @@ export const AuthPage = () => {
               <Button 
                 variant="outline" 
                 onClick={() => handleSocialLogin('google')}
-                disabled={loading}
+                disabled={loading || !!socialLoading}
                 className="w-full"
               >
-                Google
+                {socialLoading === 'google' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Google'
+                )}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => handleSocialLogin('github')}
-                disabled={loading}
+                disabled={loading || !!socialLoading}
                 className="w-full"
               >
-                GitHub
+                {socialLoading === 'github' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'GitHub'
+                )}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => handleSocialLogin('twitter')}
-                disabled={loading}
+                disabled={loading || !!socialLoading}
                 className="w-full"
               >
-                Twitter
+                {socialLoading === 'twitter' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Twitter'
+                )}
               </Button>
             </div>
           </div>

@@ -26,6 +26,7 @@ interface UserProfile {
   updated_at?: string;
   referral_code?: string;
   referral_credits?: number;
+  referred_by?: string;
 }
 
 interface AuthContextType {
@@ -75,9 +76,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .maybeSingle();
       
       if (!error && data) {
-        console.log('User profile fetched:', data);
+        console.log('User profile fetched successfully:', data);
         
-        // Type-safe conversion from database row to UserProfile
         const userProfile: UserProfile = {
           id: data.id,
           email: data.email,
@@ -92,16 +92,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           created_at: data.created_at,
           updated_at: data.updated_at,
           referral_code: data.referral_code,
-          referral_credits: data.referral_credits
+          referral_credits: data.referral_credits,
+          referred_by: data.referred_by
         };
         
         setUserProfile(userProfile);
         setUserRole(data.role || 'client');
       } else if (error) {
         console.error('Error fetching user profile:', error);
+        // Don't set null profile on error, keep existing state
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Exception in fetchUserProfile:', error);
     }
   };
 
@@ -112,17 +114,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    let mounted = true;
+
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
+        
+        if (!mounted) return; // Prevent state updates if component unmounted
+        
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Defer profile fetch to avoid deadlock
+        if (session?.user?.id) {
+          // Use setTimeout to prevent auth callback deadlock
           setTimeout(() => {
-            fetchUserProfile(session.user.id);
+            if (mounted) {
+              fetchUserProfile(session.user.id);
+            }
           }, 100);
         } else {
           setUserProfile(null);
@@ -135,20 +144,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
+      if (session?.user?.id) {
         setTimeout(() => {
-          fetchUserProfile(session.user.id);
+          if (mounted) {
+            fetchUserProfile(session.user.id);
+          }
         }, 100);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Cleanup function
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
