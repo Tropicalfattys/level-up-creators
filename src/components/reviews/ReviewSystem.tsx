@@ -147,8 +147,8 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
 
       console.log('Booking status check:', bookingStatus);
 
-      // Verify booking is completed
-      if (!['accepted', 'released'].includes(bookingStatus.status)) {
+      // Verify booking is completed (including refunded from disputes)
+      if (!['accepted', 'released', 'refunded'].includes(bookingStatus.status)) {
         console.error('Booking not completed:', bookingStatus.status);
         throw new Error('Reviews can only be submitted for completed bookings');
       }
@@ -222,7 +222,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
   const showReviewForm = canReview && 
     !existingReview && 
     bookingStatus && 
-    ['accepted', 'released'].includes(bookingStatus.status) && 
+    ['accepted', 'released', 'refunded'].includes(bookingStatus.status) && 
     user?.id &&
     (user.id === bookingStatus.client_id || user.id === bookingStatus.creator_id);
 
@@ -292,7 +292,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
       )}
 
       {/* Show message if booking not completed */}
-      {canReview && bookingStatus && !['accepted', 'released'].includes(bookingStatus.status) && (
+      {canReview && bookingStatus && !['accepted', 'released', 'refunded'].includes(bookingStatus.status) && (
         <Card>
           <CardHeader>
             <CardTitle>Review Not Available</CardTitle>
