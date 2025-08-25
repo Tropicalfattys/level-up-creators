@@ -28,6 +28,8 @@ interface UserProfile {
   referral_code?: string;
   referral_credits?: number;
   referred_by?: string;
+  payout_address_eth?: string;
+  payout_address_sol?: string;
   payout_address_cardano?: string;
   payout_address_bsc?: string;
   payout_address_sui?: string;
@@ -104,6 +106,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           referral_code: data.referral_code,
           referral_credits: data.referral_credits,
           referred_by: data.referred_by,
+          payout_address_eth: data.payout_address_eth,
+          payout_address_sol: data.payout_address_sol,
           payout_address_cardano: data.payout_address_cardano,
           payout_address_bsc: data.payout_address_bsc,
           payout_address_sui: data.payout_address_sui

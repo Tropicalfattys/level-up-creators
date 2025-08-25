@@ -691,6 +691,8 @@ export type Database = {
           id: string
           payout_address_bsc: string | null
           payout_address_cardano: string | null
+          payout_address_eth: string | null
+          payout_address_sol: string | null
           payout_address_sui: string | null
           portfolio_url: string | null
           referral_code: string | null
@@ -711,6 +713,8 @@ export type Database = {
           id: string
           payout_address_bsc?: string | null
           payout_address_cardano?: string | null
+          payout_address_eth?: string | null
+          payout_address_sol?: string | null
           payout_address_sui?: string | null
           portfolio_url?: string | null
           referral_code?: string | null
@@ -731,6 +735,8 @@ export type Database = {
           id?: string
           payout_address_bsc?: string | null
           payout_address_cardano?: string | null
+          payout_address_eth?: string | null
+          payout_address_sol?: string | null
           payout_address_sui?: string | null
           portfolio_url?: string | null
           referral_code?: string | null
