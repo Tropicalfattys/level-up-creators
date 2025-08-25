@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ExternalLink, Search } from 'lucide-react';
+import { ExternalLink, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminPayments = () => {
@@ -26,7 +26,8 @@ export const AdminPayments = () => {
           *,
           payer:users!payments_user_id_fkey(handle, email),
           creator:users!payments_creator_id_fkey(handle, email),
-          service:services!payments_service_id_fkey(title, price_usdc)
+          service:services!payments_service_id_fkey(title, price_usdc),
+          booking:bookings!payments_booking_id_fkey(id, status)
         `)
         .order('created_at', { ascending: false });
 
@@ -62,8 +63,16 @@ export const AdminPayments = () => {
 
       if (error) throw error;
 
-      toast.success(`Payment ${status} successfully`);
+      toast.success(
+        status === 'verified' 
+          ? 'Payment verified! Booking status automatically updated to paid.' 
+          : `Payment ${status} successfully`
+      );
+      
+      // Refresh both payments and bookings data
       queryClient.invalidateQueries({ queryKey: ['admin-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-referrals-test'] });
     } catch (error: any) {
       toast.error('Failed to update payment status: ' + error.message);
     }
@@ -96,7 +105,7 @@ export const AdminPayments = () => {
         <CardHeader>
           <CardTitle>Payment Management</CardTitle>
           <CardDescription>
-            Review and verify payment transactions
+            Review and verify payment transactions. Verified payments automatically update booking status to "paid".
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,7 +157,8 @@ export const AdminPayments = () => {
                 <TableHead>Service</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Network</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Payment Status</TableHead>
+                <TableHead>Booking Status</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -196,18 +206,50 @@ export const AdminPayments = () => {
                     <Badge variant="outline">{payment.network}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={
-                        payment.status === 'verified' ? 'default' : 
-                        payment.status === 'rejected' ? 'destructive' : 
-                        'secondary'
-                      }
-                    >
-                      {payment.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={
+                          payment.status === 'verified' ? 'default' : 
+                          payment.status === 'rejected' ? 'destructive' : 
+                          'secondary'
+                        }
+                      >
+                        {payment.status}
+                      </Badge>
+                      {payment.status === 'verified' && (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(payment.created_at).toLocaleDateString()}
+                    {payment.booking?.status ? (
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={
+                            payment.booking.status === 'paid' ? 'default' : 
+                            payment.booking.status === 'accepted' ? 'default' : 
+                            'secondary'
+                          }
+                        >
+                          {payment.booking.status}
+                        </Badge>
+                        {payment.status === 'verified' && payment.booking.status === 'paid' && (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="outline">No Booking</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="text-sm">{new Date(payment.created_at).toLocaleDateString()}</div>
+                      {payment.verified_at && (
+                        <div className="text-xs text-muted-foreground">
+                          Verified: {new Date(payment.verified_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {payment.status === 'pending' && (
@@ -225,6 +267,12 @@ export const AdminPayments = () => {
                         >
                           Reject
                         </Button>
+                      </div>
+                    )}
+                    {payment.status === 'verified' && payment.booking?.status === 'paid' && (
+                      <div className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-xs">Synced</span>
                       </div>
                     )}
                   </TableCell>
