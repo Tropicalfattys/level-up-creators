@@ -240,19 +240,22 @@ export const AuthPage = () => {
                   </div>
                 </div>
 
-                {referralCode && (
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-referral">Referral Code</Label>
-                    <Input
-                      id="signup-referral"
-                      type="text"
-                      placeholder="Enter referral code"
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      disabled={loading}
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-referral">Referral Code (Optional)</Label>
+                  <Input
+                    id="signup-referral"
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    disabled={loading}
+                  />
+                  {referralCode && (
+                    <p className="text-xs text-muted-foreground">
+                      You and your referrer will earn credits when you make your first booking!
+                    </p>
+                  )}
+                </div>
 
                 {error && (
                   <Alert className="py-2">
