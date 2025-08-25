@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
+import { EscrowManager } from '@/components/escrow/EscrowManager';
 
 interface BookingWithDetails {
   id: string;
@@ -273,6 +273,11 @@ export const ClientBookings = () => {
                   </div>
                 )}
 
+                {/* Escrow Manager - Only show for delivered bookings */}
+                {booking.status === 'delivered' && (
+                  <EscrowManager bookingId={booking.id} isClient={true} />
+                )}
+
                 {/* Chat Component */}
                 {booking.creator && (
                   <div>
@@ -324,4 +329,3 @@ export const ClientBookings = () => {
     </div>
   );
 };
-
