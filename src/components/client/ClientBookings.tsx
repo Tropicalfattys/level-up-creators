@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,12 +58,16 @@ export const ClientBookings = () => {
         return [];
       }
       
-      return data || [];
+      // Convert the data and handle the proof_links JSON field properly
+      return (data || []).map(booking => ({
+        ...booking,
+        proof_links: Array.isArray(booking.proof_links) ? booking.proof_links : []
+      }));
     },
     enabled: !!user?.id
   });
 
-  // Fixed tab counting - simple and correct
+  // Corrected tab counting logic
   const getTabCounts = () => {
     if (!bookings) return { all: 0, active: 0, in_progress: 0, delivered: 0 };
     
@@ -72,11 +75,11 @@ export const ClientBookings = () => {
       all: bookings.length,
       active: bookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
       in_progress: bookings.filter(b => b.status === 'in_progress').length,
-      delivered: bookings.filter(b => b.status === 'delivered').length,
+      delivered: bookings.filter(b => b.status === 'delivered' || b.status === 'accepted' || b.status === 'released').length,
     };
   };
 
-  // Fixed filtering - simple and correct, removed completed tab
+  // Corrected filtering logic
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
@@ -88,7 +91,7 @@ export const ClientBookings = () => {
       return bookings.filter(booking => booking.status === 'in_progress');
     }
     if (status === 'delivered') {
-      return bookings.filter(booking => booking.status === 'delivered');
+      return bookings.filter(booking => booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released');
     }
     
     return bookings.filter(booking => booking.status === status);
