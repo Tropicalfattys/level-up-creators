@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,13 +61,7 @@ export const BookingManagement = () => {
         return [];
       }
       
-      // Safely transform the data to match our interface
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links as Array<{ url: string; label: string }>
-          : []
-      }));
+      return data || [];
     },
     enabled: !!user?.id
   });
@@ -197,81 +192,35 @@ export const BookingManagement = () => {
     return statuses.indexOf(status) + 1;
   };
 
+  // Fixed tab counting - simple and correct
   const getTabCounts = () => {
     if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
     
-    const counts = {
+    return {
       all: bookings.length,
-      paid: 0,
-      in_progress: 0,
-      delivered: 0,
+      paid: bookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
+      in_progress: bookings.filter(b => b.status === 'in_progress').length,
+      delivered: bookings.filter(b => b.status === 'delivered').length,
     };
-
-    bookings.forEach(booking => {
-      console.log(`Creator booking ${booking.id} has status: ${booking.status}`);
-      
-      // Count "New" bookings (pending or paid status)
-      if (booking.status === 'pending' || booking.status === 'paid') {
-        counts.paid++;
-      }
-      // Count "In Progress" bookings
-      else if (booking.status === 'in_progress') {
-        counts.in_progress++;
-      }
-      // Count "Delivered" bookings (delivered status only, not accepted/released)
-      else if (booking.status === 'delivered') {
-        counts.delivered++;
-      }
-    });
-
-    console.log('Creator tab counts:', counts);
-    return counts;
   };
 
+  // Fixed filtering - simple and correct
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     
-    // Filter "New" tab - pending or paid
     if (status === 'paid') {
       return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
     }
-    // Filter "In Progress" tab
-    else if (status === 'in_progress') {
+    if (status === 'in_progress') {
       return bookings.filter(booking => booking.status === 'in_progress');
     }
-    // Filter "Delivered" tab - only delivered status
-    else if (status === 'delivered') {
+    if (status === 'delivered') {
       return bookings.filter(booking => booking.status === 'delivered');
     }
     
     return bookings.filter(booking => booking.status === status);
   };
-
-  const handleTabChange = (value: string) => {
-    // Store current scroll position before changing tab
-    const currentScrollY = window.scrollY;
-    
-    setActiveTab(value);
-    
-    // Prevent scroll by maintaining position
-    requestAnimationFrame(() => {
-      window.scrollTo(0, currentScrollY);
-    });
-  };
-
-  // Prevent auto-scroll on mount and data changes
-  useEffect(() => {
-    const preventScroll = () => {
-      // Don't allow any automatic scrolling
-      window.scrollTo(0, 0);
-    };
-    
-    // Only scroll to top on initial mount
-    if (bookings) {
-      preventScroll();
-    }
-  }, []); // Remove bookings and activeTab from dependencies
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
@@ -288,7 +237,7 @@ export const BookingManagement = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
           <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>

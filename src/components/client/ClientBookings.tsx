@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,74 +59,36 @@ export const ClientBookings = () => {
         return [];
       }
       
-      // Safely transform the data to match our interface
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links as Array<{ url: string; label: string }>
-          : []
-      }));
+      return data || [];
     },
     enabled: !!user?.id
   });
 
-  // Fixed tab counting logic for client view
+  // Fixed tab counting - simple and correct
   const getTabCounts = () => {
-    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0, completed: 0 };
+    if (!bookings) return { all: 0, active: 0, in_progress: 0, delivered: 0 };
     
-    const counts = {
+    return {
       all: bookings.length,
-      paid: 0,
-      in_progress: 0,
-      delivered: 0,
-      completed: 0,
+      active: bookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
+      in_progress: bookings.filter(b => b.status === 'in_progress').length,
+      delivered: bookings.filter(b => b.status === 'delivered').length,
     };
-
-    bookings.forEach(booking => {
-      console.log(`Client booking ${booking.id} has status: ${booking.status}`);
-      
-      // Count "Active" bookings (pending or paid status)
-      if (booking.status === 'pending' || booking.status === 'paid') {
-        counts.paid++;
-      }
-      // Count "In Progress" bookings
-      else if (booking.status === 'in_progress') {
-        counts.in_progress++;
-      }
-      // Count "Delivered" bookings (delivered status only)
-      else if (booking.status === 'delivered') {
-        counts.delivered++;
-      }
-      // Count "Completed" bookings (accepted or released)
-      else if (booking.status === 'accepted' || booking.status === 'released') {
-        counts.completed++;
-      }
-    });
-
-    console.log('Client tab counts:', counts);
-    return counts;
   };
 
-  // Fixed filtering logic for client view
+  // Fixed filtering - simple and correct, removed completed tab
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     
-    // Filter "Active" tab - pending or paid
-    if (status === 'paid') {
+    if (status === 'active') {
       return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
     }
-    // Filter "In Progress" tab
-    else if (status === 'in_progress') {
+    if (status === 'in_progress') {
       return bookings.filter(booking => booking.status === 'in_progress');
     }
-    // Filter "Delivered" tab - delivered status only
-    else if (status === 'delivered') {
+    if (status === 'delivered') {
       return bookings.filter(booking => booking.status === 'delivered');
-    }
-    // Filter "Completed" tab - accepted or released
-    else if (status === 'completed') {
-      return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
     
     return bookings.filter(booking => booking.status === status);
@@ -148,32 +111,6 @@ export const ClientBookings = () => {
     toast.success('Transaction hash copied to clipboard');
   };
 
-  // Fixed scroll prevention for client view
-  const handleTabChange = (value: string) => {
-    // Store current scroll position before changing tab
-    const currentScrollY = window.scrollY;
-    
-    setActiveTab(value);
-    
-    // Prevent scroll by maintaining position
-    requestAnimationFrame(() => {
-      window.scrollTo(0, currentScrollY);
-    });
-  };
-
-  // Prevent auto-scroll on mount and data changes
-  useEffect(() => {
-    const preventScroll = () => {
-      // Don't allow any automatic scrolling
-      window.scrollTo(0, 0);
-    };
-    
-    // Only scroll to top on initial mount
-    if (bookings) {
-      preventScroll();
-    }
-  }, []); // Remove bookings and activeTab from dependencies
-
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
   }
@@ -189,13 +126,12 @@ export const ClientBookings = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-          <TabsTrigger value="paid">Active ({tabCounts.paid})</TabsTrigger>
+          <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
           <TabsTrigger value="in_progress">In Progress ({tabCounts.in_progress})</TabsTrigger>
           <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
