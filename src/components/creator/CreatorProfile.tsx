@@ -8,25 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
-
-interface Review {
-  id: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  reviewer: {
-    handle: string;
-    avatar_url?: string;
-  };
-}
 
 export const CreatorProfile = () => {
   const { handle } = useParams();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
   // Fetch creator data by handle
   const { data: creator, isLoading } = useQuery({
@@ -92,27 +80,6 @@ export const CreatorProfile = () => {
     enabled: !!handle && handle !== 'unknown'
   });
 
-  // Fetch reviews for this creator
-  const { data: reviews } = useQuery({
-    queryKey: ['creator-reviews', creator?.user_id],
-    queryFn: async (): Promise<Review[]> => {
-      if (!creator?.user_id) return [];
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          reviewer:users!reviews_reviewer_id_fkey (handle, avatar_url)
-        `)
-        .eq('reviewee_id', creator.user_id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!creator?.user_id
-  });
-
   // Social media icons mapping
   const socialIcons = {
     twitter: Twitter,
@@ -127,6 +94,7 @@ export const CreatorProfile = () => {
   // Helper function to format URLs properly
   const formatUrl = (url: string) => {
     if (!url) return '';
+    // If URL doesn't start with http:// or https://, add https://
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return `https://${url}`;
     }
@@ -136,18 +104,6 @@ export const CreatorProfile = () => {
   const handleBookService = (service: any) => {
     setSelectedService(service);
     setIsBookingModalOpen(true);
-  };
-
-  const nextReview = () => {
-    if (reviews && currentReviewIndex < reviews.length - 1) {
-      setCurrentReviewIndex(currentReviewIndex + 1);
-    }
-  };
-
-  const previousReview = () => {
-    if (currentReviewIndex > 0) {
-      setCurrentReviewIndex(currentReviewIndex - 1);
-    }
   };
 
   if (isLoading) {
@@ -196,7 +152,7 @@ export const CreatorProfile = () => {
                 </Avatar>
                 
                 <div>
-                  <h1 className="text-2xl font-bold">@{creator.user?.handle}</h1>
+                  <h1 className="text-2xl font-bold">{creator.user?.handle}</h1>
                   {creator.headline && (
                     <p className="text-muted-foreground">{creator.headline}</p>
                   )}
@@ -205,12 +161,10 @@ export const CreatorProfile = () => {
                 <div className="flex justify-center items-center gap-2">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">
-                      {creator.rating ? creator.rating.toFixed(1) : '0.0'}
-                    </span>
+                    <span className="font-medium">{creator.rating ? creator.rating.toFixed(1) : '0.0'}</span>
                   </div>
                   <span className="text-muted-foreground">
-                    ({creator.review_count || reviews?.length || 0} reviews)
+                    ({creator.review_count || 0} reviews)
                   </span>
                 </div>
 
@@ -311,91 +265,12 @@ export const CreatorProfile = () => {
                   <div className="text-xs text-muted-foreground">Services</div>
                 </div>
                 <div>
-                  <div className="font-semibold">{creator.review_count || reviews?.length || 0}</div>
+                  <div className="font-semibold">{creator.review_count || 0}</div>
                   <div className="text-xs text-muted-foreground">Reviews</div>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Reviews Card */}
-          {reviews && reviews.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Reviews ({reviews.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Single Review Display with Navigation */}
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          Review {currentReviewIndex + 1} of {reviews.length}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={previousReview}
-                          disabled={currentReviewIndex === 0}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={nextReview}
-                          disabled={currentReviewIndex >= reviews.length - 1}
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {reviews[currentReviewIndex] && (
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={reviews[currentReviewIndex].reviewer?.avatar_url} />
-                          <AvatarFallback>
-                            {reviews[currentReviewIndex].reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium">@{reviews[currentReviewIndex].reviewer?.handle}</span>
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  className={`h-4 w-4 ${
-                                    star <= reviews[currentReviewIndex].rating
-                                      ? 'fill-yellow-400 text-yellow-400'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {new Date(reviews[currentReviewIndex].created_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </p>
-                          {reviews[currentReviewIndex].comment && (
-                            <p className="text-sm">{reviews[currentReviewIndex].comment}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Right Column - Services */}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, Star } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
 import { EscrowManager } from '@/components/escrow/EscrowManager';
-import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
 interface BookingWithDetails {
   id: string;
@@ -128,11 +128,6 @@ export const ClientBookings = () => {
   const copyTxHash = (txHash: string) => {
     navigator.clipboard.writeText(txHash);
     toast.success('Transaction hash copied to clipboard');
-  };
-
-  // Helper function to check if booking is completed and can be reviewed
-  const canReview = (booking: BookingWithDetails) => {
-    return ['accepted', 'released', 'refunded'].includes(booking.status);
   };
 
   if (isLoading) {
@@ -281,21 +276,6 @@ export const ClientBookings = () => {
                 {/* Escrow Manager - Only show for delivered bookings */}
                 {booking.status === 'delivered' && (
                   <EscrowManager bookingId={booking.id} isClient={true} />
-                )}
-
-                {/* Reviews Section - Show when booking is completed */}
-                {canReview(booking) && booking.creator && (
-                  <div className="border rounded-lg p-4 bg-blue-50/50">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <h4 className="font-medium">Share Your Experience</h4>
-                    </div>
-                    <ReviewSystem
-                      bookingId={booking.id}
-                      revieweeId={booking.creator.id}
-                      canReview={true}
-                    />
-                  </div>
                 )}
 
                 {/* Chat Component */}
