@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,13 +62,17 @@ export const ClientBookings = () => {
       // Convert the data and handle the proof_links JSON field properly
       return (data || []).map(booking => ({
         ...booking,
-        proof_links: Array.isArray(booking.proof_links) ? booking.proof_links : []
-      }));
+        proof_links: Array.isArray(booking.proof_links) 
+          ? booking.proof_links.map((link: any) => ({
+              url: typeof link === 'string' ? link : link.url || '',
+              label: typeof link === 'string' ? 'Link' : link.label || 'Link'
+            }))
+          : []
+      })) as BookingWithDetails[];
     },
     enabled: !!user?.id
   });
 
-  // Corrected tab counting logic
   const getTabCounts = () => {
     if (!bookings) return { all: 0, active: 0, in_progress: 0, delivered: 0 };
     
@@ -79,7 +84,6 @@ export const ClientBookings = () => {
     };
   };
 
-  // Corrected filtering logic
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
