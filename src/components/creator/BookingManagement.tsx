@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -94,11 +94,11 @@ export const BookingManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
       const statusText = status === 'in_progress' ? 'started' : 
                         status === 'delivered' ? 'delivered' : 'updated';
-      toast.success(`Booking ${statusText} successfully!`);
+      toast.success(`Project ${statusText} successfully!`);
     },
     onError: (error) => {
       console.error('Update booking error:', error);
-      toast.error('Failed to update booking status');
+      toast.error('Failed to update project status');
     }
   });
 
@@ -148,12 +148,17 @@ export const BookingManagement = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
-      case 'in_progress': return 'default';
-      case 'delivered': return 'secondary';
+      case 'in_progress': return 'secondary';
+      case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
       default: return 'secondary';
     }
+  };
+
+  const getStatusProgress = (status: string) => {
+    const statuses = ['paid', 'in_progress', 'delivered', 'accepted'];
+    return statuses.indexOf(status) + 1;
   };
 
   const filterBookings = (status: string) => {
@@ -235,47 +240,80 @@ export const BookingManagement = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Project Actions Section */}
+                {/* Enhanced Project Actions Section */}
                 <div className="border rounded-lg p-4 bg-muted/20">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       Project Actions
                     </h4>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Progress:</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            className={`w-2 h-2 rounded-full ${
+                              step <= getStatusProgress(booking.status) 
+                                ? 'bg-primary' 
+                                : 'bg-muted-foreground/30'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Action Buttons and Content */}
+                  {/* Current Status Display */}
+                  <div className="mb-4 p-3 bg-background rounded border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium capitalize">
+                          Current Status: {booking.status.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {booking.status === 'paid' && 'Ready to start work'}
+                          {booking.status === 'in_progress' && 'Work in progress'}
+                          {booking.status === 'delivered' && 'Awaiting client review'}
+                          {booking.status === 'accepted' && 'Project completed successfully'}
+                          {booking.status === 'released' && 'Payment released'}
+                        </p>
+                      </div>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  {/* Status-Specific Actions */}
                   <div className="space-y-4">
-                    {/* Status-specific buttons and content */}
                     {booking.status === 'paid' && (
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
-                          Ready to start work on this project
-                        </div>
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
                         <Button 
                           size="sm" 
-                          variant="default"
                           onClick={() => updateBookingStatus.mutate({ 
                             bookingId: booking.id, 
                             status: 'in_progress' 
                           })}
                           disabled={updateBookingStatus.isPending}
+                          className="w-full"
                         >
-                          <Play className="h-3 w-3 mr-1" />
+                          <Play className="h-3 w-3 mr-2" />
                           Start Work
+                          <ArrowRight className="h-3 w-3 ml-2" />
                         </Button>
                       </div>
                     )}
                     
                     {booking.status === 'in_progress' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-blue-600 font-medium">
-                            Project in progress - Add proof links below to mark as delivered
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
+                          <div>
+                            <p className="text-sm font-medium text-blue-800">Project In Progress</p>
+                            <p className="text-xs text-blue-600">Submit proof of work to mark as delivered</p>
                           </div>
+                          <Package className="h-4 w-4 text-blue-600" />
                         </div>
                         
-                        {/* Proof Submission Form */}
                         <ProofSubmission
                           bookingId={booking.id}
                           currentProof={{
@@ -290,33 +328,46 @@ export const BookingManagement = () => {
                     
                     {booking.status === 'delivered' && (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-orange-600 font-medium flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            Work delivered - Waiting for client review
+                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded border border-orange-200">
+                          <div>
+                            <p className="text-sm font-medium text-orange-800">Work Delivered</p>
+                            <p className="text-xs text-orange-600">Waiting for client review and acceptance</p>
                           </div>
+                          <CheckCircle className="h-4 w-4 text-orange-600" />
                         </div>
                         
                         {/* Display submitted proof */}
                         {(booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-background rounded border">
                             <p className="text-sm font-medium mb-2">Submitted Proof:</p>
-                            {booking.proof_link && (
-                              <div className="flex items-center gap-2 mb-1">
-                                <ExternalLink className="h-3 w-3" />
-                                <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                  View Proof Link
-                                </a>
-                              </div>
-                            )}
-                            {booking.proof_file_url && (
-                              <div className="flex items-center gap-2">
-                                <Upload className="h-3 w-3" />
-                                <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                  View Proof File
-                                </a>
-                              </div>
-                            )}
+                            <div className="space-y-2">
+                              {booking.proof_link && (
+                                <div className="flex items-center gap-2">
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  <a 
+                                    href={booking.proof_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
+                                    View Social Proof Link
+                                  </a>
+                                </div>
+                              )}
+                              {booking.proof_file_url && (
+                                <div className="flex items-center gap-2">
+                                  <Upload className="h-3 w-3 text-blue-600" />
+                                  <a 
+                                    href={booking.proof_file_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
+                                    View Uploaded File
+                                  </a>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -324,33 +375,48 @@ export const BookingManagement = () => {
                     
                     {(booking.status === 'accepted' || booking.status === 'released') && (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-green-600 font-medium flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            Project completed successfully
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">
+                          <div>
+                            <p className="text-sm font-medium text-green-800">Project Completed</p>
+                            <p className="text-xs text-green-600">
+                              {booking.status === 'accepted' ? 'Client accepted delivery' : 'Payment released'}
+                            </p>
                           </div>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                         </div>
                         
-                        {/* Display final proof links */}
+                        {/* Display final deliverables */}
                         {(booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-green-50 rounded border border-green-200">
                             <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
-                            {booking.proof_link && (
-                              <div className="flex items-center gap-2 mb-1">
-                                <ExternalLink className="h-3 w-3 text-green-600" />
-                                <a href={booking.proof_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                  View Proof Link
-                                </a>
-                              </div>
-                            )}
-                            {booking.proof_file_url && (
-                              <div className="flex items-center gap-2">
-                                <Upload className="h-3 w-3 text-green-600" />
-                                <a href={booking.proof_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                  View Proof File
-                                </a>
-                              </div>
-                            )}
+                            <div className="space-y-2">
+                              {booking.proof_link && (
+                                <div className="flex items-center gap-2">
+                                  <ExternalLink className="h-3 w-3 text-green-600" />
+                                  <a 
+                                    href={booking.proof_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
+                                    View Social Proof Link
+                                  </a>
+                                </div>
+                              )}
+                              {booking.proof_file_url && (
+                                <div className="flex items-center gap-2">
+                                  <Upload className="h-3 w-3 text-green-600" />
+                                  <a 
+                                    href={booking.proof_file_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
+                                    View Uploaded File
+                                  </a>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
