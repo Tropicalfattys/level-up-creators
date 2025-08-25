@@ -340,12 +340,6 @@ export const ClientBookings = () => {
                       </div>
                     )}
                   </div>
-                  <Link to={`/chat/${booking.id}`}>
-                    <Button size="sm" variant="outline">
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Full Chat
-                    </Button>
-                  </Link>
                 </div>
               </CardContent>
             </Card>

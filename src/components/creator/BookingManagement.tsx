@@ -577,14 +577,6 @@ export const BookingManagement = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 items-end">
-                    <Link to={`/chat/${booking.id}`}>
-                      <Button size="sm" variant="outline">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Full Chat
-                      </Button>
-                    </Link>
-                  </div>
                 </div>
               </CardContent>
             </Card>
