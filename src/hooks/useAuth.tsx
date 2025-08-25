@@ -28,6 +28,11 @@ interface UserProfile {
   referral_code?: string;
   referral_credits?: number;
   referred_by?: string;
+  payout_address_eth?: string;
+  payout_address_sol?: string;
+  payout_address_cardano?: string;
+  payout_address_bsc?: string;
+  payout_address_sui?: string;
 }
 
 interface AuthContextType {
@@ -69,13 +74,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for ID:', userId);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
       
-      if (!error && data) {
+      console.log('User profile fetch result:', { data, error });
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+      
+      if (data) {
         const userProfile: UserProfile = {
           id: data.id,
           email: data.email,
@@ -91,26 +105,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           updated_at: data.updated_at,
           referral_code: data.referral_code,
           referral_credits: data.referral_credits,
-          referred_by: data.referred_by
+          referred_by: data.referred_by,
+          payout_address_eth: data.payout_address_eth,
+          payout_address_sol: data.payout_address_sol,
+          payout_address_cardano: data.payout_address_cardano,
+          payout_address_bsc: data.payout_address_bsc,
+          payout_address_sui: data.payout_address_sui
         };
         
         setUserProfile(userProfile);
         setUserRole(data.role || 'client');
+        console.log('User profile set successfully:', userProfile);
+      } else {
+        console.log('No user profile found for ID:', userId);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Exception fetching user profile:', error);
     }
   };
 
   const refreshProfile = async () => {
     if (user?.id) {
+      console.log('Refreshing profile for user:', user.id);
       await fetchUserProfile(user.id);
     }
   };
 
   useEffect(() => {
+    console.log('Auth effect: Getting initial session');
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -124,6 +150,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, !!session);
         setSession(session);
         setUser(session?.user ?? null);
         
