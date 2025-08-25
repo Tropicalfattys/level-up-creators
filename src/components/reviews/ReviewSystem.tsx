@@ -116,45 +116,86 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
 
   const submitReview = useMutation({
     mutationFn: async () => {
-      if (!user?.id || rating === 0) {
-        throw new Error('User ID or rating missing');
+      console.log('Starting review submission validation...');
+      
+      // Basic validation
+      if (!user?.id) {
+        console.error('No user ID found');
+        throw new Error('User not authenticated');
       }
 
-      // Verify booking is in correct status
-      if (!bookingStatus || !['accepted', 'released'].includes(bookingStatus.status)) {
-        throw new Error('Booking must be completed before reviewing');
+      if (!rating || rating < 1 || rating > 5) {
+        console.error('Invalid rating:', rating);
+        throw new Error('Please select a rating between 1-5 stars');
+      }
+
+      if (!bookingId) {
+        console.error('No booking ID');
+        throw new Error('Booking ID is required');
+      }
+
+      if (!revieweeId) {
+        console.error('No reviewee ID');
+        throw new Error('Reviewee ID is required');
+      }
+
+      // Check booking status
+      if (!bookingStatus) {
+        console.error('No booking status data');
+        throw new Error('Unable to verify booking status');
+      }
+
+      console.log('Booking status check:', bookingStatus);
+
+      // Verify booking is completed
+      if (!['accepted', 'released'].includes(bookingStatus.status)) {
+        console.error('Booking not completed:', bookingStatus.status);
+        throw new Error('Reviews can only be submitted for completed bookings');
       }
 
       // Verify user is part of this booking
-      if (user.id !== bookingStatus.client_id && user.id !== bookingStatus.creator_id) {
-        throw new Error('User not authorized to review this booking');
+      const isClient = user.id === bookingStatus.client_id;
+      const isCreator = user.id === bookingStatus.creator_id;
+      
+      if (!isClient && !isCreator) {
+        console.error('User not part of booking:', { userId: user.id, booking: bookingStatus });
+        throw new Error('You are not authorized to review this booking');
       }
 
-      console.log('Submitting review:', {
+      // Check for existing review
+      if (existingReview) {
+        console.error('Review already exists:', existingReview);
+        throw new Error('You have already reviewed this booking');
+      }
+
+      // Prepare the review data
+      const reviewData = {
         booking_id: bookingId,
         reviewer_id: user.id,
         reviewee_id: revieweeId,
-        rating,
+        rating: Number(rating),
         comment: comment.trim() || null
-      });
+      };
 
-      const { error } = await supabase
+      console.log('Submitting review with data:', reviewData);
+
+      // Submit the review
+      const { data, error } = await supabase
         .from('reviews')
-        .insert({
-          booking_id: bookingId,
-          reviewer_id: user.id,
-          reviewee_id: revieweeId,
-          rating,
-          comment: comment.trim() || null
-        });
+        .insert(reviewData)
+        .select()
+        .single();
 
       if (error) {
-        console.error('Review submission error:', error);
-        throw error;
+        console.error('Supabase error during review submission:', error);
+        throw new Error(`Failed to submit review: ${error.message}`);
       }
+
+      console.log('Review submitted successfully:', data);
+      return data;
     },
     onSuccess: () => {
-      console.log('Review submitted successfully');
+      console.log('Review submission completed successfully');
       toast.success('Review submitted successfully!');
       setRating(0);
       setComment('');
@@ -164,7 +205,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
     },
     onError: (error: Error) => {
       console.error('Review submission failed:', error);
-      toast.error(`Failed to submit review: ${error.message}`);
+      toast.error(error.message || 'Failed to submit review');
     }
   });
 
@@ -174,32 +215,16 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (rating === 0) {
-      toast.error('Please select a rating');
-      return;
-    }
-
-    if (!bookingStatus) {
-      toast.error('Unable to verify booking status');
-      return;
-    }
-
-    if (!['accepted', 'released'].includes(bookingStatus.status)) {
-      toast.error('Reviews can only be submitted for completed bookings');
-      return;
-    }
-
-    if (existingReview) {
-      toast.error('You have already reviewed this booking');
-      return;
-    }
-
     submitReview.mutate();
   };
 
   // Don't show review form if user already reviewed or can't review
-  const showReviewForm = canReview && !existingReview && bookingStatus && ['accepted', 'released'].includes(bookingStatus.status);
+  const showReviewForm = canReview && 
+    !existingReview && 
+    bookingStatus && 
+    ['accepted', 'released'].includes(bookingStatus.status) && 
+    user?.id &&
+    (user.id === bookingStatus.client_id || user.id === bookingStatus.creator_id);
 
   return (
     <div className="space-y-6">
@@ -262,6 +287,16 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
           <CardHeader>
             <CardTitle>Review Submitted</CardTitle>
             <CardDescription>You have already reviewed this booking</CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Show message if booking not completed */}
+      {canReview && bookingStatus && !['accepted', 'released'].includes(bookingStatus.status) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Review Not Available</CardTitle>
+            <CardDescription>Reviews can only be submitted after the booking is completed</CardDescription>
           </CardHeader>
         </Card>
       )}
