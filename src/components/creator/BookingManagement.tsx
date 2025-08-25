@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +24,7 @@ interface BookingWithDetails {
   tx_hash?: string;
   proof_link?: string;
   proof_file_url?: string;
+  proof_links?: Array<{ url: string; label: string }>;
   services: {
     title: string;
   } | null;
@@ -65,19 +65,19 @@ export const BookingManagement = () => {
   });
 
   const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status, deliveredAt, proofLink, proofFileUrl }: { 
+    mutationFn: async ({ bookingId, status, deliveredAt, proofLinks, proofFileUrl }: { 
       bookingId: string; 
       status: string; 
       deliveredAt?: string;
-      proofLink?: string;
+      proofLinks?: Array<{ url: string; label: string }>;
       proofFileUrl?: string;
     }) => {
       const updateData: any = { status, updated_at: new Date().toISOString() };
       if (deliveredAt) {
         updateData.delivered_at = deliveredAt;
       }
-      if (proofLink) {
-        updateData.proof_link = proofLink;
+      if (proofLinks) {
+        updateData.proof_links = proofLinks;
       }
       if (proofFileUrl) {
         updateData.proof_file_url = proofFileUrl;
@@ -104,7 +104,7 @@ export const BookingManagement = () => {
 
   const handleFileUpload = async (bookingId: string, file: File) => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${bookingId}-${Date.now()}.${fileExt}`;
+    const fileName = `${bookingId}/${Date.now()}.${fileExt}`;
     
     const { data, error } = await supabase.storage
       .from('deliverables')
@@ -112,14 +112,17 @@ export const BookingManagement = () => {
 
     if (error) throw error;
 
-    const { data: { publicUrl } } = supabase.storage
+    // Use signed URL for secure access
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('deliverables')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
 
-    return publicUrl;
+    if (signedUrlError) throw signedUrlError;
+
+    return signedUrlData.signedUrl;
   };
 
-  const handleProofSubmission = async (bookingId: string, proofData: { link: string; file: File | null; notes: string }) => {
+  const handleProofSubmission = async (bookingId: string, proofData: { links: Array<{ url: string; label: string }>; file: File | null; notes: string }) => {
     let proofFileUrl = null;
 
     if (proofData.file) {
@@ -135,7 +138,7 @@ export const BookingManagement = () => {
       bookingId,
       status: 'delivered',
       deliveredAt: new Date().toISOString(),
-      proofLink: proofData.link || null,
+      proofLinks: proofData.links,
       proofFileUrl
     });
   };
@@ -320,7 +323,8 @@ export const BookingManagement = () => {
                           bookingId={booking.id}
                           currentProof={{
                             link: booking.proof_link,
-                            fileUrl: booking.proof_file_url
+                            fileUrl: booking.proof_file_url,
+                            links: booking.proof_links
                           }}
                           onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
                           isSubmitting={updateBookingStatus.isPending}
@@ -338,11 +342,26 @@ export const BookingManagement = () => {
                           <CheckCircle className="h-4 w-4 text-orange-600" />
                         </div>
                         
-                        {(booking.proof_link || booking.proof_file_url) && (
+                        {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-background rounded border">
                             <p className="text-sm font-medium mb-2">Submitted Proof:</p>
                             <div className="space-y-2">
-                              {booking.proof_link && (
+                              {booking.proof_links?.map((link, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  <span className="text-xs text-muted-foreground font-medium">{link.label}:</span>
+                                  <a 
+                                    href={link.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm truncate"
+                                  >
+                                    {link.url}
+                                  </a>
+                                </div>
+                              ))}
+                              
+                              {booking.proof_link && !booking.proof_links?.length && (
                                 <div className="flex items-center gap-2">
                                   <ExternalLink className="h-3 w-3 text-blue-600" />
                                   <a 
@@ -355,6 +374,7 @@ export const BookingManagement = () => {
                                   </a>
                                 </div>
                               )}
+                              
                               {booking.proof_file_url && (
                                 <div className="flex items-center gap-2">
                                   <Upload className="h-3 w-3 text-blue-600" />
@@ -386,11 +406,26 @@ export const BookingManagement = () => {
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         </div>
                         
-                        {(booking.proof_link || booking.proof_file_url) && (
+                        {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-green-50 rounded border border-green-200">
                             <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
                             <div className="space-y-2">
-                              {booking.proof_link && (
+                              {booking.proof_links?.map((link, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <ExternalLink className="h-3 w-3 text-green-600" />
+                                  <span className="text-xs text-green-700 font-medium">{link.label}:</span>
+                                  <a 
+                                    href={link.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm truncate"
+                                  >
+                                    {link.url}
+                                  </a>
+                                </div>
+                              ))}
+                              
+                              {booking.proof_link && !booking.proof_links?.length && (
                                 <div className="flex items-center gap-2">
                                   <ExternalLink className="h-3 w-3 text-green-600" />
                                   <a 
@@ -403,6 +438,7 @@ export const BookingManagement = () => {
                                   </a>
                                 </div>
                               )}
+                              
                               {booking.proof_file_url && (
                                 <div className="flex items-center gap-2">
                                   <Upload className="h-3 w-3 text-green-600" />
