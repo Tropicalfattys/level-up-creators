@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { BookingChat } from '@/components/messaging/BookingChat';
 import { ProofSubmission } from '@/components/creator/ProofSubmission';
 import { EscrowManager } from '@/components/escrow/EscrowManager';
 import { ReviewSystem } from '@/components/reviews/ReviewSystem';
+import { toast } from 'sonner';
 
 interface BookingWithDetails {
   id: string;
@@ -41,6 +42,52 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
+  const queryClient = useQueryClient();
+
+  const submitProofMutation = useMutation({
+    mutationFn: async ({ bookingId, proofData }: { bookingId: string; proofData: any }) => {
+      // Handle file upload if there's a file
+      let proofFileUrl = null;
+      if (proofData.file) {
+        const fileExt = proofData.file.name.split('.').pop();
+        const fileName = `${bookingId}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('deliverables')
+          .upload(fileName, proofData.file);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: urlData } = supabase.storage
+          .from('deliverables')
+          .getPublicUrl(uploadData.path);
+        
+        proofFileUrl = urlData.publicUrl;
+      }
+
+      // Update booking with proof
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'delivered',
+          delivered_at: new Date().toISOString(),
+          proof_links: proofData.links,
+          proof_file_url: proofFileUrl,
+          proof_notes: proofData.notes
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Proof submitted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+    },
+    onError: (error) => {
+      console.error('Error submitting proof:', error);
+      toast.error('Failed to submit proof. Please try again.');
+    }
+  });
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -190,7 +237,17 @@ export const BookingManagement = () => {
 
                 {/* Proof Submission */}
                 {booking.status === 'in_progress' && (
-                  <ProofSubmission bookingId={booking.id} />
+                  <ProofSubmission 
+                    bookingId={booking.id}
+                    currentProof={{
+                      links: booking.proof_links,
+                      fileUrl: booking.proof_file_url
+                    }}
+                    onSubmitProof={(proofData) => 
+                      submitProofMutation.mutate({ bookingId: booking.id, proofData })
+                    }
+                    isSubmitting={submitProofMutation.isPending}
+                  />
                 )}
 
                 {/* Escrow Manager - Only show for delivered bookings */}
