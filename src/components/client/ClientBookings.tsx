@@ -69,7 +69,7 @@ export const ClientBookings = () => {
     enabled: !!user?.id
   });
 
-  // Fixed tab counting logic
+  // Fixed tab counting logic for client view
   const getTabCounts = () => {
     if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0, completed: 0 };
     
@@ -84,13 +84,20 @@ export const ClientBookings = () => {
     bookings.forEach(booking => {
       console.log(`Client booking ${booking.id} has status: ${booking.status}`);
       
+      // Count "Active" bookings (pending or paid status)
       if (booking.status === 'pending' || booking.status === 'paid') {
         counts.paid++;
-      } else if (booking.status === 'in_progress') {
+      }
+      // Count "In Progress" bookings
+      else if (booking.status === 'in_progress') {
         counts.in_progress++;
-      } else if (booking.status === 'delivered') {
+      }
+      // Count "Delivered" bookings (delivered status only)
+      else if (booking.status === 'delivered') {
         counts.delivered++;
-      } else if (booking.status === 'accepted' || booking.status === 'released') {
+      }
+      // Count "Completed" bookings (accepted or released)
+      else if (booking.status === 'accepted' || booking.status === 'released') {
         counts.completed++;
       }
     });
@@ -99,14 +106,25 @@ export const ClientBookings = () => {
     return counts;
   };
 
-  // Fixed filtering logic
+  // Fixed filtering logic for client view
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     
+    // Filter "Active" tab - pending or paid
     if (status === 'paid') {
       return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
-    } else if (status === 'completed') {
+    }
+    // Filter "In Progress" tab
+    else if (status === 'in_progress') {
+      return bookings.filter(booking => booking.status === 'in_progress');
+    }
+    // Filter "Delivered" tab - delivered status only
+    else if (status === 'delivered') {
+      return bookings.filter(booking => booking.status === 'delivered');
+    }
+    // Filter "Completed" tab - accepted or released
+    else if (status === 'completed') {
       return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
     
@@ -130,23 +148,31 @@ export const ClientBookings = () => {
     toast.success('Transaction hash copied to clipboard');
   };
 
-  // Fixed tab change handler to prevent auto-scroll
+  // Fixed scroll prevention for client view
   const handleTabChange = (value: string) => {
+    // Store current scroll position before changing tab
+    const currentScrollY = window.scrollY;
+    
     setActiveTab(value);
-    // Prevent any scroll behavior by ensuring we stay at current position
-    setTimeout(() => {
-      window.scrollTo({ top: window.scrollY, behavior: 'auto' });
-    }, 0);
+    
+    // Prevent scroll by maintaining position
+    requestAnimationFrame(() => {
+      window.scrollTo(0, currentScrollY);
+    });
   };
 
-  // Add useEffect to prevent initial auto-scroll
+  // Prevent auto-scroll on mount and data changes
   useEffect(() => {
-    // Prevent auto-scroll on component mount or when bookings data changes
-    const currentScroll = window.scrollY;
-    setTimeout(() => {
-      window.scrollTo({ top: currentScroll, behavior: 'auto' });
-    }, 0);
-  }, [bookings, activeTab]);
+    const preventScroll = () => {
+      // Don't allow any automatic scrolling
+      window.scrollTo(0, 0);
+    };
+    
+    // Only scroll to top on initial mount
+    if (bookings) {
+      preventScroll();
+    }
+  }, []); // Remove bookings and activeTab from dependencies
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;

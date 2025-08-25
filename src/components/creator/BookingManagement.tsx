@@ -208,18 +208,23 @@ export const BookingManagement = () => {
     };
 
     bookings.forEach(booking => {
-      console.log(`Booking ${booking.id} has status: ${booking.status}`);
+      console.log(`Creator booking ${booking.id} has status: ${booking.status}`);
       
+      // Count "New" bookings (pending or paid status)
       if (booking.status === 'pending' || booking.status === 'paid') {
         counts.paid++;
-      } else if (booking.status === 'in_progress') {
+      }
+      // Count "In Progress" bookings
+      else if (booking.status === 'in_progress') {
         counts.in_progress++;
-      } else if (booking.status === 'delivered') {
+      }
+      // Count "Delivered" bookings (delivered status only, not accepted/released)
+      else if (booking.status === 'delivered') {
         counts.delivered++;
       }
     });
 
-    console.log('Tab counts:', counts);
+    console.log('Creator tab counts:', counts);
     return counts;
   };
 
@@ -227,28 +232,46 @@ export const BookingManagement = () => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     
+    // Filter "New" tab - pending or paid
     if (status === 'paid') {
       return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+    }
+    // Filter "In Progress" tab
+    else if (status === 'in_progress') {
+      return bookings.filter(booking => booking.status === 'in_progress');
+    }
+    // Filter "Delivered" tab - only delivered status
+    else if (status === 'delivered') {
+      return bookings.filter(booking => booking.status === 'delivered');
     }
     
     return bookings.filter(booking => booking.status === status);
   };
 
   const handleTabChange = (value: string) => {
+    // Store current scroll position before changing tab
+    const currentScrollY = window.scrollY;
+    
     setActiveTab(value);
-    // Prevent any scroll behavior by ensuring we stay at current position
-    setTimeout(() => {
-      window.scrollTo({ top: window.scrollY, behavior: 'auto' });
-    }, 0);
+    
+    // Prevent scroll by maintaining position
+    requestAnimationFrame(() => {
+      window.scrollTo(0, currentScrollY);
+    });
   };
 
+  // Prevent auto-scroll on mount and data changes
   useEffect(() => {
-    // Prevent auto-scroll on component mount or when bookings data changes
-    const currentScroll = window.scrollY;
-    setTimeout(() => {
-      window.scrollTo({ top: currentScroll, behavior: 'auto' });
-    }, 0);
-  }, [bookings, activeTab]);
+    const preventScroll = () => {
+      // Don't allow any automatic scrolling
+      window.scrollTo(0, 0);
+    };
+    
+    // Only scroll to top on initial mount
+    if (bookings) {
+      preventScroll();
+    }
+  }, []); // Remove bookings and activeTab from dependencies
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
