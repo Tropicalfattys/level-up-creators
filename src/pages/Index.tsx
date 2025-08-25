@@ -9,6 +9,7 @@ import { MessagesList } from '@/components/messaging/MessagesList';
 import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
 import { UserDisputes } from '@/components/disputes/UserDisputes';
 import { ClientBookings } from '@/components/client/ClientBookings';
+import { ReferralSystem } from '@/components/referrals/ReferralSystem';
 import { 
   DollarSign, 
   Users, 
@@ -70,6 +71,27 @@ export default function Index() {
       }
       
       return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Get referral count separately for accurate display
+  const { data: referralCount } = useQuery({
+    queryKey: ['referral-count', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('referred_by', user.id);
+      
+      if (error) {
+        console.error('Error fetching referral count:', error);
+        return 0;
+      }
+      
+      return count || 0;
     },
     enabled: !!user?.id
   });
@@ -257,12 +279,12 @@ export default function Index() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Activity</CardTitle>
+                <CardTitle className="text-sm font-medium">Referrals</CardTitle>
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Recent bookings</p>
+                <div className="text-2xl font-bold">{referralCount || 0}</div>
+                <p className="text-xs text-muted-foreground">People you've referred</p>
               </CardContent>
             </Card>
 
@@ -397,120 +419,7 @@ export default function Index() {
         </TabsContent>
 
         <TabsContent value="referrals" className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  Your Referral Program
-                </CardTitle>
-                <CardDescription>
-                  Earn $1 credit for every successful referral that signs up and makes their first purchase
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
-                  <div className="flex items-center gap-2">
-                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1">
-                      {userProfile?.referral_code || 'Loading...'}
-                    </code>
-                    <Button size="sm" variant="outline" onClick={copyReferralCode}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your referral link:</p>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-muted px-3 py-2 rounded text-sm flex-1 truncate">
-                      {userProfile?.referral_code ? 
-                        `${window.location.origin}/auth?ref=${userProfile.referral_code}` : 
-                        'Loading...'
-                      }
-                    </div>
-                    <Button size="sm" variant="outline" onClick={copyReferralLink}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                    <p className="text-xs text-muted-foreground">Credits Earned</p>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">Friends Referred</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Share on social media:</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('twitter')}>
-                      Twitter
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('facebook')}>
-                      Facebook
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('linkedin')}>
-                      LinkedIn
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => shareOnSocial('telegram')}>
-                      Telegram
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">1</Badge>
-                  <div>
-                    <p className="font-medium">Share your code or link</p>
-                    <p className="text-sm text-muted-foreground">
-                      Send your referral code or link to friends
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">2</Badge>
-                  <div>
-                    <p className="font-medium">They sign up</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your friend creates an account using your referral
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">3</Badge>
-                  <div>
-                    <p className="font-medium">Earn $1 credit</p>
-                    <p className="text-sm text-muted-foreground">
-                      Get $1 credit when they make their first purchase
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="mt-0.5">4</Badge>
-                  <div>
-                    <p className="font-medium">Use your credits</p>
-                    <p className="text-sm text-muted-foreground">
-                      Apply credits to any service on the platform
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ReferralSystem />
         </TabsContent>
 
         {userRole === 'admin' && (
