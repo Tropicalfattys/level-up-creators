@@ -29,12 +29,7 @@ export const ReferralTestPanel = () => {
             id,
             handle,
             referred_by,
-            referral_credits,
-            referrer:users!users_referred_by_fkey (
-              id,
-              handle,
-              referral_credits
-            )
+            referral_credits
           )
         `)
         .order('created_at', { ascending: false })
@@ -43,6 +38,37 @@ export const ReferralTestPanel = () => {
       if (error) throw error;
       return data || [];
     }
+  });
+
+  // Get referrer information separately for users who have referrers
+  const { data: referrersInfo } = useQuery({
+    queryKey: ['referrers-info'],
+    queryFn: async () => {
+      if (!bookingsWithReferrals) return {};
+      
+      const referrerIds = bookingsWithReferrals
+        .filter(booking => booking.client?.referred_by)
+        .map(booking => booking.client!.referred_by)
+        .filter(Boolean);
+
+      if (referrerIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, handle, referral_credits')
+        .in('id', referrerIds);
+
+      if (error) throw error;
+      
+      // Convert to object for easy lookup
+      const referrersMap: Record<string, any> = {};
+      data?.forEach(referrer => {
+        referrersMap[referrer.id] = referrer;
+      });
+      
+      return referrersMap;
+    },
+    enabled: !!bookingsWithReferrals
   });
 
   const testReferralCredit = useMutation({
@@ -61,6 +87,7 @@ export const ReferralTestPanel = () => {
     onSuccess: () => {
       toast.success('Booking updated to accepted - referral credit should be awarded!');
       queryClient.invalidateQueries({ queryKey: ['bookings-referrals-test'] });
+      queryClient.invalidateQueries({ queryKey: ['referrers-info'] });
       setIsTestingReferrals(false);
     },
     onError: (error: Error) => {
@@ -89,46 +116,50 @@ export const ReferralTestPanel = () => {
                 No bookings found with referred users that haven't been accepted yet.
               </p>
             ) : (
-              bookingsWithReferralUsers.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="border rounded-lg p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">
-                        Booking by @{booking.client?.handle}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Amount: ${booking.usdc_amount} USDC
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        TX: {booking.tx_hash?.slice(0, 20)}...
-                      </p>
-                    </div>
-                    <Badge variant="secondary">{booking.status}</Badge>
-                  </div>
-                  
-                  {booking.client?.referrer && (
-                    <div className="bg-blue-50 p-3 rounded">
-                      <p className="text-sm">
-                        <strong>Referred by:</strong> @{booking.client.referrer.handle}
-                      </p>
-                      <p className="text-sm">
-                        <strong>Referrer's current credits:</strong> ${booking.client.referrer.referral_credits}
-                      </p>
-                    </div>
-                  )}
-                  
-                  <Button
-                    onClick={() => testReferralCredit.mutate(booking.id)}
-                    disabled={isTestingReferrals}
-                    className="w-full"
+              bookingsWithReferralUsers.map((booking) => {
+                const referrer = referrersInfo?.[booking.client!.referred_by!];
+                
+                return (
+                  <div
+                    key={booking.id}
+                    className="border rounded-lg p-4 space-y-3"
                   >
-                    {isTestingReferrals ? 'Testing...' : 'Test Referral Credit (Set to Accepted)'}
-                  </Button>
-                </div>
-              ))
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">
+                          Booking by @{booking.client?.handle}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Amount: ${booking.usdc_amount} USDC
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          TX: {booking.tx_hash?.slice(0, 20)}...
+                        </p>
+                      </div>
+                      <Badge variant="secondary">{booking.status}</Badge>
+                    </div>
+                    
+                    {referrer && (
+                      <div className="bg-blue-50 p-3 rounded">
+                        <p className="text-sm">
+                          <strong>Referred by:</strong> @{referrer.handle}
+                        </p>
+                        <p className="text-sm">
+                          <strong>Referrer's current credits:</strong> ${referrer.referral_credits}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Button
+                      onClick={() => testReferralCredit.mutate(booking.id)}
+                      disabled={isTestingReferrals}
+                      className="w-full"
+                    >
+                      {isTestingReferrals ? 'Testing...' : 'Test Referral Credit (Set to Accepted)'}
+                    </Button>
+                  </div>
+                );
+              })
             )}
           </div>
         </CardContent>
