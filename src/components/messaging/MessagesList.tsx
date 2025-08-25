@@ -120,15 +120,27 @@ export const MessagesList = () => {
                 className="block"
               >
                 <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={conversation.avatar_url} />
-                    <AvatarFallback>
-                      {conversation.handle?.slice(0, 2).toUpperCase() || '??'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Link 
+                    to={`/profile/${conversation.handle}`} 
+                    className="flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Avatar className="h-10 w-10 hover:ring-2 hover:ring-primary/20 transition-all">
+                      <AvatarImage src={conversation.avatar_url} />
+                      <AvatarFallback>
+                        {conversation.handle?.slice(0, 2).toUpperCase() || '??'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium truncate">@{conversation.handle}</p>
+                      <Link 
+                        to={`/profile/${conversation.handle}`}
+                        className="font-medium truncate hover:text-primary transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        @{conversation.handle}
+                      </Link>
                       <div className="flex items-center gap-2">
                         {conversation.unreadCount > 0 && (
                           <Badge variant="destructive" className="text-xs">

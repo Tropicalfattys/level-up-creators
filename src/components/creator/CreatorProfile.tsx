@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface Review {
   id: string;
@@ -27,11 +29,11 @@ export const CreatorProfile = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  // Fetch creator data by handle
-  const { data: creator, isLoading } = useQuery({
-    queryKey: ['creator-profile', handle],
+  // Fetch user data by handle
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile', handle],
     queryFn: async () => {
-      console.log('Fetching creator profile for handle:', handle);
+      console.log('Fetching profile for handle:', handle);
       
       if (!handle || handle === 'unknown') {
         throw new Error('No valid handle provided');
@@ -54,48 +56,49 @@ export const CreatorProfile = () => {
         throw new Error('User not found');
       }
 
-      // Then get the creator profile
+      // Try to get creator profile if exists
       const { data: creatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (creatorError) {
+      // Don't throw error if no creator profile - user might just be a regular user
+      if (creatorError && creatorError.code !== 'PGRST116') {
         console.error('Error fetching creator:', creatorError);
-        throw new Error('Creator profile error: ' + creatorError.message);
-      }
-      
-      if (!creatorData) {
-        console.error('Creator profile not found for user:', user.id);
-        throw new Error('Creator profile not found');
       }
 
-      // Get creator's services
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('*')
-        .eq('creator_id', user.id)
-        .eq('active', true);
+      // Get services if user is a creator
+      let services = [];
+      if (creatorData && creatorData.approved) {
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('creator_id', user.id)
+          .eq('active', true);
 
-      if (servicesError) {
-        console.error('Error fetching services:', servicesError);
+        if (servicesError) {
+          console.error('Error fetching services:', servicesError);
+        } else {
+          services = servicesData || [];
+        }
       }
 
       return {
-        ...creatorData,
         user,
-        services: services || []
+        creator: creatorData,
+        services,
+        isCreator: creatorData?.approved || false
       };
     },
     enabled: !!handle && handle !== 'unknown'
   });
 
-  // Fetch creator reviews
+  // Fetch user reviews
   const { data: reviews } = useQuery({
-    queryKey: ['creator-reviews', creator?.user_id],
+    queryKey: ['user-reviews', profile?.user?.id],
     queryFn: async (): Promise<Review[]> => {
-      if (!creator?.user_id) return [];
+      if (!profile?.user?.id) return [];
       
       const { data, error } = await supabase
         .from('reviews')
@@ -103,7 +106,7 @@ export const CreatorProfile = () => {
           *,
           reviewer:users!reviews_reviewer_id_fkey (handle, avatar_url)
         `)
-        .eq('reviewee_id', creator.user_id)
+        .eq('reviewee_id', profile.user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -112,7 +115,7 @@ export const CreatorProfile = () => {
       }
       return data || [];
     },
-    enabled: !!creator?.user_id
+    enabled: !!profile?.user?.id
   });
 
   // Social media icons mapping
@@ -129,7 +132,6 @@ export const CreatorProfile = () => {
   // Helper function to format URLs properly
   const formatUrl = (url: string) => {
     if (!url) return '';
-    // If URL doesn't start with http:// or https://, add https://
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return `https://${url}`;
     }
@@ -149,62 +151,77 @@ export const CreatorProfile = () => {
     );
   }
 
-  if (!creator) {
+  if (!profile || !profile.user) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Creator not found</h2>
-          <p className="text-muted-foreground">The creator profile you're looking for doesn't exist or has been removed.</p>
+          <h2 className="text-2xl font-bold mb-4">User not found</h2>
+          <p className="text-muted-foreground">The user profile you're looking for doesn't exist or has been removed.</p>
         </div>
       </div>
     );
   }
 
-  // Transform creator data to match BookingModal expectations
-  const creatorForModal = {
-    id: creator.id,
-    user_id: creator.user_id,
+  const { user, creator, services, isCreator } = profile;
+
+  // Transform data for BookingModal if user is a creator
+  const creatorForModal = isCreator ? {
+    id: creator?.id,
+    user_id: user.id,
     users: {
-      handle: creator.user?.handle,
-      avatar_url: creator.user?.avatar_url
+      handle: user.handle,
+      avatar_url: user.avatar_url
     }
-  };
+  } : null;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Creator Info */}
+        {/* Left Column - Profile Info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Profile Card */}
           <Card>
             <CardContent className="p-6">
               <div className="text-center space-y-4">
                 <Avatar className="h-24 w-24 mx-auto">
-                  <AvatarImage src={creator.user?.avatar_url} />
+                  <AvatarImage src={user.avatar_url} />
                   <AvatarFallback className="text-2xl">
-                    {creator.user?.handle?.[0]?.toUpperCase() || 'C'}
+                    {user.handle?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div>
-                  <h1 className="text-2xl font-bold">{creator.user?.handle}</h1>
-                  {creator.headline && (
+                  <h1 className="text-2xl font-bold">{user.handle}</h1>
+                  {creator?.headline && (
                     <p className="text-muted-foreground">{creator.headline}</p>
                   )}
                 </div>
 
-                <div className="flex justify-center items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{creator.rating ? creator.rating.toFixed(1) : '0.0'}</span>
+                {/* Rating - only show if user has reviews */}
+                {reviews && reviews.length > 0 && (
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="font-medium">
+                        {creator?.rating ? creator.rating.toFixed(1) : 
+                         reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0'}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground">
+                      ({reviews.length} reviews)
+                    </span>
                   </div>
-                  <span className="text-muted-foreground">
-                    ({creator.review_count || 0} reviews)
-                  </span>
-                </div>
+                )}
 
-                <Badge variant={creator.tier === 'pro' ? 'default' : 'secondary'}>
-                  {creator.tier ? creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1) : 'Basic'} Creator
+                {/* Role Badge */}
+                <Badge variant={isCreator ? 'default' : 'secondary'}>
+                  {isCreator ? (
+                    <>
+                      {creator?.tier ? creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1) : 'Basic'} Creator
+                    </>
+                  ) : (
+                    'Client'
+                  )}
                 </Badge>
               </div>
             </CardContent>
@@ -217,14 +234,14 @@ export const CreatorProfile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Social Links Section */}
-              {(creator.user?.social_links || creator.user?.website_url || creator.user?.portfolio_url || creator.user?.youtube_url) && (
+              {(user.social_links || user.website_url || user.portfolio_url || user.youtube_url) && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Links</h4>
                   <div className="space-y-2">
                     {/* Professional Links */}
-                    {creator.user?.website_url && (
+                    {user.website_url && (
                       <a 
-                        href={formatUrl(creator.user.website_url)} 
+                        href={formatUrl(user.website_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -235,9 +252,9 @@ export const CreatorProfile = () => {
                       </a>
                     )}
                     
-                    {creator.user?.portfolio_url && (
+                    {user.portfolio_url && (
                       <a 
-                        href={formatUrl(creator.user.portfolio_url)} 
+                        href={formatUrl(user.portfolio_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -248,9 +265,9 @@ export const CreatorProfile = () => {
                       </a>
                     )}
                     
-                    {creator.user?.youtube_url && (
+                    {user.youtube_url && (
                       <a 
-                        href={formatUrl(creator.user.youtube_url)} 
+                        href={formatUrl(user.youtube_url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
@@ -262,7 +279,7 @@ export const CreatorProfile = () => {
                     )}
 
                     {/* Social Media Links */}
-                    {creator.user?.social_links && Object.entries(creator.user.social_links).map(([platform, url]) => {
+                    {user.social_links && Object.entries(user.social_links).map(([platform, url]) => {
                       if (!url) return null;
                       const IconComponent = socialIcons[platform as keyof typeof socialIcons];
                       if (!IconComponent) return null;
@@ -287,20 +304,22 @@ export const CreatorProfile = () => {
               )}
 
               {/* Bio Section */}
-              {creator.user?.bio && (
+              {user.bio && (
                 <div>
-                  <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{creator.user.bio}</p>
+                  <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{user.bio}</p>
                 </div>
               )}
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <div className="font-semibold">{creator.services?.length || 0}</div>
-                  <div className="text-xs text-muted-foreground">Services</div>
+                  <div className="font-semibold">{services?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {isCreator ? 'Services' : 'Projects'}
+                  </div>
                 </div>
                 <div>
-                  <div className="font-semibold">{creator.review_count || 0}</div>
+                  <div className="font-semibold">{reviews?.length || 0}</div>
                   <div className="text-xs text-muted-foreground">Reviews</div>
                 </div>
               </div>
@@ -326,7 +345,12 @@ export const CreatorProfile = () => {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">@{review.reviewer?.handle}</span>
+                            <Link 
+                              to={`/profile/${review.reviewer?.handle}`}
+                              className="font-medium text-sm hover:text-primary transition-colors"
+                            >
+                              @{review.reviewer?.handle}
+                            </Link>
                             <div className="flex">
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
@@ -363,47 +387,87 @@ export const CreatorProfile = () => {
           )}
         </div>
 
-        {/* Right Column - Services */}
+        {/* Right Column - Services (only for approved creators) */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Services</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {creator.services && creator.services.length > 0 ? (
-                <div className="grid gap-4">
-                  {creator.services.map((service: any) => (
-                    <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">{service.title}</h3>
-                        <Badge variant="outline">${service.price_usdc}</Badge>
+          {isCreator && services ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Services</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {services.length > 0 ? (
+                  <div className="grid gap-4">
+                    {services.map((service: any) => (
+                      <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold">{service.title}</h3>
+                          <Badge variant="outline">${service.price_usdc}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {service.description}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            Delivery: {service.delivery_days} days
+                          </span>
+                          <Button size="sm" onClick={() => handleBookService(service)}>
+                            Book Now
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {service.description}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Delivery: {service.delivery_days} days
-                        </span>
-                        <Button size="sm" onClick={() => handleBookService(service)}>
-                          Book Now
-                        </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No services available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {user.role === 'client' ? 'Client Profile' : 'Profile Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  {user.role === 'client' ? (
+                    <div className="space-y-4">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <div>
+                        <p className="text-lg font-medium mb-2">Client Member</p>
+                        <p className="text-muted-foreground">
+                          This user books services from creators on our platform.
+                        </p>
+                      </div>
+                      {reviews && reviews.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          View their reviews and activity in the sidebar.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <Award className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <div>
+                        <p className="text-lg font-medium mb-2">Community Member</p>
+                        <p className="text-muted-foreground">
+                          Welcome to our creative community!
+                        </p>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No services available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      {/* Booking Modal */}
-      {selectedService && (
+      {/* Booking Modal - only show for creators */}
+      {selectedService && creatorForModal && (
         <BookingModal
           service={selectedService}
           creator={creatorForModal}

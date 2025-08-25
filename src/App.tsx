@@ -45,6 +45,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/browse" element={<Browse />} />
                 <Route path="/creator/:handle" element={<CreatorProfile />} />
+                <Route path="/profile/:handle" element={<CreatorProfile />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/auth" element={<AuthPage />} />

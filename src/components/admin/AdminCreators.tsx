@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, X, Eye, Star, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface Creator {
   id: string;
@@ -128,7 +129,12 @@ export const AdminCreators = () => {
                         />
                       )}
                       <div>
-                        <div className="font-medium">{creator.users?.handle}</div>
+                        <Link 
+                          to={`/profile/${creator.users?.handle}`}
+                          className="font-medium hover:text-primary transition-colors"
+                        >
+                          {creator.users?.handle}
+                        </Link>
                         <div className="text-sm text-muted-foreground">{creator.headline}</div>
                       </div>
                     </div>
@@ -201,7 +207,15 @@ export const AdminCreators = () => {
           <DialogHeader>
             <DialogTitle>Creator Details</DialogTitle>
             <DialogDescription>
-              Complete information about {selectedCreator?.users?.handle}
+              Complete information about{' '}
+              {selectedCreator?.users?.handle && (
+                <Link 
+                  to={`/profile/${selectedCreator.users.handle}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {selectedCreator.users.handle}
+                </Link>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedCreator && (
@@ -210,7 +224,15 @@ export const AdminCreators = () => {
                 <div>
                   <h4 className="font-semibold mb-2">Profile Information</h4>
                   <div className="space-y-2 text-sm">
-                    <div><strong>Handle:</strong> {selectedCreator.users?.handle}</div>
+                    <div>
+                      <strong>Handle:</strong>{' '}
+                      <Link 
+                        to={`/profile/${selectedCreator.users?.handle}`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        {selectedCreator.users?.handle}
+                      </Link>
+                    </div>
                     <div><strong>Email:</strong> {selectedCreator.users?.email}</div>
                     <div><strong>Headline:</strong> {selectedCreator.headline}</div>
                     <div><strong>Bio:</strong> {selectedCreator.users?.bio}</div>

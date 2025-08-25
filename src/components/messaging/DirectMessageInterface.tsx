@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface DirectMessage {
   id: string;
@@ -157,7 +158,13 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
     <Card className="h-96 flex flex-col overflow-hidden">
       <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-lg">
-          Chat with @{otherUser?.handle || 'User'}
+          Chat with{' '}
+          <Link 
+            to={`/profile/${otherUser?.handle}`} 
+            className="hover:text-primary transition-colors"
+          >
+            @{otherUser?.handle || 'User'}
+          </Link>
         </CardTitle>
         <CardDescription>Direct conversation</CardDescription>
       </CardHeader>
@@ -173,12 +180,14 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
                   msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarImage src={msg.from_user?.avatar_url} />
-                  <AvatarFallback>
-                    {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
-                  </AvatarFallback>
-                </Avatar>
+                <Link to={`/profile/${msg.from_user?.handle}`} className="flex-shrink-0">
+                  <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary/20 transition-all">
+                    <AvatarImage src={msg.from_user?.avatar_url} />
+                    <AvatarFallback>
+                      {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
                 <div
                   className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
                     msg.from_user_id === user?.id

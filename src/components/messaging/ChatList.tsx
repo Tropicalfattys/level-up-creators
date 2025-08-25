@@ -138,20 +138,45 @@ export const ChatList = ({ userRole }: ChatListProps) => {
           return (
             <Link key={chat.id} to={`/chat/${chat.id}`}>
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={otherUser?.avatar_url} />
-                  <AvatarFallback>
-                    {otherUser?.handle?.slice(0, 2).toUpperCase() || '??'}
-                  </AvatarFallback>
-                </Avatar>
+                <Link to={`/profile/${otherUser?.handle}`} className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <Avatar className="h-10 w-10 hover:ring-2 hover:ring-primary/20 transition-all">
+                    <AvatarImage src={otherUser?.avatar_url} />
+                    <AvatarFallback>
+                      {otherUser?.handle?.slice(0, 2).toUpperCase() || '??'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-medium truncate">
-                      {userRole === 'admin' 
-                        ? `${chat.client?.handle} ↔ ${chat.creator?.handle}`
-                        : `@${otherUser?.handle || 'Unknown'}`
-                      }
+                      {userRole === 'admin' ? (
+                        <span>
+                          <Link 
+                            to={`/profile/${chat.client?.handle}`}
+                            className="hover:text-primary transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {chat.client?.handle}
+                          </Link>
+                          {' ↔ '}
+                          <Link 
+                            to={`/profile/${chat.creator?.handle}`}
+                            className="hover:text-primary transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {chat.creator?.handle}
+                          </Link>
+                        </span>
+                      ) : (
+                        <Link 
+                          to={`/profile/${otherUser?.handle}`}
+                          className="hover:text-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          @{otherUser?.handle || 'Unknown'}
+                        </Link>
+                      )}
                     </p>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
@@ -172,7 +197,14 @@ export const ChatList = ({ userRole }: ChatListProps) => {
                   {latestMessage && (
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground truncate flex-1">
-                        {latestMessage.from_user?.handle}: {latestMessage.body}
+                        <Link 
+                          to={`/profile/${latestMessage.from_user?.handle}`}
+                          className="hover:text-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {latestMessage.from_user?.handle}
+                        </Link>
+                        : {latestMessage.body}
                       </p>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
