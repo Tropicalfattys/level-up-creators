@@ -10,9 +10,8 @@ import {
 
 export const HeaderCategoriesDropdown = () => {
   const { data: categories, isLoading } = useQuery({
-    queryKey: ['header-categories'],
+    queryKey: ['categories'],
     queryFn: async () => {
-      console.log('Fetching categories for header dropdown...');
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -23,7 +22,6 @@ export const HeaderCategoriesDropdown = () => {
         console.error('Error fetching categories:', error);
         return [];
       }
-      console.log('Categories fetched for header:', data);
       return data;
     },
   });
