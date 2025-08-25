@@ -515,13 +515,14 @@ export const BookingManagement = () => {
                   </div>
                 </div>
 
+                {/* Creator Review Section - NEW: Allow creators to review clients on completed bookings */}
                 {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
                   <div className="border rounded-lg p-4 bg-muted/20">
-                    <h4 className="font-medium mb-3">Review from client</h4>
+                    <h4 className="font-medium mb-3">Rate your client experience</h4>
                     <ReviewSystem
                       bookingId={booking.id}
-                      revieweeId={user?.id || ''}
-                      canReview={false}
+                      revieweeId={booking.client.id}
+                      canReview={true}
                     />
                   </div>
                 )}

@@ -219,6 +219,7 @@ export type Database = {
           rating: number | null
           review_count: number | null
           tier: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -238,6 +239,7 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           tier?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -257,6 +259,7 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           tier?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
