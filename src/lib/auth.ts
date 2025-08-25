@@ -14,18 +14,16 @@ export interface AuthUser extends User {
 
 export const signUp = async (email: string, password: string, referralCode?: string, handle?: string) => {
   try {
-    // Always use the current origin for redirect
     const redirectUrl = `${window.location.origin}/`;
     
     console.log('SignUp attempt with:', { email, handle, referralCode, redirectUrl });
     
     const metadata: any = {};
-    if (referralCode) {
-      metadata.referral_code = referralCode;
-      console.log('Adding referral code to metadata:', referralCode);
-    }
     if (handle) {
       metadata.handle = handle;
+    }
+    if (referralCode) {
+      metadata.referral_code = referralCode;
     }
     
     const { data, error } = await supabase.auth.signUp({
@@ -38,12 +36,6 @@ export const signUp = async (email: string, password: string, referralCode?: str
     });
     
     console.log('SignUp response:', { data: !!data, error });
-    
-    if (error) {
-      console.error('SignUp error details:', error);
-    } else if (data.user && !data.session) {
-      console.log('User created, confirmation email sent');
-    }
     
     return { data, error };
   } catch (error) {
@@ -66,10 +58,6 @@ export const signIn = async (email: string, password: string) => {
       session: !!data.session, 
       error: error?.message 
     });
-    
-    if (error) {
-      console.error('SignIn error details:', error);
-    }
     
     return { data, error };
   } catch (error) {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,7 +69,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -76,8 +76,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .maybeSingle();
       
       if (!error && data) {
-        console.log('User profile fetched successfully:', data);
-        
         const userProfile: UserProfile = {
           id: data.id,
           email: data.email,
@@ -98,12 +96,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         setUserProfile(userProfile);
         setUserRole(data.role || 'client');
-      } else if (error) {
-        console.error('Error fetching user profile:', error);
-        // Don't set null profile on error, keep existing state
       }
     } catch (error) {
-      console.error('Exception in fetchUserProfile:', error);
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -114,25 +109,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    let mounted = true;
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user?.id) {
+        fetchUserProfile(session.user.id);
+      }
+      
+      setLoading(false);
+    });
 
-    // Set up auth state listener FIRST
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
-        
-        if (!mounted) return; // Prevent state updates if component unmounted
-        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user?.id) {
-          // Use setTimeout to prevent auth callback deadlock
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserProfile(session.user.id);
-            }
-          }, 100);
+          fetchUserProfile(session.user.id);
         } else {
           setUserProfile(null);
           setUserRole(null);
@@ -142,30 +138,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user?.id) {
-        setTimeout(() => {
-          if (mounted) {
-            fetchUserProfile(session.user.id);
-          }
-        }, 100);
-      }
-      
-      setLoading(false);
-    });
-
-    // Cleanup function
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   return (

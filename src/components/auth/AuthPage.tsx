@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn, signUp, signInWithProvider } from '@/lib/auth';
-import { validateInput, emailSchema, passwordSchema, handleSchema, referralCodeSchema } from '@/lib/validation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export const AuthPage = () => {
-  // State variables
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [handle, setHandle] = useState('');
@@ -20,7 +19,7 @@ export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -29,144 +28,82 @@ export const AuthPage = () => {
     const refParam = searchParams.get('ref');
     if (refParam) {
       setReferralCode(refParam);
-      console.log('Referral code from URL:', refParam);
     }
   }, [searchParams]);
 
-  const validateForm = (isSignUp: boolean = false) => {
-    const newErrors: Record<string, string> = {};
-
-    // Email validation
-    const emailValidation = validateInput(emailSchema, email);
-    if (emailValidation.success === false) {
-      newErrors.email = emailValidation.errors[0];
-    }
-
-    // Password validation
-    const passwordValidation = validateInput(passwordSchema, password);
-    if (passwordValidation.success === false) {
-      newErrors.password = passwordValidation.errors[0];
-    }
-
-    // Handle validation (sign up only)
-    if (isSignUp) {
-      const handleValidation = validateInput(handleSchema, handle);
-      if (handleValidation.success === false) {
-        newErrors.handle = handleValidation.errors[0];
-      }
-
-      // Referral code validation (optional)
-      if (referralCode) {
-        const referralValidation = validateInput(referralCodeSchema, referralCode);
-        if (referralValidation.success === false) {
-          newErrors.referralCode = referralValidation.errors[0];
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // handleSignIn function
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (loading) return; // Prevent double submission
-    if (!validateForm()) return;
+    if (loading) return;
 
     setLoading(true);
-    setErrors({}); // Clear any previous errors
+    setError('');
     
     try {
-      console.log('Attempting sign in for:', email);
       const { data, error } = await signIn(email, password);
       
       if (error) {
-        console.error('Sign in error:', error);
-        
-        // Handle specific auth errors
         if (error.message.includes('Email not confirmed')) {
-          toast.error('Please check your email and click the confirmation link before signing in.');
+          setError('Please check your email and click the confirmation link before signing in.');
         } else if (error.message.includes('Invalid login credentials')) {
-          toast.error('Invalid email or password. Please check your credentials.');
+          setError('Invalid email or password. Please check your credentials.');
         } else {
-          toast.error(error.message);
+          setError(error.message);
         }
       } else if (data.session) {
-        console.log('Sign in successful');
         toast.success('Welcome back!');
         navigate('/');
-      } else {
-        console.warn('Sign in returned no session');
-        toast.error('Sign in failed. Please try again.');
       }
     } catch (error) {
-      console.error('Sign in exception:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // handleSignUp function
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (loading) return; // Prevent double submission
-    if (!validateForm(true)) return;
+    if (loading) return;
+
+    if (!email || !password || !handle) {
+      setError('Please fill in all required fields.');
+      return;
+    }
 
     setLoading(true);
-    setErrors({}); // Clear any previous errors
+    setError('');
     
     try {
-      console.log('Attempting sign up for:', email, 'with referral:', referralCode);
       const { data, error } = await signUp(email, password, referralCode, handle);
       
       if (error) {
-        console.error('Sign up error:', error);
-        
-        // Handle specific signup errors
         if (error.message.includes('already registered')) {
-          toast.error('An account with this email already exists. Please sign in instead.');
+          setError('An account with this email already exists. Please sign in instead.');
         } else if (error.message.includes('Password should be at least')) {
-          toast.error('Password must be at least 6 characters long.');
+          setError('Password must be at least 6 characters long.');
         } else {
-          toast.error(error.message);
+          setError(error.message);
         }
       } else if (data.user) {
-        console.log('Sign up successful, user created:', data.user.id);
-        toast.success('Account created successfully! Please check your email to confirm your account before signing in.');
-        
-        // Clear form but keep on signup tab for user convenience
+        toast.success('Account created successfully! Please check your email to confirm your account.');
         setPassword('');
-      } else {
-        console.warn('Sign up returned no user data');
-        toast.error('Account creation failed. Please try again.');
       }
     } catch (error) {
-      console.error('Sign up exception:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // handleSocialLogin function
   const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
-    if (socialLoading) return; // Prevent multiple social logins
+    if (socialLoading) return;
     
     setSocialLoading(provider);
     try {
-      console.log('Attempting social login with:', provider);
       const { error } = await signInWithProvider(provider);
       if (error) {
-        console.error('Social login error:', error);
         toast.error(`${provider} login failed: ${error.message}`);
       }
-      // Success will be handled by auth state change
     } catch (error) {
-      console.error('Social login exception:', error);
       toast.error('Social login failed. Please try again.');
     } finally {
       setSocialLoading(null);
@@ -202,11 +139,6 @@ export const AuthPage = () => {
                     disabled={loading}
                     required
                   />
-                  {errors.email && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.email}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -236,12 +168,13 @@ export const AuthPage = () => {
                       )}
                     </Button>
                   </div>
-                  {errors.password && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.password}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
+
+                {error && (
+                  <Alert className="py-2">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                  </Alert>
+                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -263,11 +196,6 @@ export const AuthPage = () => {
                     disabled={loading}
                     required
                   />
-                  {errors.email && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.email}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -281,11 +209,6 @@ export const AuthPage = () => {
                     disabled={loading}
                     required
                   />
-                  {errors.handle && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.handle}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -315,11 +238,6 @@ export const AuthPage = () => {
                       )}
                     </Button>
                   </div>
-                  {errors.password && (
-                    <Alert className="py-2">
-                      <AlertDescription className="text-sm">{errors.password}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {referralCode && (
@@ -333,12 +251,13 @@ export const AuthPage = () => {
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                       disabled={loading}
                     />
-                    {errors.referralCode && (
-                      <Alert className="py-2">
-                        <AlertDescription className="text-sm">{errors.referralCode}</AlertDescription>
-                      </Alert>
-                    )}
                   </div>
+                )}
+
+                {error && (
+                  <Alert className="py-2">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                  </Alert>
                 )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
