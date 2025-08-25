@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +69,7 @@ export const ClientBookings = () => {
     enabled: !!user?.id
   });
 
+  // Fixed tab counting logic
   const getTabCounts = () => {
     if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0, completed: 0 };
     
@@ -82,34 +82,34 @@ export const ClientBookings = () => {
     };
 
     bookings.forEach(booking => {
-      switch (booking.status) {
-        case 'pending':
-        case 'paid':
-          counts.paid++;
-          break;
-        case 'in_progress':
-          counts.in_progress++;
-          break;
-        case 'delivered':
-          counts.delivered++;
-          break;
-        case 'accepted':
-        case 'released':
-          counts.completed++;
-          break;
-        default:
-          break;
+      console.log(`Client booking ${booking.id} has status: ${booking.status}`);
+      
+      if (booking.status === 'pending' || booking.status === 'paid') {
+        counts.paid++;
+      } else if (booking.status === 'in_progress') {
+        counts.in_progress++;
+      } else if (booking.status === 'delivered') {
+        counts.delivered++;
+      } else if (booking.status === 'accepted' || booking.status === 'released') {
+        counts.completed++;
       }
     });
 
+    console.log('Client tab counts:', counts);
     return counts;
   };
 
+  // Fixed filtering logic
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
-    if (status === 'paid') return bookings.filter(booking => ['pending', 'paid'].includes(booking.status));
-    if (status === 'completed') return bookings.filter(booking => ['accepted', 'released'].includes(booking.status));
+    
+    if (status === 'paid') {
+      return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+    } else if (status === 'completed') {
+      return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
+    }
+    
     return bookings.filter(booking => booking.status === status);
   };
 
@@ -130,10 +130,23 @@ export const ClientBookings = () => {
     toast.success('Transaction hash copied to clipboard');
   };
 
-  // Prevent auto-scroll when changing tabs
+  // Fixed tab change handler to prevent auto-scroll
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    // Prevent any scroll behavior by ensuring we stay at current position
+    setTimeout(() => {
+      window.scrollTo({ top: window.scrollY, behavior: 'auto' });
+    }, 0);
   };
+
+  // Add useEffect to prevent initial auto-scroll
+  useEffect(() => {
+    // Prevent auto-scroll on component mount or when bookings data changes
+    const currentScroll = window.scrollY;
+    setTimeout(() => {
+      window.scrollTo({ top: currentScroll, behavior: 'auto' });
+    }, 0);
+  }, [bookings, activeTab]);
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;

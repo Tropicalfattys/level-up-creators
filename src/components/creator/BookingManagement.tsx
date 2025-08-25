@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -208,36 +208,47 @@ export const BookingManagement = () => {
     };
 
     bookings.forEach(booking => {
-      switch (booking.status) {
-        case 'pending':
-        case 'paid':
-          counts.paid++;
-          break;
-        case 'in_progress':
-          counts.in_progress++;
-          break;
-        case 'delivered':
-          counts.delivered++;
-          break;
-        default:
-          break;
+      console.log(`Booking ${booking.id} has status: ${booking.status}`);
+      
+      if (booking.status === 'pending' || booking.status === 'paid') {
+        counts.paid++;
+      } else if (booking.status === 'in_progress') {
+        counts.in_progress++;
+      } else if (booking.status === 'delivered') {
+        counts.delivered++;
       }
     });
 
+    console.log('Tab counts:', counts);
     return counts;
   };
 
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
-    if (status === 'paid') return bookings.filter(booking => ['pending', 'paid'].includes(booking.status));
+    
+    if (status === 'paid') {
+      return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+    }
+    
     return bookings.filter(booking => booking.status === status);
   };
 
-  // Prevent auto-scroll when changing tabs
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    // Prevent any scroll behavior by ensuring we stay at current position
+    setTimeout(() => {
+      window.scrollTo({ top: window.scrollY, behavior: 'auto' });
+    }, 0);
   };
+
+  useEffect(() => {
+    // Prevent auto-scroll on component mount or when bookings data changes
+    const currentScroll = window.scrollY;
+    setTimeout(() => {
+      window.scrollTo({ top: currentScroll, behavior: 'auto' });
+    }, 0);
+  }, [bookings, activeTab]);
 
   if (isLoading) {
     return <div className="text-center py-8">Loading bookings...</div>;
