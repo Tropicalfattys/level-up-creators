@@ -21,7 +21,7 @@ const tiers = [
       'Basic analytics',
       'Admin approval required'
     ],
-    color: 'bg-gray-50'
+    color: 'bg-card text-card-foreground'
   },
   {
     id: 'mid' as const,
@@ -37,7 +37,7 @@ const tiers = [
       'Featured listing',
       'Custom branding'
     ],
-    color: 'bg-blue-50',
+    color: 'bg-card text-card-foreground',
     popular: true
   },
   {
@@ -56,7 +56,7 @@ const tiers = [
       'Video introductions',
       'Priority placement'
     ],
-    color: 'bg-purple-50'
+    color: 'bg-card text-card-foreground'
   }
 ];
 
