@@ -52,26 +52,85 @@ export const AdminPayments = () => {
 
   const updatePaymentStatus = async (paymentId: string, status: string) => {
     try {
-      const { error } = await supabase
+      const { data: currentUser } = await supabase.auth.getUser();
+      
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Update payment status
+      const { error: updateError } = await supabase
         .from('payments')
         .update({ 
           status,
           verified_at: status === 'verified' ? new Date().toISOString() : null,
-          verified_by: status === 'verified' ? (await supabase.auth.getUser()).data.user?.id : null
+          verified_by: status === 'verified' ? currentUser.user?.id : null
         })
         .eq('id', paymentId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // If this is a creator_tier payment being verified, create/approve creator record
+      if (status === 'verified' && payment.payment_type === 'creator_tier') {
+        // Check if creator record already exists
+        const { data: existingCreator } = await supabase
+          .from('creators')
+          .select('*')
+          .eq('user_id', payment.user_id)
+          .single();
+
+        if (!existingCreator) {
+          // Create new creator record
+          const { error: creatorError } = await supabase
+            .from('creators')
+            .insert({
+              user_id: payment.user_id,
+              tier: payment.amount === 0 ? 'basic' : payment.amount === 25 ? 'mid' : 'pro',
+              approved: true,
+              approved_at: new Date().toISOString(),
+              category: 'general'
+            });
+
+          if (creatorError) throw creatorError;
+        } else {
+          // Update existing creator to approved
+          const { error: approveError } = await supabase
+            .from('creators')
+            .update({
+              approved: true,
+              approved_at: new Date().toISOString(),
+              tier: payment.amount === 0 ? 'basic' : payment.amount === 25 ? 'mid' : 'pro'
+            })
+            .eq('user_id', payment.user_id);
+
+          if (approveError) throw approveError;
+        }
+
+        // Update user role to creator
+        const { error: roleError } = await supabase
+          .from('users')
+          .update({ role: 'creator' })
+          .eq('id', payment.user_id);
+
+        if (roleError) throw roleError;
+      }
 
       toast.success(
         status === 'verified' 
-          ? 'Payment verified! Booking status automatically updated to paid.' 
+          ? payment.payment_type === 'creator_tier'
+            ? 'Payment verified! Creator approved and role updated.'
+            : 'Payment verified! Booking status automatically updated to paid.'
           : `Payment ${status} successfully`
       );
       
-      // Refresh both payments and bookings data
+      // Refresh all related data
       queryClient.invalidateQueries({ queryKey: ['admin-payments'] });
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
       queryClient.invalidateQueries({ queryKey: ['bookings-referrals-test'] });
     } catch (error: any) {
       toast.error('Failed to update payment status: ' + error.message);

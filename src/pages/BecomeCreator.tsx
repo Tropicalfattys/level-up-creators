@@ -1,11 +1,13 @@
-
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Star, Crown } from 'lucide-react';
 import { CreatorPayment } from '@/components/creator/CreatorPayment';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const tiers = [
   {
@@ -64,15 +66,64 @@ export default function BecomeCreator() {
   const [selectedTier, setSelectedTier] = useState<'basic' | 'mid' | 'pro' | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const createCreatorApplication = useMutation({
+    mutationFn: async (tier: 'basic' | 'mid' | 'pro') => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Check if creator record already exists
+      const { data: existingCreator } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingCreator) {
+        throw new Error('Creator application already exists');
+      }
+
+      // Create creator record with approved: false for admin review
+      const { data, error } = await supabase
+        .from('creators')
+        .insert({
+          user_id: user.id,
+          tier: tier,
+          approved: false, // Requires admin approval
+          category: 'general',
+          headline: `${tier} Creator Application`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Creator application submitted successfully! Please wait for admin approval.');
+      setShowPayment(false);
+      setSelectedTier(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to submit creator application: ' + error.message);
+    }
+  });
 
   const handleTierSelect = (tier: 'basic' | 'mid' | 'pro') => {
     setSelectedTier(tier);
-    setShowPayment(true);
+    if (tier === 'basic') {
+      // For free tier, create application immediately
+      createCreatorApplication.mutate(tier);
+    } else {
+      // For paid tiers, show payment modal
+      setShowPayment(true);
+    }
   };
 
-  const handlePaymentSuccess = () => {
-    setShowPayment(false);
-    // Handle successful payment/application
+  const handlePaymentSuccess = (tier: 'basic' | 'mid' | 'pro') => {
+    // Create creator application after successful payment
+    createCreatorApplication.mutate(tier);
   };
 
   if (!user) {
@@ -183,7 +234,7 @@ export default function BecomeCreator() {
         <CreatorPayment
           isOpen={showPayment}
           onClose={() => setShowPayment(false)}
-          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentSuccess={() => handlePaymentSuccess(selectedTier)}
           tier={selectedTier}
         />
       )}
