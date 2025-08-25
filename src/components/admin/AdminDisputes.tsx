@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, Eye, Check, X } from 'lucide-react';
+import { AlertTriangle, Eye, Check, X, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BookingWithRelations {
@@ -134,6 +134,18 @@ export const AdminDisputes = () => {
     });
   };
 
+  const getDisputeOutcome = (dispute: DisputeWithRelations) => {
+    if (dispute.status !== 'resolved' || !dispute.booking) return null;
+    
+    const bookingStatus = dispute.booking.status;
+    if (bookingStatus === 'refunded') {
+      return { winner: 'client', text: 'Ruled in favor of Client', color: 'bg-red-100 text-red-800' };
+    } else if (bookingStatus === 'released') {
+      return { winner: 'creator', text: 'Ruled in favor of Creator', color: 'bg-green-100 text-green-800' };
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -234,30 +246,46 @@ export const AdminDisputes = () => {
                 <TableRow>
                   <TableHead>Service</TableHead>
                   <TableHead>Parties</TableHead>
-                  <TableHead>Resolution</TableHead>
+                  <TableHead>Dispute Outcome</TableHead>
+                  <TableHead>Admin Resolution Note</TableHead>
                   <TableHead>Resolved Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {resolvedDisputes.map((dispute) => (
-                  <TableRow key={dispute.id}>
-                    <TableCell>{dispute.booking?.services?.title}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>Client: {dispute.booking?.client?.handle}</div>
-                        <div>Creator: {dispute.booking?.creator?.handle}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {dispute.resolution_note}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {dispute.resolved_at && new Date(dispute.resolved_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {resolvedDisputes.map((dispute) => {
+                  const outcome = getDisputeOutcome(dispute);
+                  return (
+                    <TableRow key={dispute.id}>
+                      <TableCell>{dispute.booking?.services?.title}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>Client: {dispute.booking?.client?.handle}</div>
+                          <div>Creator: {dispute.booking?.creator?.handle}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {outcome ? (
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3" />
+                            <Badge className={outcome.color}>
+                              {outcome.text}
+                            </Badge>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No outcome data</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm max-w-xs">
+                          {dispute.resolution_note || 'No resolution note provided'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {dispute.resolved_at && new Date(dispute.resolved_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
