@@ -1,13 +1,16 @@
+
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { NavigationMenu, NavigationMenuList } from '@/components/ui/navigation-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import { LogOut, User, Settings, DollarSign, Menu, Shield, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { ShoppingCartModal } from '@/components/cart/ShoppingCartModal';
+import { HeaderCategoriesDropdown } from './HeaderCategoriesDropdown';
 import { useState } from 'react';
 
 export const Header = () => {
@@ -20,23 +23,6 @@ export const Header = () => {
     await signOut();
     navigate('/');
   };
-
-  const categories = [
-    { id: 'ama', name: 'Host an AMA', path: '/browse?category=ama' },
-    { id: 'twitter', name: 'Tweet Campaigns', path: '/browse?category=twitter' },
-    { id: 'video', name: 'Promo Videos', path: '/browse?category=video' },
-    { id: 'tutorials', name: 'Product Tutorials', path: '/browse?category=tutorials' },
-    { id: 'reviews', name: 'Product Reviews', path: '/browse?category=reviews' },
-    { id: 'spaces', name: 'Twitter Spaces', path: '/browse?category=spaces' },
-    { id: 'instagram', name: 'Instagram Posts', path: '/browse?category=instagram' },
-    { id: 'facebook', name: 'Facebook Posts', path: '/browse?category=facebook' },
-    { id: 'marketing', name: 'Marketing Campaigns', path: '/browse?category=marketing' },
-    { id: 'branding', name: 'Project Branding', path: '/browse?category=branding' },
-    { id: 'discord', name: 'Discord Contests', path: '/browse?category=discord' },
-    { id: 'blogs', name: 'Blogs & Articles', path: '/browse?category=blogs' },
-    { id: 'reddit', name: 'Reddit Posts', path: '/browse?category=reddit' },
-    { id: 'memes', name: 'Meme Creation', path: '/browse?category=memes' }
-  ];
 
   return (
     <header className="border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60 sticky top-0 z-50">
@@ -53,25 +39,11 @@ export const Header = () => {
         </Link>
         
         <nav className="hidden md:flex items-center space-x-8">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-zinc-800">
-                Categories
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-zinc-900 border-zinc-800 z-50 max-h-96 overflow-y-auto">
-              {categories.map((category) => (
-                <DropdownMenuItem key={category.id} asChild>
-                  <Link 
-                    to={category.path} 
-                    className="w-full text-white hover:bg-zinc-800 focus:bg-zinc-800"
-                  >
-                    {category.name}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <HeaderCategoriesDropdown />
+            </NavigationMenuList>
+          </NavigationMenu>
           
           <Link to="/how-it-works" className="text-white/80 hover:text-white transition-colors">
             How it works
