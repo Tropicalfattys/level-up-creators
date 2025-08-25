@@ -72,16 +72,22 @@ export const BookingManagement = () => {
       proofLinks?: Array<{ url: string; label: string }>;
       proofFileUrl?: string;
     }) => {
-      const updateData: any = { status, updated_at: new Date().toISOString() };
+      const updateData: any = { 
+        status, 
+        updated_at: new Date().toISOString() 
+      };
+      
       if (deliveredAt) {
         updateData.delivered_at = deliveredAt;
       }
-      if (proofLinks) {
+      if (proofLinks && proofLinks.length > 0) {
         updateData.proof_links = proofLinks;
       }
       if (proofFileUrl) {
         updateData.proof_file_url = proofFileUrl;
       }
+
+      console.log('Updating booking with data:', updateData);
 
       const { error } = await supabase
         .from('bookings')
@@ -102,45 +108,64 @@ export const BookingManagement = () => {
     }
   });
 
-  const handleFileUpload = async (bookingId: string, file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${bookingId}/${Date.now()}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from('deliverables')
-      .upload(fileName, file);
+  const handleFileUpload = async (bookingId: string, file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${bookingId}/${Date.now()}.${fileExt}`;
+      
+      console.log('Uploading file:', fileName, 'Size:', file.size);
+      
+      const { data, error } = await supabase.storage
+        .from('deliverables')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-    if (error) throw error;
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
 
-    // Use signed URL for secure access
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('deliverables')
-      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+      console.log('File uploaded successfully:', data);
 
-    if (signedUrlError) throw signedUrlError;
+      // Create signed URL for secure access (7 days)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('deliverables')
+        .createSignedUrl(fileName, 60 * 60 * 24 * 7);
 
-    return signedUrlData.signedUrl;
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw signedUrlError;
+      }
+
+      console.log('Signed URL created:', signedUrlData.signedUrl);
+      return signedUrlData.signedUrl;
+    } catch (error) {
+      console.error('File upload failed:', error);
+      throw error;
+    }
   };
 
   const handleProofSubmission = async (bookingId: string, proofData: { links: Array<{ url: string; label: string }>; file: File | null; notes: string }) => {
-    let proofFileUrl = null;
+    try {
+      let proofFileUrl = null;
 
-    if (proofData.file) {
-      try {
+      if (proofData.file) {
         proofFileUrl = await handleFileUpload(bookingId, proofData.file);
-      } catch (error) {
-        toast.error('Failed to upload file');
-        return;
       }
-    }
 
-    updateBookingStatus.mutate({
-      bookingId,
-      status: 'delivered',
-      deliveredAt: new Date().toISOString(),
-      proofLinks: proofData.links,
-      proofFileUrl
-    });
+      await updateBookingStatus.mutateAsync({
+        bookingId,
+        status: 'delivered',
+        deliveredAt: new Date().toISOString(),
+        proofLinks: proofData.links,
+        proofFileUrl
+      });
+    } catch (error) {
+      console.error('Proof submission failed:', error);
+      toast.error('Failed to submit proof of work');
+    }
   };
 
   const copyTxHash = (txHash: string) => {
