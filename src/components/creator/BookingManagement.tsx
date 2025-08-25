@@ -190,21 +190,41 @@ export const BookingManagement = () => {
     return statuses.indexOf(status) + 1;
   };
 
+  const getTabCounts = () => {
+    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
+    
+    const counts = {
+      all: bookings.length,
+      paid: 0,
+      in_progress: 0,
+      delivered: 0,
+    };
+
+    bookings.forEach(booking => {
+      switch (booking.status) {
+        case 'pending':
+        case 'paid':
+          counts.paid++;
+          break;
+        case 'in_progress':
+          counts.in_progress++;
+          break;
+        case 'delivered':
+          counts.delivered++;
+          break;
+        default:
+          break;
+      }
+    });
+
+    return counts;
+  };
+
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     if (status === 'paid') return bookings.filter(booking => ['pending', 'paid'].includes(booking.status));
     return bookings.filter(booking => booking.status === status);
-  };
-
-  const getTabCounts = () => {
-    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
-    return {
-      all: bookings.length,
-      paid: bookings.filter(b => ['pending', 'paid'].includes(b.status)).length,
-      in_progress: bookings.filter(b => b.status === 'in_progress').length,
-      delivered: bookings.filter(b => b.status === 'delivered').length,
-    };
   };
 
   if (isLoading) {

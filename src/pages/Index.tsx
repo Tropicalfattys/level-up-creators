@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 export default function Index() {
   const { user, userRole, loading } = useAuth();
@@ -147,6 +148,14 @@ export default function Index() {
     }
   };
 
+  // Prevent auto-scroll when changing tabs
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Don't auto-scroll, just change the tab
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -218,7 +227,7 @@ export default function Index() {
         </Card>
       )}
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="booked">Booked</TabsTrigger>
