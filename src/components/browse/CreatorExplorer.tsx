@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, Package, Filter, Search } from 'lucide-react';
+import { Star, Clock, DollarSign, Package, Filter, Search, Heart } from 'lucide-react';
+import { useUserFollows } from '@/hooks/useUserFollows';
 
 interface CreatorData {
   id: string;
@@ -35,6 +35,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [categoryFilter, setCategoryFilter] = useState(selectedCategory || 'all');
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const navigate = useNavigate();
+  const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
   const categories = [
     'ama', 'twitter', 'video', 'tutorials', 'reviews', 'spaces',
@@ -142,6 +143,23 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
   const handleViewProfile = (handle: string) => {
     navigate(`/creator/${handle}`);
+  };
+
+  const handleFollowToggle = (creator: CreatorData, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (isFollowing(creator.id)) {
+      removeFollow(creator.id);
+    } else {
+      const creatorToFollow = {
+        id: creator.id,
+        user_id: creator.id, // Using creator.id as user_id since that's how the data is structured
+        handle: creator.handle,
+        avatar_url: creator.avatar_url,
+        headline: creator.headline
+      };
+      addFollow(creatorToFollow);
+    }
   };
 
   const categoryIcons = [
@@ -253,12 +271,28 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           </div>
                         </div>
                         
-                        <Button 
-                          onClick={() => handleViewProfile(creator.handle)}
-                          className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
-                        >
-                          View Profile
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleFollowToggle(creator, e)}
+                            className="p-2 hover:bg-red-50"
+                          >
+                            <Heart
+                              className={`h-5 w-5 transition-colors ${
+                                isFollowing(creator.id)
+                                  ? 'fill-red-500 text-red-500'
+                                  : 'text-gray-400 hover:text-red-500'
+                              }`}
+                            />
+                          </Button>
+                          <Button 
+                            onClick={() => handleViewProfile(creator.handle)}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
+                          >
+                            View Profile
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

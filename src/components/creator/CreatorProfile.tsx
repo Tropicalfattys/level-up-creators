@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
+import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase, Heart } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
+import { useUserFollows } from '@/hooks/useUserFollows';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -28,6 +28,7 @@ export const CreatorProfile = () => {
   const { handle } = useParams();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
   // Fetch user data by handle
   const { data: profile, isLoading } = useQuery({
@@ -143,6 +144,23 @@ export const CreatorProfile = () => {
     setIsBookingModalOpen(true);
   };
 
+  const handleFollowToggle = () => {
+    if (!profile?.user) return;
+    
+    if (isFollowing(profile.user.id)) {
+      removeFollow(profile.user.id);
+    } else {
+      const creatorToFollow = {
+        id: profile.creator?.id || profile.user.id,
+        user_id: profile.user.id,
+        handle: profile.user.handle,
+        avatar_url: profile.user.avatar_url,
+        headline: profile.creator?.headline
+      };
+      addFollow(creatorToFollow);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -191,7 +209,25 @@ export const CreatorProfile = () => {
                 </Avatar>
                 
                 <div>
-                  <h1 className="text-2xl font-bold">{user.handle}</h1>
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <h1 className="text-2xl font-bold">{user.handle}</h1>
+                    {isCreator && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleFollowToggle}
+                        className="p-2 hover:bg-red-50"
+                      >
+                        <Heart
+                          className={`h-5 w-5 transition-colors ${
+                            isFollowing(user.id)
+                              ? 'fill-red-500 text-red-500'
+                              : 'text-gray-400 hover:text-red-500'
+                          }`}
+                        />
+                      </Button>
+                    )}
+                  </div>
                   {creator?.headline && (
                     <p className="text-muted-foreground">{creator.headline}</p>
                   )}
