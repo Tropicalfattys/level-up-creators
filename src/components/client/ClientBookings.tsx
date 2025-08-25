@@ -1,17 +1,17 @@
-
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, Hash, Copy, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
+import { ProjectStatusCard } from './ProjectStatusCard';
 
 interface BookingWithDetails {
   id: string;
@@ -24,7 +24,6 @@ interface BookingWithDetails {
   tx_hash?: string;
   proof_link?: string;
   proof_file_url?: string;
-  proof_links?: Array<{ url: string; label: string }>;
   services: {
     title: string;
   } | null;
@@ -37,6 +36,7 @@ interface BookingWithDetails {
 
 export const ClientBookings = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('all');
 
   const { data: bookings, isLoading } = useQuery({
@@ -58,64 +58,44 @@ export const ClientBookings = () => {
         console.error('Error fetching client bookings:', error);
         return [];
       }
-      
-      // Safely transform the data to match our interface
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links as Array<{ url: string; label: string }>
-          : []
-      }));
+      return data || [];
     },
     enabled: !!user?.id
   });
 
-  const getTabCounts = () => {
-    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0, completed: 0 };
-    
-    const counts = {
-      all: bookings.length,
-      paid: 0,
-      in_progress: 0,
-      delivered: 0,
-      completed: 0,
-    };
+  const updateBookingStatus = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
+      const updateData: any = { 
+        status, 
+        updated_at: new Date().toISOString(),
+        ...(status === 'accepted' && { accepted_at: new Date().toISOString() })
+      };
 
-    bookings.forEach(booking => {
-      switch (booking.status) {
-        case 'pending':
-        case 'paid':
-          counts.paid++;
-          break;
-        case 'in_progress':
-          counts.in_progress++;
-          break;
-        case 'delivered':
-          counts.delivered++;
-          break;
-        case 'accepted':
-        case 'released':
-          counts.completed++;
-          break;
-        default:
-          break;
-      }
-    });
+      const { error } = await supabase
+        .from('bookings')
+        .update(updateData)
+        .eq('id', bookingId);
 
-    return counts;
-  };
+      if (error) throw error;
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      const statusText = status === 'accepted' ? 'accepted' : 'disputed';
+      toast.success(`Booking ${statusText} successfully!`);
+    },
+    onError: (error) => {
+      console.error('Update booking error:', error);
+      toast.error('Failed to update booking status');
+    }
+  });
 
-  const filterBookings = (status: string) => {
-    if (!bookings) return [];
-    if (status === 'all') return bookings;
-    if (status === 'paid') return bookings.filter(booking => ['pending', 'paid'].includes(booking.status));
-    if (status === 'completed') return bookings.filter(booking => ['accepted', 'released'].includes(booking.status));
-    return bookings.filter(booking => booking.status === status);
+  const copyTxHash = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    toast.success('Transaction hash copied to clipboard');
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'in_progress': return 'secondary';
       case 'delivered': return 'outline';
@@ -125,18 +105,24 @@ export const ClientBookings = () => {
     }
   };
 
-  const copyTxHash = (txHash: string) => {
-    navigator.clipboard.writeText(txHash);
-    toast.success('Transaction hash copied to clipboard');
+  const filterBookings = (status: string) => {
+    if (!bookings) return [];
+    if (status === 'all') return bookings;
+    return bookings.filter(booking => booking.status === status);
   };
 
-  // Prevent auto-scroll when changing tabs
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  const getTabCounts = () => {
+    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
+    return {
+      all: bookings.length,
+      paid: bookings.filter(b => b.status === 'paid').length,
+      in_progress: bookings.filter(b => b.status === 'in_progress').length,
+      delivered: bookings.filter(b => b.status === 'delivered').length,
+    };
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading bookings...</div>;
+    return <div className="text-center py-8">Loading your bookings...</div>;
   }
 
   const tabCounts = getTabCounts();
@@ -146,17 +132,16 @@ export const ClientBookings = () => {
       <div>
         <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
         <p className="text-muted-foreground">
-          Track your service bookings and communicate with creators
+          Track your orders and communicate with creators
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-          <TabsTrigger value="paid">Active ({tabCounts.paid})</TabsTrigger>
+          <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
           <TabsTrigger value="in_progress">In Progress ({tabCounts.in_progress})</TabsTrigger>
           <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
@@ -199,85 +184,19 @@ export const ClientBookings = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Status Information */}
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Project Status</h4>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm">
-                      <span className="font-medium">Current Status:</span> {booking.status.replace('_', ' ')}
-                    </p>
-                    {booking.status === 'delivered' && (
-                      <div className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        <p className="text-sm text-orange-800">
-                          Work has been delivered - please review and accept or open a dispute if needed
-                        </p>
-                      </div>
-                    )}
-                    {(booking.status === 'accepted' || booking.status === 'released') && (
-                      <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <p className="text-sm text-green-800">
-                          Project completed successfully
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Delivered Content */}
-                {booking.status === 'delivered' && (booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
-                  <div className="border rounded-lg p-4 bg-blue-50">
-                    <h4 className="font-medium mb-3 text-blue-800">Deliverables:</h4>
-                    <div className="space-y-2">
-                      {booking.proof_links?.map((link, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <ExternalLink className="h-3 w-3 text-blue-600" />
-                          <span className="text-xs text-blue-700 font-medium">{link.label}:</span>
-                          <a 
-                            href={link.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-blue-600 hover:underline text-sm truncate"
-                          >
-                            {link.url}
-                          </a>
-                        </div>
-                      ))}
-                      
-                      {booking.proof_link && !booking.proof_links?.length && (
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="h-3 w-3 text-blue-600" />
-                          <a 
-                            href={booking.proof_link} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            View Social Proof Link
-                          </a>
-                        </div>
-                      )}
-                      
-                      {booking.proof_file_url && (
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="h-3 w-3 text-blue-600" />
-                          <a 
-                            href={booking.proof_file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            View Uploaded File
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* Project Status Card */}
+                <ProjectStatusCard
+                  booking={booking}
+                  onAccept={() => updateBookingStatus.mutate({ 
+                    bookingId: booking.id, 
+                    status: 'accepted' 
+                  })}
+                  onDispute={() => updateBookingStatus.mutate({ 
+                    bookingId: booking.id, 
+                    status: 'disputed' 
+                  })}
+                  isLoading={updateBookingStatus.isPending}
+                />
 
                 {/* Chat Component */}
                 {booking.creator && (
@@ -285,6 +204,7 @@ export const ClientBookings = () => {
                     <div className="flex items-center gap-2 mb-3">
                       <MessageSquare className="h-4 w-4" />
                       <h4 className="font-medium">Chat with @{booking.creator.handle}</h4>
+                      <span className="text-sm text-muted-foreground">Discuss your project requirements</span>
                     </div>
                     <BookingChat
                       bookingId={booking.id}
@@ -298,21 +218,23 @@ export const ClientBookings = () => {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                      Ordered {format(new Date(booking.created_at), 'MMM d, yyyy')}
                     </div>
                     {booking.delivered_at && (
                       <div className="flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3" />
                         Delivered {format(new Date(booking.delivered_at), 'MMM d')}
                       </div>
                     )}
                   </div>
-                  <Link to={`/chat/${booking.id}`}>
-                    <Button size="sm" variant="outline">
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Full Chat
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 items-end">
+                    <Link to={`/chat/${booking.id}`}>
+                      <Button size="sm" variant="outline">
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Full Chat
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

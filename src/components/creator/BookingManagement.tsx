@@ -59,14 +59,7 @@ export const BookingManagement = () => {
         console.error('Error fetching bookings:', error);
         return [];
       }
-      
-      // Safely transform the data to match our interface
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links as Array<{ url: string; label: string }>
-          : []
-      }));
+      return data || [];
     },
     enabled: !!user?.id
   });
@@ -197,36 +190,6 @@ export const BookingManagement = () => {
     return statuses.indexOf(status) + 1;
   };
 
-  const getTabCounts = () => {
-    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
-    
-    const counts = {
-      all: bookings.length,
-      paid: 0,
-      in_progress: 0,
-      delivered: 0,
-    };
-
-    bookings.forEach(booking => {
-      switch (booking.status) {
-        case 'pending':
-        case 'paid':
-          counts.paid++;
-          break;
-        case 'in_progress':
-          counts.in_progress++;
-          break;
-        case 'delivered':
-          counts.delivered++;
-          break;
-        default:
-          break;
-      }
-    });
-
-    return counts;
-  };
-
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
@@ -234,9 +197,14 @@ export const BookingManagement = () => {
     return bookings.filter(booking => booking.status === status);
   };
 
-  // Prevent auto-scroll when changing tabs
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  const getTabCounts = () => {
+    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
+    return {
+      all: bookings.length,
+      paid: bookings.filter(b => ['pending', 'paid'].includes(b.status)).length,
+      in_progress: bookings.filter(b => b.status === 'in_progress').length,
+      delivered: bookings.filter(b => b.status === 'delivered').length,
+    };
   };
 
   if (isLoading) {
@@ -254,7 +222,7 @@ export const BookingManagement = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
           <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
