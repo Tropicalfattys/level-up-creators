@@ -162,7 +162,17 @@ export const ClientBookings = () => {
                     <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3" />
-                      Creator: @{booking.creator?.handle || 'Unknown'}
+                      Creator: 
+                      {booking.creator?.handle ? (
+                        <Link 
+                          to={`/profile/${booking.creator.handle}`}
+                          className="text-primary hover:underline"
+                        >
+                          @{booking.creator.handle}
+                        </Link>
+                      ) : (
+                        <span>Unknown</span>
+                      )}
                     </CardDescription>
                     {booking.tx_hash && (
                       <CardDescription className="flex items-center gap-2 mt-1">
@@ -295,7 +305,19 @@ export const ClientBookings = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <MessageSquare className="h-4 w-4" />
-                      <h4 className="font-medium">Chat with @{booking.creator.handle}</h4>
+                      <h4 className="font-medium">
+                        Chat with{' '}
+                        {booking.creator.handle ? (
+                          <Link 
+                            to={`/profile/${booking.creator.handle}`}
+                            className="text-primary hover:underline"
+                          >
+                            @{booking.creator.handle}
+                          </Link>
+                        ) : (
+                          <span>@{booking.creator.handle || 'Unknown'}</span>
+                        )}
+                      </h4>
                     </div>
                     <BookingChat
                       bookingId={booking.id}

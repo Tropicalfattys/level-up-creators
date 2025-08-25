@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface Review {
   id: string;
@@ -320,7 +320,16 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">@{review.reviewer?.handle}</span>
+                        {review.reviewer?.handle ? (
+                          <Link 
+                            to={`/profile/${review.reviewer.handle}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            @{review.reviewer.handle}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">@Unknown</span>
+                        )}
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star

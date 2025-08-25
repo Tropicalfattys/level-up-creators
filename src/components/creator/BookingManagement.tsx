@@ -272,7 +272,17 @@ export const BookingManagement = () => {
                     <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3" />
-                      Client: @{booking.client?.handle || 'Unknown'}
+                      Client: 
+                      {booking.client?.handle ? (
+                        <Link 
+                          to={`/profile/${booking.client.handle}`}
+                          className="text-primary hover:underline"
+                        >
+                          @{booking.client.handle}
+                        </Link>
+                      ) : (
+                        <span>Unknown</span>
+                      )}
                     </CardDescription>
                     {booking.tx_hash && (
                       <CardDescription className="flex items-center gap-2 mt-1">
@@ -531,7 +541,19 @@ export const BookingManagement = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <MessageSquare className="h-4 w-4" />
-                      <h4 className="font-medium">Chat with @{booking.client.handle}</h4>
+                      <h4 className="font-medium">
+                        Chat with{' '}
+                        {booking.client.handle ? (
+                          <Link 
+                            to={`/profile/${booking.client.handle}`}
+                            className="text-primary hover:underline"
+                          >
+                            @{booking.client.handle}
+                          </Link>
+                        ) : (
+                          <span>@{booking.client.handle || 'Unknown'}</span>
+                        )}
+                      </h4>
                       <span className="text-sm text-muted-foreground">Discuss project details and deliverables</span>
                     </div>
                     <BookingChat
