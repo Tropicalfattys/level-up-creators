@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { ShoppingCartModal } from '@/components/cart/ShoppingCartModal';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Header = () => {
   const { user, userRole, userProfile } = useAuth();
@@ -16,27 +18,28 @@ export const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch categories from database
+  const { data: categories, isLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+      return data;
+    },
+  });
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-
-  const categories = [
-    { id: 'ama', name: 'Host an AMA', path: '/browse?category=ama' },
-    { id: 'twitter', name: 'Tweet Campaigns', path: '/browse?category=twitter' },
-    { id: 'video', name: 'Promo Videos', path: '/browse?category=video' },
-    { id: 'tutorials', name: 'Product Tutorials', path: '/browse?category=tutorials' },
-    { id: 'reviews', name: 'Product Reviews', path: '/browse?category=reviews' },
-    { id: 'spaces', name: 'Twitter Spaces', path: '/browse?category=spaces' },
-    { id: 'instagram', name: 'Instagram Posts', path: '/browse?category=instagram' },
-    { id: 'facebook', name: 'Facebook Posts', path: '/browse?category=facebook' },
-    { id: 'marketing', name: 'Marketing Campaigns', path: '/browse?category=marketing' },
-    { id: 'branding', name: 'Project Branding', path: '/browse?category=branding' },
-    { id: 'discord', name: 'Discord Contests', path: '/browse?category=discord' },
-    { id: 'blogs', name: 'Blogs & Articles', path: '/browse?category=blogs' },
-    { id: 'reddit', name: 'Reddit Posts', path: '/browse?category=reddit' },
-    { id: 'memes', name: 'Meme Creation', path: '/browse?category=memes' }
-  ];
 
   return (
     <header className="border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60 sticky top-0 z-50">
@@ -60,16 +63,26 @@ export const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-zinc-900 border-zinc-800 z-50 max-h-96 overflow-y-auto">
-              {categories.map((category) => (
-                <DropdownMenuItem key={category.id} asChild>
-                  <Link 
-                    to={category.path} 
-                    className="w-full text-white hover:bg-zinc-800 focus:bg-zinc-800"
-                  >
-                    {category.name}
-                  </Link>
+              {isLoading ? (
+                <DropdownMenuItem disabled className="text-white/60">
+                  Loading categories...
                 </DropdownMenuItem>
-              ))}
+              ) : categories && categories.length > 0 ? (
+                categories.map((category) => (
+                  <DropdownMenuItem key={category.id} asChild>
+                    <Link 
+                      to={`/browse?category=${category.value}`} 
+                      className="w-full text-white hover:bg-zinc-800 focus:bg-zinc-800"
+                    >
+                      {category.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled className="text-white/60">
+                  No categories available
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           
