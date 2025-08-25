@@ -147,6 +147,7 @@ export const BookingManagement = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'in_progress': return 'secondary';
       case 'delivered': return 'outline';
@@ -157,13 +158,14 @@ export const BookingManagement = () => {
   };
 
   const getStatusProgress = (status: string) => {
-    const statuses = ['paid', 'in_progress', 'delivered', 'accepted'];
+    const statuses = ['pending', 'paid', 'in_progress', 'delivered', 'accepted'];
     return statuses.indexOf(status) + 1;
   };
 
   const filterBookings = (status: string) => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
+    if (status === 'paid') return bookings.filter(booking => ['pending', 'paid'].includes(booking.status));
     return bookings.filter(booking => booking.status === status);
   };
 
@@ -171,7 +173,7 @@ export const BookingManagement = () => {
     if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
     return {
       all: bookings.length,
-      paid: bookings.filter(b => b.status === 'paid').length,
+      paid: bookings.filter(b => ['pending', 'paid'].includes(b.status)).length,
       in_progress: bookings.filter(b => b.status === 'in_progress').length,
       delivered: bookings.filter(b => b.status === 'delivered').length,
     };
@@ -240,7 +242,7 @@ export const BookingManagement = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Enhanced Project Actions Section */}
+                {/* Project Actions Section */}
                 <div className="border rounded-lg p-4 bg-muted/20">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium flex items-center gap-2">
@@ -250,7 +252,7 @@ export const BookingManagement = () => {
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Progress:</span>
                       <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4].map((step) => (
+                        {[1, 2, 3, 4, 5].map((step) => (
                           <div
                             key={step}
                             className={`w-2 h-2 rounded-full ${
@@ -272,8 +274,8 @@ export const BookingManagement = () => {
                           Current Status: {booking.status.replace('_', ' ')}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {booking.status === 'paid' && 'Ready to start work'}
-                          {booking.status === 'in_progress' && 'Work in progress'}
+                          {(['pending', 'paid'].includes(booking.status)) && 'Ready to start work'}
+                          {booking.status === 'in_progress' && 'Work in progress - submit proof when done'}
                           {booking.status === 'delivered' && 'Awaiting client review'}
                           {booking.status === 'accepted' && 'Project completed successfully'}
                           {booking.status === 'released' && 'Payment released'}
@@ -283,9 +285,9 @@ export const BookingManagement = () => {
                     </div>
                   </div>
 
-                  {/* Status-Specific Actions */}
+                  {/* Action Buttons and Forms */}
                   <div className="space-y-4">
-                    {booking.status === 'paid' && (
+                    {(['pending', 'paid'].includes(booking.status)) && (
                       <div className="space-y-3">
                         <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
                         <Button 
@@ -336,7 +338,6 @@ export const BookingManagement = () => {
                           <CheckCircle className="h-4 w-4 text-orange-600" />
                         </div>
                         
-                        {/* Display submitted proof */}
                         {(booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-background rounded border">
                             <p className="text-sm font-medium mb-2">Submitted Proof:</p>
@@ -385,7 +386,6 @@ export const BookingManagement = () => {
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         </div>
                         
-                        {/* Display final deliverables */}
                         {(booking.proof_link || booking.proof_file_url) && (
                           <div className="p-3 bg-green-50 rounded border border-green-200">
                             <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
