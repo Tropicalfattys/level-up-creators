@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
+import { format } from 'date-fns';
+
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  reviewer: {
+    handle: string;
+    avatar_url?: string;
+  };
+}
 
 export const CreatorProfile = () => {
   const { handle } = useParams();
@@ -78,6 +89,30 @@ export const CreatorProfile = () => {
       };
     },
     enabled: !!handle && handle !== 'unknown'
+  });
+
+  // Fetch creator reviews
+  const { data: reviews } = useQuery({
+    queryKey: ['creator-reviews', creator?.user_id],
+    queryFn: async (): Promise<Review[]> => {
+      if (!creator?.user_id) return [];
+      
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          reviewer:users!reviews_reviewer_id_fkey (handle, avatar_url)
+        `)
+        .eq('reviewee_id', creator.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!creator?.user_id
   });
 
   // Social media icons mapping
@@ -271,6 +306,61 @@ export const CreatorProfile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Reviews Summary Card */}
+          {reviews && reviews.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Reviews ({reviews.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {reviews.slice(0, 3).map((review) => (
+                    <div key={review.id} className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={review.reviewer?.avatar_url} />
+                          <AvatarFallback>
+                            {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">@{review.reviewer?.handle}</span>
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-3 w-3 ${
+                                    star <= review.rating
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {review.comment}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(review.created_at), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {reviews.length > 3 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      +{reviews.length - 3} more reviews
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Services */}

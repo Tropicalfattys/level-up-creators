@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
 import { ProofSubmission } from './ProofSubmission';
+import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
 interface BookingWithDetails {
   id: string;
@@ -513,6 +514,17 @@ export const BookingManagement = () => {
                     )}
                   </div>
                 </div>
+
+                {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <h4 className="font-medium mb-3">Review from client</h4>
+                    <ReviewSystem
+                      bookingId={booking.id}
+                      revieweeId={user?.id || ''}
+                      canReview={false}
+                    />
+                  </div>
+                )}
 
                 {booking.client && (
                   <div>

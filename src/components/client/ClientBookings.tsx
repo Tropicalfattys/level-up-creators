@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
 import { EscrowManager } from '@/components/escrow/EscrowManager';
+import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 
 interface BookingWithDetails {
   id: string;
@@ -276,6 +276,18 @@ export const ClientBookings = () => {
                 {/* Escrow Manager - Only show for delivered bookings */}
                 {booking.status === 'delivered' && (
                   <EscrowManager bookingId={booking.id} isClient={true} />
+                )}
+
+                {/* Review System - Only show for completed bookings */}
+                {(booking.status === 'accepted' || booking.status === 'released') && booking.creator && (
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <h4 className="font-medium mb-3">Review this service</h4>
+                    <ReviewSystem
+                      bookingId={booking.id}
+                      revieweeId={booking.creator.id}
+                      canReview={true}
+                    />
+                  </div>
                 )}
 
                 {/* Chat Component */}
