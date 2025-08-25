@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { BookingChat } from '@/components/messaging/BookingChat';
 import { ProofSubmission } from './ProofSubmission';
 import { ReviewSystem } from '@/components/reviews/ReviewSystem';
+import { PaymentBreakdown } from '@/components/payments/PaymentBreakdown';
 
 interface BookingWithDetails {
   id: string;
@@ -313,6 +314,13 @@ export const BookingManagement = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <PaymentBreakdown 
+                    amount={booking.usdc_amount} 
+                    showTitle={true}
+                  />
+                </div>
+
                 <div className="border rounded-lg p-4 bg-muted/20">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium flex items-center gap-2">

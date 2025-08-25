@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Clock, Shield, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { toast } from 'sonner';
+import { PaymentBreakdown } from '@/components/payments/PaymentBreakdown';
 
 interface EscrowManagerProps {
   bookingId: string;
@@ -148,20 +148,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
 
         <Separator />
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span>Service Amount</span>
-            <span>${booking.usdc_amount} USDC</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Platform Fee (15%)</span>
-            <span>${(booking.usdc_amount * 0.15).toFixed(2)} USDC</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Creator Receives</span>
-            <span className="font-medium">${(booking.usdc_amount * 0.85).toFixed(2)} USDC</span>
-          </div>
-        </div>
+        <PaymentBreakdown amount={booking.usdc_amount} />
 
         {booking.status === 'delivered' && releaseDate && (
           <div className="bg-blue-50 p-3 rounded-lg">
