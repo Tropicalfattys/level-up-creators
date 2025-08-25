@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +39,17 @@ export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('all');
+
+  // Prevent auto-scroll when tab changes
+  const handleTabChange = (value: string) => {
+    // Store current scroll position
+    const currentScrollY = window.scrollY;
+    setActiveTab(value);
+    // Restore scroll position after state update
+    setTimeout(() => {
+      window.scrollTo(0, currentScrollY);
+    }, 0);
+  };
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['creator-bookings', user?.id],
@@ -244,7 +254,7 @@ export const BookingManagement = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
           <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
