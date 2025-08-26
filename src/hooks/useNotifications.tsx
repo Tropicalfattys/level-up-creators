@@ -28,6 +28,8 @@ export const useNotifications = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('Fetching notifications for user:', user.id);
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -40,9 +42,12 @@ export const useNotifications = () => {
         throw error;
       }
 
+      console.log('Fetched notifications:', data);
       return data as Notification[];
     },
     enabled: !!user?.id,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Get unread count
@@ -53,6 +58,8 @@ export const useNotifications = () => {
     if (!user?.id) return;
 
     try {
+      console.log('Marking notification as read:', notificationId);
+      
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -64,6 +71,7 @@ export const useNotifications = () => {
         return;
       }
 
+      console.log('Notification marked as read successfully');
       // Update the query cache
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
     } catch (error) {
@@ -76,6 +84,8 @@ export const useNotifications = () => {
     if (!user?.id) return;
 
     try {
+      console.log('Marking all notifications as read for user:', user.id);
+      
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -87,6 +97,7 @@ export const useNotifications = () => {
         return;
       }
 
+      console.log('All notifications marked as read successfully');
       // Update the query cache
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
     } catch (error) {
@@ -98,6 +109,8 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!user?.id || isSubscribed) return;
 
+    console.log('Setting up notifications subscription for user:', user.id);
+
     const channel = supabase
       .channel('notifications')
       .on(
@@ -108,16 +121,20 @@ export const useNotifications = () => {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
+        (payload) => {
+          console.log('Notifications realtime event:', payload);
           // Invalidate and refetch notifications when changes occur
           queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Notifications subscription status:', status);
+      });
 
     setIsSubscribed(true);
 
     return () => {
+      console.log('Cleaning up notifications subscription');
       supabase.removeChannel(channel);
       setIsSubscribed(false);
     };

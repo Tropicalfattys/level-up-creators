@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -14,6 +14,7 @@ import { BookingChat } from '@/components/messaging/BookingChat';
 import { ProofSubmission } from './ProofSubmission';
 import { ReviewSystem } from '@/components/reviews/ReviewSystem';
 import { PaymentBreakdown } from '@/components/payments/PaymentBreakdown';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface BookingWithDetails {
   id: string;
@@ -53,10 +54,12 @@ export const BookingManagement = () => {
     }, 0);
   };
 
-  const { data: bookings, isLoading } = useQuery({
+  const { data: bookings, isLoading, error: bookingsError } = useQuery({
     queryKey: ['creator-bookings', user?.id],
     queryFn: async (): Promise<BookingWithDetails[]> => {
       if (!user?.id) return [];
+
+      console.log('Fetching bookings for creator:', user.id);
 
       const { data, error } = await supabase
         .from('bookings')
@@ -70,8 +73,10 @@ export const BookingManagement = () => {
 
       if (error) {
         console.error('Error fetching bookings:', error);
-        return [];
+        throw error;
       }
+      
+      console.log('Fetched bookings data:', data);
       
       // Convert the data and handle the proof_links JSON field properly
       return (data || []).map(booking => ({
@@ -84,7 +89,9 @@ export const BookingManagement = () => {
           : []
       })) as BookingWithDetails[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 3,
+    retryDelay: 1000
   });
 
   const updateBookingStatus = useMutation({
@@ -112,22 +119,64 @@ export const BookingManagement = () => {
 
       console.log('Updating booking with data:', updateData);
 
-      const { error } = await supabase
+      // First verify the booking exists and user has permission
+      const { data: existingBooking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('id, creator_id, status')
+        .eq('id', bookingId)
+        .eq('creator_id', user?.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching booking for update:', fetchError);
+        throw new Error('Booking not found or access denied');
+      }
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to update it');
+      }
+
+      console.log('Existing booking verified:', existingBooking);
+
+      const { data, error } = await supabase
         .from('bookings')
         .update(updateData)
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .eq('creator_id', user?.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Booking update error:', error);
+        throw error;
+      }
+
+      console.log('Booking updated successfully:', data);
+      return data;
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (data, { status }) => {
+      console.log('Booking update success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
+      
       const statusText = status === 'in_progress' ? 'started' : 
                         status === 'delivered' ? 'delivered' : 'updated';
       toast.success(`Project ${statusText} successfully!`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Update booking error:', error);
-      toast.error('Failed to update project status');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to update project status';
+      if (error?.message?.includes('not found')) {
+        errorMessage = 'Booking not found or access denied';
+      } else if (error?.message?.includes('permission')) {
+        errorMessage = 'You do not have permission to update this booking';
+      } else if (error?.code === 'PGRST301') {
+        errorMessage = 'Database connection error. Please try again.';
+      }
+      
+      toast.error(errorMessage);
     }
   });
 
@@ -245,6 +294,25 @@ export const BookingManagement = () => {
     return <div className="text-center py-8">Loading bookings...</div>;
   }
 
+  if (bookingsError) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load bookings. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+        <Button 
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['creator-bookings'] })}
+          variant="outline"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   const tabCounts = getTabCounts();
 
   return (
@@ -255,6 +323,15 @@ export const BookingManagement = () => {
           Manage your active bookings and deliverables
         </p>
       </div>
+
+      {updateBookingStatus.isError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            There was an error updating the booking. Please try again or refresh the page.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
@@ -376,7 +453,7 @@ export const BookingManagement = () => {
                           className="w-full"
                         >
                           <Play className="h-3 w-3 mr-2" />
-                          Start Work
+                          {updateBookingStatus.isPending ? 'Starting...' : 'Start Work'}
                           <ArrowRight className="h-3 w-3 ml-2" />
                         </Button>
                       </div>
@@ -533,7 +610,7 @@ export const BookingManagement = () => {
                   </div>
                 </div>
 
-                {/* Creator Review Section - NEW: Allow creators to review clients on completed bookings */}
+                {/* Creator Review Section - Allow creators to review clients on completed bookings */}
                 {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
                   <div className="border rounded-lg p-4 bg-muted/20">
                     <h4 className="font-medium mb-3">Rate your client experience</h4>
