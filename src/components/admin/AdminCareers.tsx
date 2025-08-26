@@ -134,7 +134,7 @@ export const AdminCareers = () => {
     setSubmitting(true);
     try {
       const validation = validateInput(jobPostingSchema, data);
-      if (!validation.success) {
+      if (validation.success === false) {
         showErrorToast(validation.errors.join(', '));
         return;
       }

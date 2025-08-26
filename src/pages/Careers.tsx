@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -125,7 +124,7 @@ export default function Careers() {
     try {
       // Validate the form data
       const validation = validateInput(jobApplicationSchema, { ...data, job_posting_id: selectedJob });
-      if (!validation.success) {
+      if (validation.success === false) {
         showErrorToast(validation.errors.join(', '));
         return;
       }
