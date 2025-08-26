@@ -1,3 +1,4 @@
+
 import './App.css';
 import { Toaster } from '@/components/ui/sonner';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -19,6 +20,7 @@ import AdminPanel from '@/pages/AdminPanel';
 import BookingConfirmation from '@/pages/BookingConfirmation';
 import Chat from '@/pages/Chat';
 import DirectMessages from '@/pages/DirectMessages';
+import Careers from '@/pages/Careers';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -48,6 +50,7 @@ function App() {
                 <Route path="/profile/:handle" element={<CreatorProfile />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/careers" element={<Careers />} />
                 <Route path="/auth" element={<AuthPage />} />
                 
                 {/* Protected Routes */}
