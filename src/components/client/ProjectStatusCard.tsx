@@ -22,6 +22,7 @@ interface ProjectStatusCardProps {
 export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: ProjectStatusCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
@@ -31,7 +32,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
   };
 
   const getStatusProgress = (status: string, workStarted: boolean = false) => {
-    // 4-step process: paid -> work started -> delivered -> accepted
+    // 4-step process: paid -> work started -> delivered -> accepted/released
     if (status === 'pending') return 0;
     if (status === 'paid') return workStarted ? 2 : 1;
     if (status === 'delivered') return 3;
@@ -76,6 +77,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
               </Badge>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
+              {booking.status === 'pending' && 'Waiting for payment confirmation'}
               {booking.status === 'paid' && !isWorkStarted && 'Creator will start work soon'}
               {booking.status === 'paid' && isWorkStarted && 'Creator is working on your project'}
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
@@ -89,6 +91,16 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
 
       {/* Status-Specific Content */}
       <div className="space-y-4">
+        {booking.status === 'pending' && (
+          <div className="flex items-center justify-between p-3 bg-yellow-50 rounded border border-yellow-200">
+            <div>
+              <p className="text-sm font-medium text-yellow-800">Payment Pending</p>
+              <p className="text-xs text-yellow-600">Waiting for payment confirmation</p>
+            </div>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </div>
+        )}
+        
         {booking.status === 'paid' && !isWorkStarted && (
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
             <div>
