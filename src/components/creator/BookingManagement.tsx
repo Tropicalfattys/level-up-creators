@@ -108,6 +108,28 @@ export const BookingManagement = () => {
 
       console.log('Starting booking update for:', bookingId, 'new status:', status);
 
+      // First, verify the booking exists and belongs to the creator
+      const { data: existingBooking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('id, creator_id, status')
+        .eq('id', bookingId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching booking:', fetchError);
+        throw new Error(`Booking not found: ${fetchError.message}`);
+      }
+
+      if (!existingBooking) {
+        throw new Error('Booking not found');
+      }
+
+      if (existingBooking.creator_id !== user.id) {
+        throw new Error('You do not have permission to update this booking');
+      }
+
+      console.log('Existing booking verified:', existingBooking);
+
       // Build update data object
       const updateData: any = { 
         status, 
@@ -130,25 +152,17 @@ export const BookingManagement = () => {
 
       console.log('Update data prepared:', updateData);
 
-      // Perform the update with simplified error handling
+      // Perform the update with simple query
       const { data, error } = await supabase
         .from('bookings')
         .update(updateData)
         .eq('id', bookingId)
-        .eq('creator_id', user.id)
         .select('*')
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
+        .single();
 
       if (error) {
         console.error('Supabase update error:', error);
-        // More specific error handling
-        if (error.code === 'PGRST116') {
-          throw new Error('Booking not found or you do not have permission to update it');
-        } else if (error.message.includes('row-level security')) {
-          throw new Error('You do not have permission to update this booking');
-        } else {
-          throw new Error(`Failed to update booking: ${error.message}`);
-        }
+        throw new Error(`Failed to update booking: ${error.message}`);
       }
 
       if (!data) {
@@ -179,7 +193,7 @@ export const BookingManagement = () => {
       } else if (error?.message?.includes('permission')) {
         errorMessage = 'You do not have permission to update this booking';
       } else if (error?.message?.includes('not found')) {
-        errorMessage = 'Booking not found';
+        errorMessage = 'Booking not found or you do not have access to it';
       } else if (error?.message) {
         errorMessage = error.message;
       }
