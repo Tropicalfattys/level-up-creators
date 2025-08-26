@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -253,7 +252,6 @@ export const AdminCareers = () => {
     setShowJobDialog(true);
   };
 
-  // Helper function to safely parse JSONB arrays
   const parseJsonArray = (json: Json): string[] => {
     if (Array.isArray(json)) {
       return json.map(item => String(item));
@@ -261,7 +259,6 @@ export const AdminCareers = () => {
     return [];
   };
 
-  // Helper function to safely parse JSONB objects
   const parseJsonObject = (json: Json | null): Record<string, string> => {
     if (json && typeof json === 'object' && !Array.isArray(json)) {
       const result: Record<string, string> = {};
