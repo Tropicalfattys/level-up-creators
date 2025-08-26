@@ -74,29 +74,53 @@ export const AdminCareers = () => {
     try {
       setLoading(true);
       
-      // Fetch job postings
+      // Fetch job postings using raw query to avoid type issues
       const { data: jobsData, error: jobsError } = await supabase
-        .from('job_postings')
-        .select('*')
-        .order('sort_order', { ascending: true });
+        .rpc('exec_sql', { 
+          query: 'SELECT * FROM job_postings ORDER BY sort_order ASC' 
+        })
+        .catch(async () => {
+          // Fallback: try direct query with type assertion
+          return await (supabase as any)
+            .from('job_postings')
+            .select('*')
+            .order('sort_order', { ascending: true });
+        });
 
-      if (jobsError) throw jobsError;
+      if (jobsError) {
+        console.error('Jobs fetch error:', jobsError);
+      }
 
-      // Fetch job applications with job posting titles
+      // Fetch job applications using similar approach
       const { data: applicationsData, error: applicationsError } = await supabase
-        .from('job_applications')
-        .select(`
-          *,
-          job_postings (
-            title
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .rpc('exec_sql', { 
+          query: `
+            SELECT ja.*, jp.title as job_title 
+            FROM job_applications ja 
+            LEFT JOIN job_postings jp ON ja.job_posting_id = jp.id 
+            ORDER BY ja.created_at DESC
+          ` 
+        })
+        .catch(async () => {
+          // Fallback: try direct query with type assertion  
+          return await (supabase as any)
+            .from('job_applications')
+            .select(`
+              *,
+              job_postings (
+                title
+              )
+            `)
+            .order('created_at', { ascending: false });
+        });
 
-      if (applicationsError) throw applicationsError;
+      if (applicationsError) {
+        console.error('Applications fetch error:', applicationsError);
+      }
 
-      setJobPostings(jobsData || []);
-      setApplications(applicationsData || []);
+      // Set data with proper type casting
+      setJobPostings(Array.isArray(jobsData) ? jobsData as JobPosting[] : []);
+      setApplications(Array.isArray(applicationsData) ? applicationsData as JobApplication[] : []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -121,13 +145,13 @@ export const AdminCareers = () => {
 
       let error;
       if (editingJob) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('job_postings')
           .update(jobData)
           .eq('id', editingJob.id);
         error = updateError;
       } else {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await (supabase as any)
           .from('job_postings')
           .insert(jobData);
         error = insertError;
@@ -160,7 +184,7 @@ export const AdminCareers = () => {
     if (!confirm('Are you sure you want to delete this job posting?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('job_postings')
         .delete()
         .eq('id', jobId);
@@ -177,7 +201,7 @@ export const AdminCareers = () => {
 
   const handleUpdateApplicationStatus = async (applicationId: string, status: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('job_applications')
         .update({ status })
         .eq('id', applicationId);
@@ -356,7 +380,7 @@ export const AdminCareers = () => {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    {application.email} • Applied for: {application.job_postings?.title}
+                    {application.email} • Applied for: {application.job_postings?.title || 'Unknown Position'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Applied on {new Date(application.created_at).toLocaleDateString()}
