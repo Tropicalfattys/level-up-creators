@@ -49,7 +49,7 @@ export const ChatInterface = ({
   const queryClient = useQueryClient();
 
   // Use the booking chat hook for real-time updates
-  const { isConnected } = useBookingChat({ bookingId, userId: user?.id });
+  const { messages: hookMessages, loading: hookLoading, sendMessage: hookSendMessage } = useBookingChat(bookingId);
 
   // Determine the other user
   const isClient = user?.id === clientId;

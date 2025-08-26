@@ -39,7 +39,7 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   const queryClient = useQueryClient();
 
   // Use the booking chat hook for real-time updates
-  const { isConnected } = useBookingChat({ bookingId, userId: user?.id });
+  const { messages: hookMessages, loading: hookLoading, sendMessage: hookSendMessage } = useBookingChat(bookingId);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['booking-messages', bookingId],
@@ -292,9 +292,6 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
             <div>
               <CardTitle className="text-lg">Chat with @{otherUserHandle}</CardTitle>
               <CardDescription>Discuss project details and deliverables</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
             </div>
           </div>
         </CardHeader>
