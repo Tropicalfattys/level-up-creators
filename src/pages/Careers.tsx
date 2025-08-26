@@ -12,15 +12,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Clock, Users, Star, Send, Upload } from 'lucide-react';
+import { Loader2, Users, Star, Send, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 interface JobPosting {
   id: string;
   title: string;
   role_overview: string;
-  responsibilities: string[];
-  qualifications: string[];
+  responsibilities: Json;
+  qualifications: Json;
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -192,6 +193,14 @@ export default function Careers() {
     }
   };
 
+  // Helper function to safely parse JSONB arrays
+  const parseJsonArray = (json: Json): string[] => {
+    if (Array.isArray(json)) {
+      return json.map(item => String(item));
+    }
+    return [];
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -246,7 +255,7 @@ export default function Careers() {
                       Responsibilities:
                     </h4>
                     <ul className="space-y-2">
-                      {job.responsibilities.map((responsibility, idx) => (
+                      {parseJsonArray(job.responsibilities).map((responsibility, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                           <span>•</span>
                           <span>{responsibility}</span>
@@ -261,7 +270,7 @@ export default function Careers() {
                       Qualifications:
                     </h4>
                     <ul className="space-y-2">
-                      {job.qualifications.map((qualification, idx) => (
+                      {parseJsonArray(job.qualifications).map((qualification, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                           <span>•</span>
                           <span>{qualification}</span>

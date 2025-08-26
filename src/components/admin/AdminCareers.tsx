@@ -34,13 +34,14 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import type { Json } from '@/integrations/supabase/types';
 
 interface JobPosting {
   id: string;
   title: string;
   role_overview: string;
-  responsibilities: string[];
-  qualifications: string[];
+  responsibilities: Json;
+  qualifications: Json;
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -56,7 +57,7 @@ interface JobApplication {
   resume_url: string | null;
   portfolio_url: string | null;
   github_url: string | null;
-  social_links: Record<string, string> | null;
+  social_links: Json | null;
   cover_letter: string;
   status: string;
   created_at: string;
@@ -240,8 +241,8 @@ export const AdminCareers = () => {
       form.reset({
         title: job.title,
         role_overview: job.role_overview,
-        responsibilities: job.responsibilities,
-        qualifications: job.qualifications,
+        responsibilities: parseJsonArray(job.responsibilities),
+        qualifications: parseJsonArray(job.qualifications),
         active: job.active,
         sort_order: job.sort_order
       });
@@ -250,6 +251,28 @@ export const AdminCareers = () => {
       form.reset();
     }
     setShowJobDialog(true);
+  };
+
+  // Helper function to safely parse JSONB arrays
+  const parseJsonArray = (json: Json): string[] => {
+    if (Array.isArray(json)) {
+      return json.map(item => String(item));
+    }
+    return [];
+  };
+
+  // Helper function to safely parse JSONB objects
+  const parseJsonObject = (json: Json | null): Record<string, string> => {
+    if (json && typeof json === 'object' && !Array.isArray(json)) {
+      const result: Record<string, string> = {};
+      Object.entries(json).forEach(([key, value]) => {
+        if (value && typeof value === 'string') {
+          result[key] = value;
+        }
+      });
+      return result;
+    }
+    return {};
   };
 
   const addResponsibilityField = () => {
@@ -384,8 +407,8 @@ export const AdminCareers = () => {
                             <Calendar className="h-3 w-3" />
                             {format(new Date(job.created_at), 'MMM d, yyyy')}
                           </span>
-                          <span>{job.responsibilities.length} responsibilities</span>
-                          <span>{job.qualifications.length} qualifications</span>
+                          <span>{parseJsonArray(job.responsibilities).length} responsibilities</span>
+                          <span>{parseJsonArray(job.qualifications).length} qualifications</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -538,11 +561,11 @@ export const AdminCareers = () => {
                                 )}
                               </div>
 
-                              {application.social_links && Object.keys(application.social_links).length > 0 && (
+                              {application.social_links && Object.keys(parseJsonObject(application.social_links)).length > 0 && (
                                 <div>
                                   <Label>Social Links</Label>
                                   <div className="flex gap-2 mt-1">
-                                    {Object.entries(application.social_links).map(([platform, link]) => 
+                                    {Object.entries(parseJsonObject(application.social_links)).map(([platform, link]) => 
                                       link && (
                                         <Button key={platform} variant="outline" size="sm" asChild>
                                           <a href={link} target="_blank" rel="noopener noreferrer">
