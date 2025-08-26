@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,121 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, Code, Globe, Palette, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { Briefcase, Code, Globe, Palette, TrendingUp, Users, CheckCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-const jobPositions = [
-  {
-    id: 'full-stack-developer',
-    title: 'Full-Stack Developer',
-    icon: Code,
-    overview: "As a Full-Stack Developer, you'll play a key role in building new features, improving performance, and scaling our crypto-first creator platform. You'll work closely with product, design, and network teams to deliver seamless user experiences and secure blockchain integrations.",
-    responsibilities: [
-      'Develop and maintain both frontend and backend systems',
-      'Integrate blockchain payment and escrow flows',
-      'Write clean, secure, and scalable code',
-      'Collaborate with designers to deliver pixel-perfect UI/UX',
-      'Debug, test, and deploy new features'
-    ],
-    qualifications: [
-      'Strong experience with Node.js, TypeScript, and React',
-      'Familiarity with web3.js, ethers.js, or other blockchain libraries',
-      'Experience with SQL/NoSQL databases',
-      'Understanding of API design and REST/GraphQL',
-      'Prior experience building crypto/web3 applications is a plus'
-    ]
-  },
-  {
-    id: 'frontend-developer',
-    title: 'Frontend Developer (React + TypeScript)',
-    icon: Code,
-    overview: "We're looking for a frontend developer with an eye for detail to bring our product to life. You'll be responsible for turning design concepts into highly interactive, responsive, and user-friendly interfaces.",
-    responsibilities: [
-      'Develop responsive, mobile-first web pages with React + TypeScript',
-      'Optimize UI performance and load speeds',
-      'Ensure cross-browser compatibility',
-      'Work with designers to create intuitive user experiences'
-    ],
-    qualifications: [
-      'Expert in React, TypeScript, HTML, CSS, Tailwind/Styled Components',
-      'Experience with Next.js or similar SSR frameworks a plus',
-      'Knowledge of state management tools (Redux, Zustand, etc.)',
-      'Passion for great design and UX'
-    ]
-  },
-  {
-    id: 'network-engineer',
-    title: 'Network Engineer',
-    icon: Globe,
-    overview: "As our Network Engineer, you'll help build and maintain the backend infrastructure that supports secure blockchain payments, real-time messaging, and smooth content delivery.",
-    responsibilities: [
-      'Design, implement, and manage network architecture',
-      'Ensure uptime, scalability, and security of backend systems',
-      'Support integration of blockchain escrow wallets',
-      'Monitor system performance and optimize for speed'
-    ],
-    qualifications: [
-      'Strong background in cloud platforms (AWS, GCP, or Azure)',
-      'Knowledge of network security protocols, firewalls, and monitoring tools',
-      'Familiarity with Docker, Kubernetes, CI/CD pipelines',
-      'Experience working with crypto nodes/APIs is highly desirable'
-    ]
-  },
-  {
-    id: 'ui-ux-designer',
-    title: 'UI/UX Designer',
-    icon: Palette,
-    overview: "We're seeking a creative designer to craft intuitive, modern, and clean interfaces for our crypto creator platform. You'll ensure users can discover, book, and pay creators seamlessly.",
-    responsibilities: [
-      'Create wireframes, mockups, and user flows',
-      'Collaborate with developers to implement designs',
-      'Conduct usability testing and gather feedback',
-      'Maintain a consistent visual identity across the product'
-    ],
-    qualifications: [
-      'Proficiency with Figma, Sketch, or Adobe XD',
-      'Strong portfolio of web/app design projects',
-      'Experience designing for web3/crypto products is a bonus',
-      'Understanding of responsive design principles'
-    ]
-  },
-  {
-    id: 'business-development-lead',
-    title: 'Business Development Lead',
-    icon: TrendingUp,
-    overview: "As Business Development Lead, you'll drive partnerships, onboard new creators, and grow platform adoption. You'll be the face of our platform to influencers, agencies, and crypto-native projects.",
-    responsibilities: [
-      'Identify and secure partnerships with top crypto influencers',
-      'Develop business strategies to expand creator and fan adoption',
-      'Negotiate deals and collaborations',
-      'Track KPIs and growth metrics'
-    ],
-    qualifications: [
-      'Proven experience in business development, partnerships, or sales',
-      'Network within the crypto/Web3 creator ecosystem',
-      'Strong communication and negotiation skills',
-      'Passion for building communities and markets'
-    ]
-  },
-  {
-    id: 'community-liaison',
-    title: 'Community Liaison',
-    icon: Users,
-    overview: "We're looking for community builders who live and breathe crypto culture. As a Community Liaison, you'll help grow, moderate, and energize our community across Twitter, Discord, and Telegram.",
-    responsibilities: [
-      'Engage with users and creators across social channels',
-      'Organize AMAs, giveaways, and content campaigns',
-      'Collect and report community feedback to the product team',
-      'Build strong relationships with early adopters'
-    ],
-    qualifications: [
-      'Experience in community management or social media',
-      'Familiarity with Discord, Telegram, and Twitter dynamics',
-      'Deep understanding of crypto culture, memes, and trends',
-      'Strong written communication skills'
-    ]
-  }
-];
+interface JobPosting {
+  id: string;
+  title: string;
+  role_overview: string;
+  responsibilities: string[];
+  qualifications: string[];
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function Careers() {
   const [formData, setFormData] = useState({
@@ -142,16 +41,42 @@ export default function Careers() {
   });
   const [submitted, setSubmitted] = useState(false);
 
+  // Fetch job postings from database
+  const { data: jobPostings = [], isLoading: jobsLoading, error: jobsError } = useQuery({
+    queryKey: ['active-job-postings'],
+    queryFn: async (): Promise<JobPosting[]> => {
+      const { data, error } = await (supabase as any)
+        .from('job_postings')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Convert JSON arrays to string arrays safely
+      const convertedData = (data || []).map(job => ({
+        ...job,
+        responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities as string[] : [],
+        qualifications: Array.isArray(job.qualifications) ? job.qualifications as string[] : []
+      }));
+      
+      return convertedData;
+    }
+  });
+
   // Form submission mutation using the same safe pattern as ContactForm
   const submitApplication = useMutation({
     mutationFn: async (data: typeof formData) => {
+      // Find the selected job posting to get its ID
+      const selectedJobPosting = jobPostings.find(job => job.id === data.position);
+      
       const { error } = await (supabase as any)
         .from('job_applications')
         .insert([{
           name: data.name,
           email: data.email,
           phone: data.phone,
-          job_posting_id: null, // We'll connect this to job_postings later in Phase 3
+          job_posting_id: selectedJobPosting?.id || null,
           resume_url: data.resumeUrl,
           portfolio_url: data.portfolioUrl,
           github_url: data.githubUrl,
@@ -258,50 +183,92 @@ export default function Careers() {
         {/* Job Positions */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-12">🌍 Open Positions</h2>
-          <div className="grid gap-8 max-w-4xl mx-auto">
-            {jobPositions.map((job, index) => {
-              const Icon = job.icon;
-              return (
-                <Card key={job.id} className="border-2">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-                        <Icon className="h-5 w-5 text-primary" />
+          
+          {jobsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mr-2" />
+              <span>Loading available positions...</span>
+            </div>
+          ) : jobsError ? (
+            <Card className="max-w-4xl mx-auto border-red-200 bg-red-50">
+              <CardHeader>
+                <CardTitle className="text-red-800">Unable to Load Positions</CardTitle>
+                <CardDescription className="text-red-600">
+                  We're having trouble loading our current job openings. Please try refreshing the page or contact us directly.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : jobPostings.length === 0 ? (
+            <Card className="max-w-4xl mx-auto border-yellow-200 bg-yellow-50">
+              <CardHeader>
+                <CardTitle className="text-yellow-800">No Open Positions</CardTitle>
+                <CardDescription className="text-yellow-600">
+                  We don't have any open positions at the moment, but we're always looking for talented people! Feel free to submit an application anyway and we'll keep your information on file.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <div className="grid gap-8 max-w-4xl mx-auto">
+              {jobPostings.map((job, index) => {
+                // Map job categories to icons - fallback to Briefcase if no match
+                const getJobIcon = (title: string) => {
+                  const titleLower = title.toLowerCase();
+                  if (titleLower.includes('developer') || titleLower.includes('engineer')) return Code;
+                  if (titleLower.includes('network')) return Globe;
+                  if (titleLower.includes('designer') || titleLower.includes('ui') || titleLower.includes('ux')) return Palette;
+                  if (titleLower.includes('business') || titleLower.includes('development')) return TrendingUp;
+                  if (titleLower.includes('community') || titleLower.includes('liaison')) return Users;
+                  return Briefcase;
+                };
+                
+                const Icon = getJobIcon(job.title);
+                
+                return (
+                  <Card key={job.id} className="border-2">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">{index + 1}. {job.title}</CardTitle>
                       </div>
-                      <CardTitle className="text-2xl">{index + 1}. {job.title}</CardTitle>
-                    </div>
-                    <CardDescription className="text-base leading-relaxed">
-                      {job.overview}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div>
-                      <h4 className="font-semibold text-lg mb-3">Responsibilities:</h4>
-                      <ul className="space-y-2">
-                        {job.responsibilities.map((responsibility, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span className="text-muted-foreground">{responsibility}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-lg mb-3">Qualifications:</h4>
-                      <ul className="space-y-2">
-                        {job.qualifications.map((qualification, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span className="text-muted-foreground">{qualification}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      <CardDescription className="text-base leading-relaxed">
+                        {job.role_overview}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {job.responsibilities.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-lg mb-3">Responsibilities:</h4>
+                          <ul className="space-y-2">
+                            {job.responsibilities.map((responsibility, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                <span className="text-muted-foreground">{responsibility}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {job.qualifications.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-lg mb-3">Qualifications:</h4>
+                          <ul className="space-y-2">
+                            {job.qualifications.map((qualification, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                <span className="text-muted-foreground">{qualification}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Why Join Us */}
@@ -382,16 +349,25 @@ export default function Careers() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="position">Position Applying For *</Label>
-                    <Select value={formData.position} onValueChange={(value) => handleInputChange('position', value)} required>
+                    <Select 
+                      value={formData.position} 
+                      onValueChange={(value) => handleInputChange('position', value)} 
+                      required
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a position" />
                       </SelectTrigger>
                       <SelectContent>
-                        {jobPositions.map((job) => (
+                        {jobPostings.map((job) => (
                           <SelectItem key={job.id} value={job.id}>
                             {job.title}
                           </SelectItem>
                         ))}
+                        {jobPostings.length === 0 && (
+                          <SelectItem value="general" disabled>
+                            No positions available
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
