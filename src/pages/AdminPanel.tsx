@@ -10,6 +10,8 @@ import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { AdminAuditLogs } from '@/components/admin/AdminAuditLogs';
 import { AdminPricing } from '@/components/admin/AdminPricing';
 import { ReferralTestPanel } from '@/components/admin/ReferralTestPanel';
+import { AdminContactUs } from '@/components/admin/AdminContactUs';
+import { AdminCareers } from '@/components/admin/AdminCareers';
 
 export default function AdminPanel() {
   return (
@@ -20,7 +22,7 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="creators">Creators</TabsTrigger>
@@ -30,6 +32,8 @@ export default function AdminPanel() {
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          <TabsTrigger value="contact-us">Contact Us</TabsTrigger>
+          <TabsTrigger value="careers">Careers</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics">
@@ -66,6 +70,14 @@ export default function AdminPanel() {
 
         <TabsContent value="referrals">
           <ReferralTestPanel />
+        </TabsContent>
+
+        <TabsContent value="contact-us">
+          <AdminContactUs />
+        </TabsContent>
+
+        <TabsContent value="careers">
+          <AdminCareers />
         </TabsContent>
 
         <TabsContent value="audit">
