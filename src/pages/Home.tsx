@@ -290,6 +290,7 @@ export default function Home() {
             <Link to="/categories" className="hover:text-foreground transition-colors">Categories</Link>
             <Link to="/browse" className="hover:text-foreground transition-colors">Browse Creators</Link>
             <Link to="/become-creator" className="hover:text-foreground transition-colors">Become a Creator</Link>
+            <Link to="/careers" className="hover:text-foreground transition-colors">Careers</Link>
             <Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link>
             <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
           </div>

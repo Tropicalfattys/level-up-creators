@@ -362,6 +362,95 @@ export type Database = {
           },
         ]
       }
+      job_applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string
+          email: string
+          github_url: string | null
+          id: string
+          job_posting_id: string | null
+          name: string
+          phone: string | null
+          portfolio_url: string | null
+          resume_url: string | null
+          social_links: Json | null
+          status: string
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          github_url?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name: string
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          social_links?: Json | null
+          status?: string
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          github_url?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name?: string
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          social_links?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          qualifications: Json
+          responsibilities: Json
+          role_overview: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          qualifications?: Json
+          responsibilities?: Json
+          role_overview: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          qualifications?: Json
+          responsibilities?: Json
+          role_overview?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachments: Json | null
@@ -410,6 +499,67 @@ export type Database = {
             columns: ["to_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          dispute_id: string | null
+          id: string
+          message: string
+          payment_id: string | null
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          dispute_id?: string | null
+          id?: string
+          message: string
+          payment_id?: string | null
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          dispute_id?: string | null
+          id?: string
+          message?: string
+          payment_id?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -763,7 +913,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_notification: {
+        Args: {
+          p_booking_id?: string
+          p_dispute_id?: string
+          p_message: string
+          p_payment_id?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
