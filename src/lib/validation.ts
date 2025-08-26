@@ -96,57 +96,6 @@ export const contactMessageSchema = z.object({
     .max(2000, 'Message must be less than 2000 characters')
 });
 
-// Job posting validation schemas
-export const jobPostingSchema = z.object({
-  title: z.string()
-    .min(5, 'Job title must be at least 5 characters')
-    .max(150, 'Job title must be less than 150 characters'),
-  role_overview: z.string()
-    .min(50, 'Role overview must be at least 50 characters')
-    .max(2000, 'Role overview must be less than 2000 characters'),
-  responsibilities: z.array(z.string().min(1, 'Responsibility cannot be empty'))
-    .min(1, 'At least one responsibility is required')
-    .max(20, 'Maximum 20 responsibilities allowed'),
-  qualifications: z.array(z.string().min(1, 'Qualification cannot be empty'))
-    .min(1, 'At least one qualification is required')
-    .max(20, 'Maximum 20 qualifications allowed'),
-  active: z.boolean().default(true),
-  sort_order: z.number().int().min(0).default(0)
-});
-
-// Job application validation schemas
-export const jobApplicationSchema = z.object({
-  job_posting_id: z.string().uuid('Invalid job posting ID'),
-  name: z.string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name must be less than 100 characters')
-    .regex(/^[a-zA-Z\s\-']+$/, 'Name contains invalid characters'),
-  email: emailSchema,
-  phone: z.string()
-    .regex(/^[\+]?[0-9\(\)\-\s]+$/, 'Invalid phone number format')
-    .min(10, 'Phone number must be at least 10 digits')
-    .max(20, 'Phone number must be less than 20 characters')
-    .optional()
-    .or(z.literal('')),
-  portfolio_url: z.string()
-    .url('Please enter a valid portfolio URL')
-    .optional()
-    .or(z.literal('')),
-  github_url: z.string()
-    .url('Please enter a valid GitHub URL')
-    .optional()
-    .or(z.literal('')),
-  social_links: z.object({
-    twitter: z.string().url().optional().or(z.literal('')),
-    linkedin: z.string().url().optional().or(z.literal('')),
-    discord: z.string().optional().or(z.literal('')),
-    telegram: z.string().optional().or(z.literal(''))
-  }).optional(),
-  cover_letter: z.string()
-    .min(50, 'Cover letter must be at least 50 characters')
-    .max(2000, 'Cover letter must be less than 2000 characters')
-});
-
 // Review validation
 export const reviewSchema = z.object({
   rating: z.number()

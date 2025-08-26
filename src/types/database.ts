@@ -946,33 +946,3 @@ export interface Booking {
     };
   };
 }
-
-export interface JobPosting {
-  id: string;
-  title: string;
-  role_overview: string;
-  responsibilities: string[];
-  qualifications: string[];
-  active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface JobApplication {
-  id: string;
-  job_posting_id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  resume_url: string | null;
-  portfolio_url: string | null;
-  github_url: string | null;
-  social_links: Record<string, string> | null;
-  cover_letter: string;
-  status: string;
-  created_at: string;
-  job_postings?: {
-    title: string;
-  };
-}
