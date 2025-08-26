@@ -102,6 +102,12 @@ export const BookingManagement = () => {
       proofLinks?: Array<{ url: string; label: string }>;
       proofFileUrl?: string;
     }) => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Starting booking update for:', bookingId, 'new status:', status);
+
       const updateData: any = { 
         status, 
         updated_at: new Date().toISOString() 
@@ -117,38 +123,24 @@ export const BookingManagement = () => {
         updateData.proof_file_url = proofFileUrl;
       }
 
-      console.log('Updating booking with data:', updateData);
+      console.log('Update data prepared:', updateData);
 
-      // First verify the booking exists and user has permission
-      const { data: existingBooking, error: fetchError } = await supabase
-        .from('bookings')
-        .select('id, creator_id, status')
-        .eq('id', bookingId)
-        .eq('creator_id', user?.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching booking for update:', fetchError);
-        throw new Error('Booking not found or access denied');
-      }
-
-      if (!existingBooking) {
-        throw new Error('Booking not found or you do not have permission to update it');
-      }
-
-      console.log('Existing booking verified:', existingBooking);
-
+      // Perform the update with proper error handling
       const { data, error } = await supabase
         .from('bookings')
         .update(updateData)
         .eq('id', bookingId)
-        .eq('creator_id', user?.id)
+        .eq('creator_id', user.id)
         .select()
         .single();
 
       if (error) {
-        console.error('Booking update error:', error);
-        throw error;
+        console.error('Supabase update error:', error);
+        throw new Error(`Failed to update booking: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No booking was updated. Please check if you have permission to modify this booking.');
       }
 
       console.log('Booking updated successfully:', data);
@@ -164,16 +156,15 @@ export const BookingManagement = () => {
       toast.success(`Project ${statusText} successfully!`);
     },
     onError: (error: any) => {
-      console.error('Update booking error:', error);
+      console.error('Update booking mutation error:', error);
       
-      // Provide more specific error messages
       let errorMessage = 'Failed to update project status';
-      if (error?.message?.includes('not found')) {
-        errorMessage = 'Booking not found or access denied';
+      if (error?.message?.includes('not authenticated')) {
+        errorMessage = 'Please log in to continue';
       } else if (error?.message?.includes('permission')) {
         errorMessage = 'You do not have permission to update this booking';
-      } else if (error?.code === 'PGRST301') {
-        errorMessage = 'Database connection error. Please try again.';
+      } else if (error?.message) {
+        errorMessage = error.message;
       }
       
       toast.error(errorMessage);
@@ -445,10 +436,13 @@ export const BookingManagement = () => {
                         <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
                         <Button 
                           size="sm" 
-                          onClick={() => updateBookingStatus.mutate({ 
-                            bookingId: booking.id, 
-                            status: 'in_progress' 
-                          })}
+                          onClick={() => {
+                            console.log('Starting work on booking:', booking.id);
+                            updateBookingStatus.mutate({ 
+                              bookingId: booking.id, 
+                              status: 'in_progress' 
+                            });
+                          }}
                           disabled={updateBookingStatus.isPending}
                           className="w-full"
                         >
