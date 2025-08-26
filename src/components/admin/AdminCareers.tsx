@@ -11,13 +11,36 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Briefcase, Plus, Users, FileText, Eye, ExternalLink, Mail, Phone, Github, Globe } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Briefcase, Plus, Users, FileText, Eye, ExternalLink, Mail, Phone, Github, Globe, Save, RefreshCw, X, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+
+interface JobPosting {
+  id: string;
+  title: string;
+  role_overview: string;
+  responsibilities: string[];
+  qualifications: string[];
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export const AdminCareers = () => {
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [editingJobs, setEditingJobs] = useState<Record<string, Partial<JobPosting>>>({});
+  const [newJobData, setNewJobData] = useState<Partial<JobPosting>>({
+    title: '',
+    role_overview: '',
+    responsibilities: [''],
+    qualifications: [''],
+    active: true,
+    sort_order: 0
+  });
   const queryClient = useQueryClient();
 
   // Fetch job applications
@@ -37,14 +60,22 @@ export const AdminCareers = () => {
   // Fetch job postings
   const { data: jobPostings = [], isLoading: postingsLoading } = useQuery({
     queryKey: ['job-postings'],
-    queryFn: async () => {
+    queryFn: async (): Promise<JobPosting[]> => {
       const { data, error } = await (supabase as any)
         .from('job_postings')
         .select('*')
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data;
+      
+      // Convert JSON arrays to string arrays safely
+      const convertedData = (data || []).map(job => ({
+        ...job,
+        responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities as string[] : [],
+        qualifications: Array.isArray(job.qualifications) ? job.qualifications as string[] : []
+      }));
+      
+      return convertedData;
     }
   });
 
@@ -68,6 +99,175 @@ export const AdminCareers = () => {
     }
   });
 
+  // Update job posting
+  const updateJobMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<JobPosting> }) => {
+      const { error } = await (supabase as any)
+        .from('job_postings')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      toast.success('Job posting updated successfully!');
+      setEditingJobs({});
+    },
+    onError: (error) => {
+      console.error('Error updating job posting:', error);
+      toast.error('Failed to update job posting');
+    }
+  });
+
+  // Create new job posting
+  const createJobMutation = useMutation({
+    mutationFn: async (jobData: Partial<JobPosting>) => {
+      const { error } = await (supabase as any)
+        .from('job_postings')
+        .insert([jobData]);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      toast.success('Job posting created successfully!');
+      setShowNewJobModal(false);
+      setNewJobData({
+        title: '',
+        role_overview: '',
+        responsibilities: [''],
+        qualifications: [''],
+        active: true,
+        sort_order: 0
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating job posting:', error);
+      toast.error('Failed to create job posting');
+    }
+  });
+
+  // Delete job posting (soft delete)
+  const deleteJobMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from('job_postings')
+        .update({ active: false })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      toast.success('Job posting deactivated successfully');
+    },
+    onError: (error) => {
+      console.error('Error deactivating job posting:', error);
+      toast.error('Failed to deactivate job posting');
+    }
+  });
+
+  const handleJobInputChange = (jobId: string, field: keyof JobPosting, value: any) => {
+    setEditingJobs(prev => ({
+      ...prev,
+      [jobId]: {
+        ...prev[jobId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleJobArrayChange = (jobId: string, field: 'responsibilities' | 'qualifications', index: number, value: string) => {
+    const currentJob = jobPostings?.find(j => j.id === jobId);
+    const currentArray = getCurrentJobValue({ id: jobId } as JobPosting, field) as string[] || currentJob?.[field] || [];
+    const updatedArray = [...currentArray];
+    updatedArray[index] = value;
+    
+    handleJobInputChange(jobId, field, updatedArray);
+  };
+
+  const addJobArrayItem = (jobId: string, field: 'responsibilities' | 'qualifications') => {
+    const currentJob = jobPostings?.find(j => j.id === jobId);
+    const currentArray = getCurrentJobValue({ id: jobId } as JobPosting, field) as string[] || currentJob?.[field] || [];
+    const updatedArray = [...currentArray, ''];
+    
+    handleJobInputChange(jobId, field, updatedArray);
+  };
+
+  const removeJobArrayItem = (jobId: string, field: 'responsibilities' | 'qualifications', index: number) => {
+    const currentJob = jobPostings?.find(j => j.id === jobId);
+    const currentArray = getCurrentJobValue({ id: jobId } as JobPosting, field) as string[] || currentJob?.[field] || [];
+    const updatedArray = currentArray.filter((_, i) => i !== index);
+    
+    handleJobInputChange(jobId, field, updatedArray);
+  };
+
+  const handleSaveJob = (job: JobPosting) => {
+    const updates = editingJobs[job.id];
+    if (!updates || Object.keys(updates).length === 0) {
+      toast.error('No changes to save');
+      return;
+    }
+
+    updateJobMutation.mutate({ id: job.id, updates });
+  };
+
+  const hasJobChanges = (jobId: string) => {
+    return editingJobs[jobId] && Object.keys(editingJobs[jobId]).length > 0;
+  };
+
+  const getCurrentJobValue = (job: JobPosting, field: keyof JobPosting) => {
+    return editingJobs[job.id]?.[field] !== undefined 
+      ? editingJobs[job.id][field] 
+      : job[field];
+  };
+
+  const handleNewJobArrayChange = (field: 'responsibilities' | 'qualifications', index: number, value: string) => {
+    const currentArray = newJobData[field] || [];
+    const updatedArray = [...currentArray];
+    updatedArray[index] = value;
+    
+    setNewJobData(prev => ({
+      ...prev,
+      [field]: updatedArray
+    }));
+  };
+
+  const addNewJobArrayItem = (field: 'responsibilities' | 'qualifications') => {
+    const currentArray = newJobData[field] || [];
+    setNewJobData(prev => ({
+      ...prev,
+      [field]: [...currentArray, '']
+    }));
+  };
+
+  const removeNewJobArrayItem = (field: 'responsibilities' | 'qualifications', index: number) => {
+    const currentArray = newJobData[field] || [];
+    const updatedArray = currentArray.filter((_, i) => i !== index);
+    
+    setNewJobData(prev => ({
+      ...prev,
+      [field]: updatedArray
+    }));
+  };
+
+  const handleCreateJob = () => {
+    if (!newJobData.title || !newJobData.role_overview) {
+      toast.error('Please fill in title and role overview');
+      return;
+    }
+
+    // Filter out empty strings from arrays
+    const cleanedData = {
+      ...newJobData,
+      responsibilities: (newJobData.responsibilities || []).filter(item => item.trim() !== ''),
+      qualifications: (newJobData.qualifications || []).filter(item => item.trim() !== '')
+    };
+
+    createJobMutation.mutate(cleanedData);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -89,6 +289,15 @@ export const AdminCareers = () => {
 
   const pendingApplications = applications.filter(app => app.status === 'pending');
   const activeJobs = jobPostings.filter(job => job.active);
+
+  if (applicationsLoading || postingsLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2">Loading careers data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,6 +350,360 @@ export const AdminCareers = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Job Postings Management */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Job Postings Management
+              </CardTitle>
+              <CardDescription>
+                Manage job postings, update content, and control visibility
+              </CardDescription>
+            </div>
+            <Dialog open={showNewJobModal} onOpenChange={setShowNewJobModal}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Job
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Job Posting</DialogTitle>
+                  <DialogDescription>
+                    Add a new job posting to the careers page
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Job Title</Label>
+                      <Input
+                        value={newJobData.title || ''}
+                        onChange={(e) => setNewJobData(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="e.g., Senior React Developer"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sort Order</Label>
+                      <Input
+                        type="number"
+                        value={newJobData.sort_order || 0}
+                        onChange={(e) => setNewJobData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Role Overview</Label>
+                    <Textarea
+                      value={newJobData.role_overview || ''}
+                      onChange={(e) => setNewJobData(prev => ({ ...prev, role_overview: e.target.value }))}
+                      placeholder="Brief description of the role..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Responsibilities</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addNewJobArrayItem('responsibilities')}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Responsibility
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {(newJobData.responsibilities || []).map((responsibility, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                          <Input
+                            value={responsibility}
+                            onChange={(e) => handleNewJobArrayChange('responsibilities', index, e.target.value)}
+                            placeholder="Enter responsibility"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeNewJobArrayItem('responsibilities', index)}
+                            className="flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Qualifications</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addNewJobArrayItem('qualifications')}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Qualification
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {(newJobData.qualifications || []).map((qualification, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                          <Input
+                            value={qualification}
+                            onChange={(e) => handleNewJobArrayChange('qualifications', index, e.target.value)}
+                            placeholder="Enter qualification"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeNewJobArrayItem('qualifications', index)}
+                            className="flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={newJobData.active || false}
+                      onCheckedChange={(checked) => setNewJobData(prev => ({ ...prev, active: checked }))}
+                    />
+                    <Label>Active (visible on careers page)</Label>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowNewJobModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateJob}
+                      disabled={createJobMutation.isPending}
+                    >
+                      {createJobMutation.isPending ? 'Creating...' : 'Create Job'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(!jobPostings || jobPostings.length === 0) ? (
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardHeader>
+                <CardTitle className="text-yellow-800">No Job Postings Found</CardTitle>
+                <CardDescription>
+                  Create your first job posting to get started.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {jobPostings.map((job) => {
+                const currentResponsibilities = getCurrentJobValue(job, 'responsibilities') as string[] || [];
+                const currentQualifications = getCurrentJobValue(job, 'qualifications') as string[] || [];
+                
+                return (
+                  <Card key={job.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {getCurrentJobValue(job, 'title') as string}
+                            <span className="text-sm font-normal ml-2 text-muted-foreground">
+                              (Order: {getCurrentJobValue(job, 'sort_order')})
+                            </span>
+                          </CardTitle>
+                          <CardDescription>
+                            Changes update the live careers page immediately
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={getCurrentJobValue(job, 'active') ? "default" : "secondary"}>
+                            {getCurrentJobValue(job, 'active') ? "Active" : "Inactive"}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteJobMutation.mutate(job.id)}
+                            disabled={deleteJobMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Job Title</Label>
+                          <Input
+                            value={getCurrentJobValue(job, 'title') as string}
+                            onChange={(e) => handleJobInputChange(job.id, 'title', e.target.value)}
+                            placeholder="Job title"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Sort Order</Label>
+                          <Input
+                            type="number"
+                            value={getCurrentJobValue(job, 'sort_order') as number}
+                            onChange={(e) => handleJobInputChange(job.id, 'sort_order', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Role Overview</Label>
+                        <Textarea
+                          value={getCurrentJobValue(job, 'role_overview') as string}
+                          onChange={(e) => handleJobInputChange(job.id, 'role_overview', e.target.value)}
+                          placeholder="Brief description of the role..."
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>Responsibilities</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addJobArrayItem(job.id, 'responsibilities')}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Responsibility
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {currentResponsibilities.map((responsibility, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                              <Input
+                                value={responsibility}
+                                onChange={(e) => handleJobArrayChange(job.id, 'responsibilities', index, e.target.value)}
+                                placeholder="Enter responsibility"
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeJobArrayItem(job.id, 'responsibilities', index)}
+                                className="flex-shrink-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          {currentResponsibilities.length === 0 && (
+                            <p className="text-sm text-muted-foreground italic">
+                              No responsibilities added yet. Click "Add Responsibility" to get started.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>Qualifications</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addJobArrayItem(job.id, 'qualifications')}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Qualification
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {currentQualifications.map((qualification, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                              <Input
+                                value={qualification}
+                                onChange={(e) => handleJobArrayChange(job.id, 'qualifications', index, e.target.value)}
+                                placeholder="Enter qualification"
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeJobArrayItem(job.id, 'qualifications', index)}
+                                className="flex-shrink-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          {currentQualifications.length === 0 && (
+                            <p className="text-sm text-muted-foreground italic">
+                              No qualifications added yet. Click "Add Qualification" to get started.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={getCurrentJobValue(job, 'active') as boolean}
+                            onCheckedChange={(checked) => handleJobInputChange(job.id, 'active', checked)}
+                          />
+                          <Label>Show on Careers Page</Label>
+                        </div>
+
+                        <Button
+                          onClick={() => handleSaveJob(job)}
+                          disabled={!hasJobChanges(job.id) || updateJobMutation.isPending}
+                          size="sm"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {updateJobMutation.isPending ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      </div>
+
+                      {hasJobChanges(job.id) && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-sm text-blue-800">
+                            You have unsaved changes. Click "Save Changes" to apply them.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Job Applications Table */}
       <Card>
