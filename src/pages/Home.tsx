@@ -1,300 +1,79 @@
-
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
-import { Search, Users, CreditCard, Shield, Globe, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
+import { Hero } from '@/components/layout/Hero';
+import { Testimonials } from '@/components/layout/Testimonials';
+import { FAQ } from '@/components/layout/FAQ';
 
-export default function Home() {
-  const { user } = useAuth();
-
-  const services = [
-    { name: 'Host an AMA', icon: MessageSquare, description: 'Telegram, Twitter, Discord' },
-    { name: 'Tweet Campaigns & Threads', icon: Hash, description: 'Engaging Twitter content' },
-    { name: 'Promo Videos', icon: Video, description: 'TikTok, Reels, YouTube Shorts' },
-    { name: 'Product Tutorials', icon: FileText, description: 'Walkthroughs & guides' },
-    { name: 'Product Reviews', icon: Star, description: 'Honest project reviews' },
-    { name: 'Host Twitter Spaces', icon: Megaphone, description: 'Live audio engagement' },
-    { name: 'Instagram Posts', icon: Instagram, description: 'Visual content creation' },
-    { name: 'Facebook Posts', icon: Facebook, description: 'Social media reach' },
-    { name: 'General Marketing', icon: Target, description: 'Full campaign strategies' },
-    { name: 'Project Branding', icon: Palette, description: 'Brand identity & design' },
-    { name: 'Discord Contests', icon: Trophy, description: 'Community engagement' },
-    { name: 'Blogs & Articles', icon: FileText, description: 'Written content' },
-    { name: 'Reddit Posts', icon: Hash, description: 'Community discussions' },
-    { name: 'Meme Creation', icon: Zap, description: 'Viral content creation' },
-  ];
-
-  const featuredCategories = [
-    { title: 'Top AMA Hosts', description: 'Expert hosts for live sessions', count: 'Coming Soon' },
-    { title: 'Best at Twitter Campaigns', description: 'Proven Twitter growth specialists', count: 'Coming Soon' },
-    { title: 'Rising Video Creators', description: 'Trending video content makers', count: 'Coming Soon' },
-  ];
-
+const Home = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Hire Crypto Creators & Amplify Your Project.{' '}
-            <span className="bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] bg-clip-text text-transparent">
-              Pay securely in USDC.
-            </span>
-          </h1>
-          
-          <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto">
-            Connect directly with trusted creators across Twitter, YouTube, Discord, and Telegram. 
-            Book AMAs, Twitter Spaces, campaigns, project reviews, product tutorials, and more — all paid in crypto.
-          </p>
+    <div>
+      <Hero />
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button size="lg" asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link to="/browse">Browse Creators</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/browse">Hire a Creator</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/become-creator">Become a Creator</Link>
-            </Button>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="max-w-md mx-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                placeholder="Search for crypto creators" 
-                className="pl-10 bg-muted border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Testimonials */}
+      <Testimonials />
 
-      {/* How It Works Section */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Level Up Your Marketing in 3 Easy Steps</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">1. Find Your Creator</h3>
-              <p className="text-muted-foreground">Choose from vetted crypto influencers across multiple platforms.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <CreditCard className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">2. Book & Pay in USDC</h3>
-              <p className="text-muted-foreground">Simple checkout via MetaMask or Phantom, no middlemen.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">3. Get Your Content or Service</h3>
-              <p className="text-muted-foreground">From AMAs to full marketing campaigns, creators deliver exactly what you need at the price that fits your budget.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Categories Section with Carousel */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Services That Drive Web3 Growth</h2>
-          
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            plugins={[
-              Autoplay({
-                delay: 3000,
-              }),
-            ]}
-            className="w-full max-w-7xl mx-auto"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {services.map((service, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
-                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border">
-                    <CardContent className="p-4 text-center">
-                      <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                      <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
-                      <p className="text-xs text-muted-foreground">{service.description}</p>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden md:flex" />
-            <CarouselNext className="hidden md:flex" />
-          </Carousel>
-        </div>
-      </section>
-
-      {/* Why LeveledUP Section */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">The First Creator Marketplace Built for Web3</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
-                <CreditCard className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-4">Crypto-Native Payments</h3>
-                <p className="text-muted-foreground">Pay in USDC (ETH, Solana, Sui, Cardano soon).</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
-                <Shield className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
-                <p className="text-muted-foreground">Funds are held until services are delivered.</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
-                <Globe className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-4">Cross-Platform Reach</h3>
-                <p className="text-muted-foreground">From Twitter to Telegram, work with creators where the crypto community actually lives.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Creators Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Featured Creators</h2>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { title: 'Top AMA Hosts', description: 'Expert hosts for live sessions', count: 'Coming Soon' },
-              { title: 'Best at Twitter Campaigns', description: 'Proven Twitter growth specialists', count: 'Coming Soon' },
-              { title: 'Rising Video Creators', description: 'Trending video content makers', count: 'Coming Soon' }
-            ].map((category) => (
-              <Card key={category.title} className="bg-card border-border">
-                <CardContent className="p-6 text-center">
-                  <h3 className="text-xl font-semibold mb-2">{category.title}</h3>
-                  <p className="text-muted-foreground mb-4">{category.description}</p>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                    {category.count}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">What Projects Are Saying</h2>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                project: "DeFi Protocol Launch",
-                review: "LeveledUP connected us with amazing creators who helped launch our protocol. The AMA host was professional and the Twitter campaign drove real engagement.",
-                rating: 5
-              },
-              {
-                project: "NFT Collection Marketing",
-                review: "The video content created for our NFT drop was incredible. Sales increased 300% after working with creators from this platform.",
-                rating: 5
-              },
-              {
-                project: "Web3 Gaming Startup",
-                review: "Found the perfect creators for our Discord community building. The engagement and growth has been phenomenal since launch.",
-                rating: 5
-              }
-            ].map((testimonial, index) => (
-              <Card key={index} className="bg-card border-border">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <h3 className="font-semibold mb-2">{testimonial.project}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">"{testimonial.review}"</p>
-                  <div className="text-xs text-muted-foreground">Verified Project Review</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Creator Onboarding Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Are You a Creator? Want To Earn Crypto for Your Skills.</h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Monetize your audience. Offer AMAs, tweet campaigns, videos, and more. Set your price, get paid in USDC, and grow your influence.
-          </p>
-          
-          <Button size="lg" asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link to="/become-creator">Apply as a Creator</Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* Bottom Section */}
-      <section className="py-12 px-4 bg-muted/50">
-        <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <img 
-              src="/lovable-uploads/62634403-0cf8-4432-a1e2-28c295b08bd6.png" 
-              alt="LeveledUP Logo" 
-              className="h-8 w-8"
-            />
-            <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] bg-clip-text text-transparent">
-              LeveledUP
-            </span>
-          </div>
-          <p className="text-muted-foreground">LeveledUP — the crypto creator marketplace</p>
-        </div>
-      </section>
+      {/* FAQ */}
+      <FAQ />
 
       {/* Footer */}
-      <footer className="py-8 px-4 bg-background border-t border-border">
-        <div className="container mx-auto">
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
-            <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-            <Link to="/categories" className="hover:text-foreground transition-colors">Categories</Link>
-            <Link to="/browse" className="hover:text-foreground transition-colors">Browse Creators</Link>
-            <Link to="/become-creator" className="hover:text-foreground transition-colors">Become a Creator</Link>
-            <Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link>
-            <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+      <footer className="bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li><Link to="/about" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">About</Link></li>
+                <li><Link to="/careers" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Careers</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Categories</h3>
+              <ul className="space-y-2">
+                <li><Link to="/browse?category=trading" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Trading</Link></li>
+                <li><Link to="/browse?category=nft" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">NFTs</Link></li>
+                <li><Link to="/browse?category=defi" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">DeFi</Link></li>
+                <li><Link to="/browse?category=gaming" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Gaming</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Browse</h3>
+              <ul className="space-y-2">
+                <li><Link to="/browse" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Browse Creators</Link></li>
+                <li><Link to="/become-creator" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Become a Creator</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Help</h3>
+              <ul className="space-y-2">
+                <li><Link to="/faq" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">FAQ</Link></li>
+                <li><Link to="/contact" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li><Link to="/terms" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Terms of Service</Link></li>
+                <li><Link to="/privacy" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Privacy Policy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Connect</h3>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Twitter</a></li>
+                <li><a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">LinkedIn</a></li>
+                <li><a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Instagram</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 border-t border-gray-200 dark:border-gray-700 pt-8">
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              &copy; {new Date().getFullYear()} Your Company. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
     </div>
   );
-}
+};
+
+export default Home;
