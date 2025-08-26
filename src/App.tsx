@@ -1,4 +1,3 @@
-
 import './App.css';
 import { Toaster } from '@/components/ui/sonner';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -10,7 +9,6 @@ import Browse from '@/pages/Browse';
 import CreatorProfile from '@/pages/CreatorProfile';
 import Services from '@/pages/Services';
 import Contact from '@/pages/Contact';
-import Careers from '@/pages/Careers';
 import HowItWorks from '@/pages/HowItWorks';
 import Settings from '@/pages/Settings';
 import BecomeCreator from '@/pages/BecomeCreator';
@@ -50,7 +48,6 @@ function App() {
                 <Route path="/profile/:handle" element={<CreatorProfile />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/careers" element={<Careers />} />
                 <Route path="/auth" element={<AuthPage />} />
                 
                 {/* Protected Routes */}
