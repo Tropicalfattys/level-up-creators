@@ -362,6 +362,95 @@ export type Database = {
           },
         ]
       }
+      job_applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string
+          email: string
+          github_url: string | null
+          id: string
+          job_posting_id: string | null
+          name: string
+          phone: string | null
+          portfolio_url: string | null
+          resume_url: string | null
+          social_links: Json | null
+          status: string
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          github_url?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name: string
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          social_links?: Json | null
+          status?: string
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          github_url?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name?: string
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_url?: string | null
+          social_links?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          qualifications: Json
+          responsibilities: Json
+          role_overview: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          qualifications?: Json
+          responsibilities?: Json
+          role_overview: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          qualifications?: Json
+          responsibilities?: Json
+          role_overview?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachments: Json | null
