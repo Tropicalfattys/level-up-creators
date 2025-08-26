@@ -136,7 +136,8 @@ export default function Careers() {
     socialLinks: {
       twitter: '',
       linkedin: '',
-      telegram: ''
+      telegram: '',
+      discord: ''
     }
   });
   const [submitted, setSubmitted] = useState(false);
@@ -176,7 +177,8 @@ export default function Careers() {
         socialLinks: {
           twitter: '',
           linkedin: '',
-          telegram: ''
+          telegram: '',
+          discord: ''
         }
       });
     },
@@ -431,7 +433,7 @@ export default function Careers() {
 
                 <div className="space-y-4">
                   <Label>Social Links</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="twitter" className="text-sm">Twitter/X</Label>
                       <Input
@@ -460,6 +462,16 @@ export default function Careers() {
                         placeholder="@yourusername"
                         value={formData.socialLinks.telegram}
                         onChange={(e) => handleInputChange('social.telegram', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="discord" className="text-sm">Discord</Label>
+                      <Input
+                        id="discord"
+                        type="text"
+                        placeholder="username#1234"
+                        value={formData.socialLinks.discord}
+                        onChange={(e) => handleInputChange('social.discord', e.target.value)}
                       />
                     </div>
                   </div>
