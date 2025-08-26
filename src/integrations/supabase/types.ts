@@ -72,6 +72,7 @@ export type Database = {
           tx_hash: string | null
           updated_at: string | null
           usdc_amount: number
+          work_started_at: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -91,6 +92,7 @@ export type Database = {
           tx_hash?: string | null
           updated_at?: string | null
           usdc_amount: number
+          work_started_at?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -110,6 +112,7 @@ export type Database = {
           tx_hash?: string | null
           updated_at?: string | null
           usdc_amount?: number
+          work_started_at?: string | null
         }
         Relationships: [
           {
