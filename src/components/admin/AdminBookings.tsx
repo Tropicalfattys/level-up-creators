@@ -76,11 +76,14 @@ export const AdminBookings = () => {
     }
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, workStarted?: boolean) => {
     const statusConfig = {
       'draft': { color: 'bg-gray-500', label: 'Draft' },
-      'paid': { color: 'bg-blue-500', label: 'Paid' },
-      'in_progress': { color: 'bg-yellow-500', label: 'In Progress' },
+      'pending': { color: 'bg-yellow-500', label: 'Pending' },
+      'paid': { 
+        color: workStarted ? 'bg-blue-600' : 'bg-blue-500', 
+        label: workStarted ? 'Work Started' : 'Paid' 
+      },
       'delivered': { color: 'bg-purple-500', label: 'Delivered' },
       'accepted': { color: 'bg-green-500', label: 'Accepted' },
       'disputed': { color: 'bg-red-500', label: 'Disputed' },
@@ -170,6 +173,7 @@ export const AdminBookings = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="disputed">Disputed</SelectItem>
@@ -233,7 +237,7 @@ export const AdminBookings = () => {
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                    <TableCell>{getStatusBadge(booking.status, !!booking.work_started_at)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">{booking.chain}</Badge>
                     </TableCell>

@@ -57,12 +57,12 @@ export default function CreatorDashboard() {
         return;
       }
 
-      // Fetch active bookings count
+      // Fetch active bookings count - Updated to use correct statuses
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('*', { count: 'exact' })
         .eq('creator_id', user.id)
-        .in('status', ['paid', 'in_progress', 'delivered']);
+        .in('status', ['paid', 'delivered']);
 
       if (bookingsError) {
         console.error('Error fetching active bookings:', bookingsError);
