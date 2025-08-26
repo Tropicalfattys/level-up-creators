@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,16 +75,22 @@ export default function Careers() {
 
   const fetchJobPostings = async () => {
     try {
+      console.log('Careers: Fetching job postings...');
       const { data, error } = await supabase
         .from('job_postings')
         .select('*')
         .eq('active', true)
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Careers: Error fetching job postings:', error);
+        throw error;
+      }
+      
+      console.log('Careers: Successfully fetched job postings:', data?.length || 0);
       setJobPostings(data || []);
     } catch (error) {
-      console.error('Error fetching job postings:', error);
+      console.error('Careers: Error in fetchJobPostings:', error);
       showErrorToast(handleSupabaseError(error as Error));
     } finally {
       setLoading(false);
@@ -92,30 +99,42 @@ export default function Careers() {
 
   const uploadResume = async (file: File): Promise<string | null> => {
     try {
+      console.log('Careers: Starting resume upload...', { fileName: file.name, size: file.size });
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `resumes/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Careers: Uploading file to path:', filePath);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('attachments')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Careers: Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Careers: Upload successful:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from('attachments')
         .getPublicUrl(filePath);
 
+      console.log('Careers: Generated public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
-      console.error('Error uploading resume:', error);
+      console.error('Careers: Error uploading resume:', error);
       showErrorToast('Failed to upload resume. Please try again.');
       return null;
     }
   };
 
   const onSubmit = async (data: JobApplicationForm) => {
+    console.log('Careers: Form submission started', { selectedJob, hasResume: !!resumeFile });
+    
     if (!selectedJob) {
+      console.error('Careers: No job selected');
       toast.error('Please select a position to apply for');
       return;
     }
@@ -123,36 +142,56 @@ export default function Careers() {
     setSubmitting(true);
     try {
       // Validate the form data
+      console.log('Careers: Validating form data...');
       const validation = validateInput(jobApplicationSchema, { ...data, job_posting_id: selectedJob });
       if (validation.success === false) {
+        console.error('Careers: Validation failed:', validation.errors);
         showErrorToast(validation.errors.join(', '));
         return;
       }
 
+      console.log('Careers: Form validation passed');
+
       // Upload resume if provided
       let resumeUrl = null;
       if (resumeFile) {
+        console.log('Careers: Uploading resume file...');
         resumeUrl = await uploadResume(resumeFile);
-        if (!resumeUrl) return; // Upload failed
+        if (!resumeUrl) {
+          console.error('Careers: Resume upload failed, aborting submission');
+          return; // Upload failed
+        }
+        console.log('Careers: Resume uploaded successfully:', resumeUrl);
       }
 
       // Submit application
-      const { error } = await supabase
-        .from('job_applications')
-        .insert({
-          job_posting_id: selectedJob,
-          name: data.name,
-          email: data.email,
-          phone: data.phone || null,
-          portfolio_url: data.portfolio_url || null,
-          github_url: data.github_url || null,
-          social_links: data.social_links || {},
-          cover_letter: data.cover_letter,
-          resume_url: resumeUrl,
-          status: 'pending'
-        });
+      console.log('Careers: Submitting application to database...');
+      const applicationData = {
+        job_posting_id: selectedJob,
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        portfolio_url: data.portfolio_url || null,
+        github_url: data.github_url || null,
+        social_links: data.social_links || {},
+        cover_letter: data.cover_letter,
+        resume_url: resumeUrl,
+        status: 'pending'
+      };
 
-      if (error) throw error;
+      console.log('Careers: Application data:', applicationData);
+
+      const { error, data: insertedData } = await supabase
+        .from('job_applications')
+        .insert(applicationData)
+        .select();
+
+      if (error) {
+        console.error('Careers: Database insert error:', error);
+        throw error;
+      }
+
+      console.log('Careers: Application submitted successfully:', insertedData);
 
       toast.success('Application submitted successfully!', {
         description: 'We\'ll review your application and get back to you soon.'
@@ -164,7 +203,7 @@ export default function Careers() {
       setResumeFile(null);
 
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error('Careers: Error submitting application:', error);
       showErrorToast(handleSupabaseError(error as Error));
     } finally {
       setSubmitting(false);
@@ -174,20 +213,25 @@ export default function Careers() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('Careers: File selected:', { name: file.name, size: file.size, type: file.type });
+      
       // Validate file type and size
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       const maxSize = 5 * 1024 * 1024; // 5MB
 
       if (!allowedTypes.includes(file.type)) {
+        console.error('Careers: Invalid file type:', file.type);
         toast.error('Please upload a PDF or Word document');
         return;
       }
 
       if (file.size > maxSize) {
+        console.error('Careers: File too large:', file.size);
         toast.error('File size must be less than 5MB');
         return;
       }
 
+      console.log('Careers: File validation passed');
       setResumeFile(file);
     }
   };
