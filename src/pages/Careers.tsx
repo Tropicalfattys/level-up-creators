@@ -1,12 +1,14 @@
-
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, Code, Globe, Palette, TrendingUp, Users } from 'lucide-react';
+import { Briefcase, Code, Globe, Palette, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const jobPositions = [
   {
@@ -137,6 +139,52 @@ export default function Careers() {
       telegram: ''
     }
   });
+  const [submitted, setSubmitted] = useState(false);
+
+  // Form submission mutation using the same safe pattern as ContactForm
+  const submitApplication = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const { error } = await (supabase as any)
+        .from('job_applications')
+        .insert([{
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          job_posting_id: null, // We'll connect this to job_postings later in Phase 3
+          resume_url: data.resumeUrl,
+          portfolio_url: data.portfolioUrl,
+          github_url: data.githubUrl,
+          cover_letter: data.coverLetter,
+          social_links: data.socialLinks,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Application submitted successfully! We\'ll review it and get back to you within 3-5 business days.');
+      setSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        position: '',
+        resumeUrl: '',
+        portfolioUrl: '',
+        githubUrl: '',
+        coverLetter: '',
+        socialLinks: {
+          twitter: '',
+          linkedin: '',
+          telegram: ''
+        }
+      });
+    },
+    onError: (error) => {
+      console.error('Job application error:', error);
+      toast.error('Failed to submit application. Please try again.');
+    }
+  });
 
   const handleInputChange = (field: string, value: string) => {
     if (field.startsWith('social.')) {
@@ -158,9 +206,38 @@ export default function Careers() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission will be implemented in Phase 2
-    console.log('Form submitted:', formData);
+    
+    if (!formData.name || !formData.email || !formData.position) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    submitApplication.mutate(formData);
   };
+
+  // Success state display
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-16">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Application Submitted Successfully!</h3>
+              <p className="text-muted-foreground mb-6">
+                Thank you for your interest in joining LeveledUp. We'll review your application and get back to you within 3-5 business days.
+              </p>
+              <Button onClick={() => setSubmitted(false)} variant="outline">
+                Submit Another Application
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -399,8 +476,13 @@ export default function Careers() {
                   />
                 </div>
 
-                <Button type="submit" size="lg" className="w-full">
-                  Submit Application
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full"
+                  disabled={submitApplication.isPending}
+                >
+                  {submitApplication.isPending ? 'Submitting Application...' : 'Submit Application'}
                 </Button>
               </form>
             </CardContent>
