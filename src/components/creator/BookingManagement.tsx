@@ -28,6 +28,7 @@ interface BookingWithDetails {
   proof_link?: string;
   proof_file_url?: string;
   proof_links?: Array<{ url: string; label: string }>;
+  work_started_at?: string;
   services: {
     title: string;
   } | null;
@@ -45,10 +46,8 @@ export const BookingManagement = () => {
 
   // Prevent auto-scroll when tab changes
   const handleTabChange = (value: string) => {
-    // Store current scroll position
     const currentScrollY = window.scrollY;
     setActiveTab(value);
-    // Restore scroll position after state update
     setTimeout(() => {
       window.scrollTo(0, currentScrollY);
     }, 0);
@@ -78,7 +77,6 @@ export const BookingManagement = () => {
       
       console.log('Fetched bookings data:', data);
       
-      // Convert the data and handle the proof_links JSON field properly
       return (data || []).map(booking => ({
         ...booking,
         proof_links: Array.isArray(booking.proof_links) 
@@ -95,12 +93,13 @@ export const BookingManagement = () => {
   });
 
   const updateBookingStatus = useMutation({
-    mutationFn: async ({ bookingId, status, deliveredAt, proofLinks, proofFileUrl }: { 
+    mutationFn: async ({ bookingId, status, deliveredAt, proofLinks, proofFileUrl, workStartedAt }: { 
       bookingId: string; 
       status: string; 
       deliveredAt?: string;
       proofLinks?: Array<{ url: string; label: string }>;
       proofFileUrl?: string;
+      workStartedAt?: string;
     }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -108,37 +107,17 @@ export const BookingManagement = () => {
 
       console.log('Starting booking update for:', bookingId, 'new status:', status);
 
-      // First, verify the booking exists and belongs to the creator
-      const { data: existingBooking, error: fetchError } = await supabase
-        .from('bookings')
-        .select('id, creator_id, status')
-        .eq('id', bookingId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching booking:', fetchError);
-        throw new Error(`Booking not found: ${fetchError.message}`);
-      }
-
-      if (!existingBooking) {
-        throw new Error('Booking not found');
-      }
-
-      if (existingBooking.creator_id !== user.id) {
-        throw new Error('You do not have permission to update this booking');
-      }
-
-      console.log('Existing booking verified:', existingBooking);
-
-      // Build update data object
       const updateData: any = { 
-        status, 
         updated_at: new Date().toISOString() 
       };
       
+      // Only update status if it's a valid database status
+      if (status && status !== 'work_started') {
+        updateData.status = status;
+      }
+      
       if (deliveredAt) {
         updateData.delivered_at = deliveredAt;
-        // Set release_at to 3 days from delivery for auto-release
         const releaseDate = new Date(deliveredAt);
         releaseDate.setDate(releaseDate.getDate() + 3);
         updateData.release_at = releaseDate.toISOString();
@@ -149,14 +128,18 @@ export const BookingManagement = () => {
       if (proofFileUrl) {
         updateData.proof_file_url = proofFileUrl;
       }
+      if (workStartedAt) {
+        // Add work_started_at timestamp but keep status as 'paid'
+        updateData.work_started_at = workStartedAt;
+      }
 
       console.log('Update data prepared:', updateData);
 
-      // Perform the update with simple query
       const { data, error } = await supabase
         .from('bookings')
         .update(updateData)
         .eq('id', bookingId)
+        .eq('creator_id', user.id)
         .select('*')
         .single();
 
@@ -174,13 +157,12 @@ export const BookingManagement = () => {
     },
     onSuccess: (data, { status }) => {
       console.log('Booking update success, invalidating queries');
-      // Debounce query invalidations to prevent cascading updates
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
         queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
       }, 100);
       
-      const statusText = status === 'in_progress' ? 'started' : 
+      const statusText = status === 'work_started' ? 'Work started' : 
                         status === 'delivered' ? 'delivered' : 'updated';
       toast.success(`Project ${statusText} successfully!`);
     },
@@ -223,7 +205,6 @@ export const BookingManagement = () => {
 
       console.log('File uploaded successfully:', data);
 
-      // Create signed URL for secure access (7 days)
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('deliverables')
         .createSignedUrl(fileName, 60 * 60 * 24 * 7);
@@ -271,7 +252,6 @@ export const BookingManagement = () => {
     switch (status) {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
-      case 'in_progress': return 'secondary';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -279,19 +259,24 @@ export const BookingManagement = () => {
     }
   };
 
-  const getStatusProgress = (status: string) => {
-    const statuses = ['pending', 'paid', 'in_progress', 'delivered', 'accepted'];
-    return statuses.indexOf(status) + 1;
+  const getStatusProgress = (status: string, workStarted: boolean = false) => {
+    // 4-step process: paid -> (work started) -> delivered -> accepted -> released
+    if (status === 'pending') return 0;
+    if (status === 'paid') return workStarted ? 2 : 1;
+    if (status === 'delivered') return 3;
+    if (status === 'accepted') return 4;
+    if (status === 'released') return 4;
+    return 0;
   };
 
   const getTabCounts = () => {
-    if (!bookings) return { all: 0, paid: 0, in_progress: 0, delivered: 0 };
+    if (!bookings) return { all: 0, new: 0, active: 0, completed: 0 };
     
     return {
       all: bookings.length,
-      paid: bookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
-      in_progress: bookings.filter(b => b.status === 'in_progress').length,
-      delivered: bookings.filter(b => b.status === 'delivered' || b.status === 'accepted' || b.status === 'released').length,
+      new: bookings.filter(b => b.status === 'pending' || (b.status === 'paid' && !b.work_started_at)).length,
+      active: bookings.filter(b => (b.status === 'paid' && b.work_started_at) || b.status === 'delivered').length,
+      completed: bookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
     };
   };
 
@@ -299,14 +284,14 @@ export const BookingManagement = () => {
     if (!bookings) return [];
     if (status === 'all') return bookings;
     
-    if (status === 'paid') {
-      return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+    if (status === 'new') {
+      return bookings.filter(booking => booking.status === 'pending' || (booking.status === 'paid' && !booking.work_started_at));
     }
-    if (status === 'in_progress') {
-      return bookings.filter(booking => booking.status === 'in_progress');
+    if (status === 'active') {
+      return bookings.filter(booking => (booking.status === 'paid' && booking.work_started_at) || booking.status === 'delivered');
     }
-    if (status === 'delivered') {
-      return bookings.filter(booking => booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released');
+    if (status === 'completed') {
+      return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
     
     return bookings.filter(booking => booking.status === status);
@@ -358,302 +343,26 @@ export const BookingManagement = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-          <TabsTrigger value="paid">New ({tabCounts.paid})</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress ({tabCounts.in_progress})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
+          <TabsTrigger value="new">New ({tabCounts.new})</TabsTrigger>
+          <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
+          <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
-          {filterBookings(activeTab).map((booking) => (
-            <Card key={booking.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <User className="h-3 w-3" />
-                      Client: 
-                      {booking.client?.handle ? (
-                        <Link 
-                          to={`/profile/${booking.client.handle}`}
-                          className="text-primary hover:underline"
-                        >
-                          @{booking.client.handle}
-                        </Link>
-                      ) : (
-                        <span>Unknown</span>
-                      )}
-                    </CardDescription>
-                    {booking.tx_hash && (
+          {filterBookings(activeTab).map((booking) => {
+            const isWorkStarted = !!booking.work_started_at;
+            const currentProgress = getStatusProgress(booking.status, isWorkStarted);
+            
+            return (
+              <Card key={booking.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mt-1">
-                        <Hash className="h-3 w-3" />
-                        <span className="font-mono text-xs">
-                          TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
-                        </span>
-                        <Button
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => copyTxHash(booking.tx_hash!)}
-                          className="h-4 w-4 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </CardDescription>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={getStatusColor(booking.status)}>
-                      {booking.status.replace('_', ' ')}
-                    </Badge>
-                    <p className="font-semibold mt-1">
-                      <DollarSign className="h-3 w-3 inline mr-1" />
-                      {booking.usdc_amount} USDC
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <PaymentBreakdown 
-                    amount={booking.usdc_amount} 
-                    showTitle={true}
-                  />
-                </div>
-
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Project Actions
-                    </h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Progress:</span>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((step) => (
-                          <div
-                            key={step}
-                            className={`w-2 h-2 rounded-full ${
-                              step <= getStatusProgress(booking.status) 
-                                ? 'bg-primary' 
-                                : 'bg-muted-foreground/30'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-4 p-3 bg-background rounded border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium capitalize">
-                          Current Status: {booking.status.replace('_', ' ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {(['pending', 'paid'].includes(booking.status)) && 'Ready to start work'}
-                          {booking.status === 'in_progress' && 'Work in progress - submit proof when done'}
-                          {booking.status === 'delivered' && 'Awaiting client review'}
-                          {booking.status === 'accepted' && 'Project completed successfully'}
-                          {booking.status === 'released' && 'Payment released'}
-                        </p>
-                      </div>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {(['pending', 'paid'].includes(booking.status)) && (
-                      <div className="space-y-3">
-                        <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            console.log('Starting work on booking:', booking.id);
-                            updateBookingStatus.mutate({ 
-                              bookingId: booking.id, 
-                              status: 'in_progress' 
-                            });
-                          }}
-                          disabled={updateBookingStatus.isPending}
-                          className="w-full"
-                        >
-                          <Play className="h-3 w-3 mr-2" />
-                          {updateBookingStatus.isPending ? 'Starting...' : 'Start Work'}
-                          <ArrowRight className="h-3 w-3 ml-2" />
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {booking.status === 'in_progress' && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
-                          <div>
-                            <p className="text-sm font-medium text-blue-800">Project In Progress</p>
-                            <p className="text-xs text-blue-600">Submit proof of work to mark as delivered</p>
-                          </div>
-                          <Package className="h-4 w-4 text-blue-600" />
-                        </div>
-                        
-                        <ProofSubmission
-                          bookingId={booking.id}
-                          currentProof={{
-                            link: booking.proof_link,
-                            fileUrl: booking.proof_file_url,
-                            links: booking.proof_links
-                          }}
-                          onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
-                          isSubmitting={updateBookingStatus.isPending}
-                        />
-                      </div>
-                    )}
-                    
-                    {booking.status === 'delivered' && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded border border-orange-200">
-                          <div>
-                            <p className="text-sm font-medium text-orange-800">Work Delivered</p>
-                            <p className="text-xs text-orange-600">Waiting for client review and acceptance</p>
-                          </div>
-                          <CheckCircle className="h-4 w-4 text-orange-600" />
-                        </div>
-                        
-                        {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
-                          <div className="p-3 bg-background rounded border">
-                            <p className="text-sm font-medium mb-2">Submitted Proof:</p>
-                            <div className="space-y-2">
-                              {booking.proof_links?.map((link, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                  <ExternalLink className="h-3 w-3 text-blue-600" />
-                                  <span className="text-xs text-muted-foreground font-medium">{link.label}:</span>
-                                  <a 
-                                    href={link.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm truncate"
-                                  >
-                                    {link.url}
-                                  </a>
-                                </div>
-                              ))}
-                              
-                              {booking.proof_link && !booking.proof_links?.length && (
-                                <div className="flex items-center gap-2">
-                                  <ExternalLink className="h-3 w-3 text-blue-600" />
-                                  <a 
-                                    href={booking.proof_link} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm"
-                                  >
-                                    View Social Proof Link
-                                  </a>
-                                </div>
-                              )}
-                              
-                              {booking.proof_file_url && (
-                                <div className="flex items-center gap-2">
-                                  <Upload className="h-3 w-3 text-blue-600" />
-                                  <a 
-                                    href={booking.proof_file_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm"
-                                  >
-                                    View Uploaded File
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {(booking.status === 'accepted' || booking.status === 'released') && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">
-                          <div>
-                            <p className="text-sm font-medium text-green-800">Project Completed</p>
-                            <p className="text-xs text-green-600">
-                              {booking.status === 'accepted' ? 'Client accepted delivery' : 'Payment released'}
-                            </p>
-                          </div>
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </div>
-                        
-                        {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
-                          <div className="p-3 bg-green-50 rounded border border-green-200">
-                            <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
-                            <div className="space-y-2">
-                              {booking.proof_links?.map((link, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                  <ExternalLink className="h-3 w-3 text-green-600" />
-                                  <span className="text-xs text-green-700 font-medium">{link.label}:</span>
-                                  <a 
-                                    href={link.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm truncate"
-                                  >
-                                    {link.url}
-                                  </a>
-                                </div>
-                              ))}
-                              
-                              {booking.proof_link && !booking.proof_links?.length && (
-                                <div className="flex items-center gap-2">
-                                  <ExternalLink className="h-3 w-3 text-green-600" />
-                                  <a 
-                                    href={booking.proof_link} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm"
-                                  >
-                                    View Social Proof Link
-                                  </a>
-                                </div>
-                              )}
-                              
-                              {booking.proof_file_url && (
-                                <div className="flex items-center gap-2">
-                                  <Upload className="h-3 w-3 text-green-600" />
-                                  <a 
-                                    href={booking.proof_file_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-blue-600 hover:underline text-sm"
-                                  >
-                                    View Uploaded File
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Creator Review Section - Allow creators to review clients on completed bookings */}
-                {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
-                  <div className="border rounded-lg p-4 bg-muted/20">
-                    <h4 className="font-medium mb-3">Rate your client experience</h4>
-                    <ReviewSystem
-                      bookingId={booking.id}
-                      revieweeId={booking.client.id}
-                      canReview={true}
-                    />
-                  </div>
-                )}
-
-                {booking.client && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <MessageSquare className="h-4 w-4" />
-                      <h4 className="font-medium">
-                        Chat with{' '}
-                        {booking.client.handle ? (
+                        <User className="h-3 w-3" />
+                        Client: 
+                        {booking.client?.handle ? (
                           <Link 
                             to={`/profile/${booking.client.handle}`}
                             className="text-primary hover:underline"
@@ -661,36 +370,323 @@ export const BookingManagement = () => {
                             @{booking.client.handle}
                           </Link>
                         ) : (
-                          <span>@{booking.client.handle || 'Unknown'}</span>
+                          <span>Unknown</span>
                         )}
-                      </h4>
-                      <span className="text-sm text-muted-foreground">Discuss project details and deliverables</span>
+                      </CardDescription>
+                      {booking.tx_hash && (
+                        <CardDescription className="flex items-center gap-2 mt-1">
+                          <Hash className="h-3 w-3" />
+                          <span className="font-mono text-xs">
+                            TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                          </span>
+                          <Button
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => copyTxHash(booking.tx_hash!)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </CardDescription>
+                      )}
                     </div>
-                    <BookingChat
-                      bookingId={booking.id}
-                      otherUserId={booking.client.id}
-                      otherUserHandle={booking.client.handle}
+                    <div className="text-right">
+                      <Badge variant={getStatusColor(booking.status)}>
+                        {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                      </Badge>
+                      <p className="font-semibold mt-1">
+                        <DollarSign className="h-3 w-3 inline mr-1" />
+                        {booking.usdc_amount} USDC
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <PaymentBreakdown 
+                      amount={booking.usdc_amount} 
+                      showTitle={true}
                     />
                   </div>
-                )}
-                
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
-                    </div>
-                    {booking.delivered_at && (
-                      <div className="flex items-center gap-1">
-                        <Upload className="h-3 w-3" />
-                        Delivered {format(new Date(booking.delivered_at), 'MMM d')}
+
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        Project Actions
+                      </h4>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Progress:</span>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div
+                              key={step}
+                              className={`w-2 h-2 rounded-full ${
+                                step <= currentProgress 
+                                  ? 'bg-primary' 
+                                  : 'bg-muted-foreground/30'
+                              }`}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="mb-4 p-3 bg-background rounded border">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium capitalize">
+                            Current Status: {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(booking.status === 'pending' || (booking.status === 'paid' && !isWorkStarted)) && 'Ready to start work'}
+                            {(booking.status === 'paid' && isWorkStarted) && 'Work in progress - submit proof when done'}
+                            {booking.status === 'delivered' && 'Awaiting client review'}
+                            {booking.status === 'accepted' && 'Project completed successfully'}
+                            {booking.status === 'released' && 'Payment released'}
+                          </p>
+                        </div>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {(booking.status === 'pending' || (booking.status === 'paid' && !isWorkStarted)) && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              console.log('Starting work on booking:', booking.id);
+                              updateBookingStatus.mutate({ 
+                                bookingId: booking.id, 
+                                status: 'work_started',
+                                workStartedAt: new Date().toISOString()
+                              });
+                            }}
+                            disabled={updateBookingStatus.isPending}
+                            className="w-full"
+                          >
+                            <Play className="h-3 w-3 mr-2" />
+                            {updateBookingStatus.isPending ? 'Starting...' : 'Start Work'}
+                            <ArrowRight className="h-3 w-3 ml-2" />
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {(booking.status === 'paid' && isWorkStarted) && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
+                            <div>
+                              <p className="text-sm font-medium text-blue-800">Work In Progress</p>
+                              <p className="text-xs text-blue-600">Submit proof of work to mark as delivered</p>
+                            </div>
+                            <Package className="h-4 w-4 text-blue-600" />
+                          </div>
+                          
+                          <ProofSubmission
+                            bookingId={booking.id}
+                            currentProof={{
+                              link: booking.proof_link,
+                              fileUrl: booking.proof_file_url,
+                              links: booking.proof_links
+                            }}
+                            onSubmitProof={(proofData) => handleProofSubmission(booking.id, proofData)}
+                            isSubmitting={updateBookingStatus.isPending}
+                          />
+                        </div>
+                      )}
+                      
+                      {booking.status === 'delivered' && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-orange-50 rounded border border-orange-200">
+                            <div>
+                              <p className="text-sm font-medium text-orange-800">Work Delivered</p>
+                              <p className="text-xs text-orange-600">Waiting for client review and acceptance</p>
+                            </div>
+                            <CheckCircle className="h-4 w-4 text-orange-600" />
+                          </div>
+                          
+                          {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
+                            <div className="p-3 bg-background rounded border">
+                              <p className="text-sm font-medium mb-2">Submitted Proof:</p>
+                              <div className="space-y-2">
+                                {booking.proof_links?.map((link, index) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <ExternalLink className="h-3 w-3 text-blue-600" />
+                                    <span className="text-xs text-muted-foreground font-medium">{link.label}:</span>
+                                    <a 
+                                      href={link.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm truncate"
+                                    >
+                                      {link.url}
+                                    </a>
+                                  </div>
+                                ))}
+                                
+                                {booking.proof_link && !booking.proof_links?.length && (
+                                  <div className="flex items-center gap-2">
+                                    <ExternalLink className="h-3 w-3 text-blue-600" />
+                                    <a 
+                                      href={booking.proof_link} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm"
+                                    >
+                                      View Social Proof Link
+                                    </a>
+                                  </div>
+                                )}
+                                
+                                {booking.proof_file_url && (
+                                  <div className="flex items-center gap-2">
+                                    <Upload className="h-3 w-3 text-blue-600" />
+                                    <a 
+                                      href={booking.proof_file_url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm"
+                                    >
+                                      View Uploaded File
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {(booking.status === 'accepted' || booking.status === 'released') && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">
+                            <div>
+                              <p className="text-sm font-medium text-green-800">Project Completed</p>
+                              <p className="text-xs text-green-600">
+                                {booking.status === 'accepted' ? 'Client accepted delivery' : 'Payment released'}
+                              </p>
+                            </div>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          
+                          {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
+                            <div className="p-3 bg-green-50 rounded border border-green-200">
+                              <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
+                              <div className="space-y-2">
+                                {booking.proof_links?.map((link, index) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <ExternalLink className="h-3 w-3 text-green-600" />
+                                    <span className="text-xs text-green-700 font-medium">{link.label}:</span>
+                                    <a 
+                                      href={link.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm truncate"
+                                    >
+                                      {link.url}
+                                    </a>
+                                  </div>
+                                ))}
+                                
+                                {booking.proof_link && !booking.proof_links?.length && (
+                                  <div className="flex items-center gap-2">
+                                    <ExternalLink className="h-3 w-3 text-green-600" />
+                                    <a 
+                                      href={booking.proof_link} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm"
+                                    >
+                                      View Social Proof Link
+                                    </a>
+                                  </div>
+                                )}
+                                
+                                {booking.proof_file_url && (
+                                  <div className="flex items-center gap-2">
+                                    <Upload className="h-3 w-3 text-green-600" />
+                                    <a 
+                                      href={booking.proof_file_url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-sm"
+                                    >
+                                      View Uploaded File
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
+                    <div className="border rounded-lg p-4 bg-muted/20">
+                      <h4 className="font-medium mb-3">Rate your client experience</h4>
+                      <ReviewSystem
+                        bookingId={booking.id}
+                        revieweeId={booking.client.id}
+                        canReview={true}
+                      />
+                    </div>
+                  )}
+
+                  {booking.client && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <MessageSquare className="h-4 w-4" />
+                        <h4 className="font-medium">
+                          Chat with{' '}
+                          {booking.client.handle ? (
+                            <Link 
+                              to={`/profile/${booking.client.handle}`}
+                              className="text-primary hover:underline"
+                            >
+                              @{booking.client.handle}
+                            </Link>
+                          ) : (
+                            <span>@{booking.client.handle || 'Unknown'}</span>
+                          )}
+                        </h4>
+                        <span className="text-sm text-muted-foreground">Discuss project details and deliverables</span>
+                      </div>
+                      <BookingChat
+                        bookingId={booking.id}
+                        otherUserId={booking.client.id}
+                        otherUserHandle={booking.client.handle}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                      </div>
+                      {booking.work_started_at && (
+                        <div className="flex items-center gap-1">
+                          <Play className="h-3 w-3" />
+                          Started {format(new Date(booking.work_started_at), 'MMM d')}
+                        </div>
+                      )}
+                      {booking.delivered_at && (
+                        <div className="flex items-center gap-1">
+                          <Upload className="h-3 w-3" />
+                          Delivered {format(new Date(booking.delivered_at), 'MMM d')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {filterBookings(activeTab).length === 0 && (
             <div className="text-center py-12">

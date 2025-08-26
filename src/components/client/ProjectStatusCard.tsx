@@ -1,5 +1,5 @@
 
-import { ExternalLink, Upload, Package, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ExternalLink, Upload, Package, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -9,8 +9,10 @@ interface ProjectStatusCardProps {
     status: string;
     proof_link?: string;
     proof_file_url?: string;
+    proof_links?: Array<{ url: string; label: string }>;
     delivered_at?: string;
     accepted_at?: string;
+    work_started_at?: string;
   };
   onAccept?: () => void;
   onDispute?: () => void;
@@ -21,7 +23,6 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'default';
-      case 'in_progress': return 'secondary';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -29,10 +30,17 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
     }
   };
 
-  const getStatusProgress = (status: string) => {
-    const statuses = ['paid', 'in_progress', 'delivered', 'accepted'];
-    return statuses.indexOf(status) + 1;
+  const getStatusProgress = (status: string, workStarted: boolean = false) => {
+    // 4-step process: paid -> work started -> delivered -> accepted
+    if (status === 'pending') return 0;
+    if (status === 'paid') return workStarted ? 2 : 1;
+    if (status === 'delivered') return 3;
+    if (status === 'accepted' || status === 'released') return 4;
+    return 0;
   };
+
+  const isWorkStarted = !!booking.work_started_at;
+  const currentProgress = getStatusProgress(booking.status, isWorkStarted);
 
   return (
     <div className="border rounded-lg p-4 bg-muted/20">
@@ -48,7 +56,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
               <div
                 key={step}
                 className={`w-2 h-2 rounded-full ${
-                  step <= getStatusProgress(booking.status) 
+                  step <= currentProgress 
                     ? 'bg-primary' 
                     : 'bg-muted-foreground/30'
                 }`}
@@ -64,12 +72,12 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
           <div>
             <p className="text-sm font-medium capitalize flex items-center gap-2">
               <Badge variant={getStatusColor(booking.status)}>
-                {booking.status.replace('_', ' ')}
+                {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
               </Badge>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {booking.status === 'paid' && 'Creator will start work soon'}
-              {booking.status === 'in_progress' && 'Creator is working on your project'}
+              {booking.status === 'paid' && !isWorkStarted && 'Creator will start work soon'}
+              {booking.status === 'paid' && isWorkStarted && 'Creator is working on your project'}
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
               {booking.status === 'accepted' && 'You accepted the delivery'}
               {booking.status === 'released' && 'Project completed successfully'}
@@ -81,7 +89,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
 
       {/* Status-Specific Content */}
       <div className="space-y-4">
-        {booking.status === 'paid' && (
+        {booking.status === 'paid' && !isWorkStarted && (
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
             <div>
               <p className="text-sm font-medium text-blue-800">Payment Confirmed</p>
@@ -91,13 +99,13 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
           </div>
         )}
         
-        {booking.status === 'in_progress' && (
+        {booking.status === 'paid' && isWorkStarted && (
           <div className="flex items-center justify-between p-3 bg-yellow-50 rounded border border-yellow-200">
             <div>
               <p className="text-sm font-medium text-yellow-800">Work In Progress</p>
               <p className="text-xs text-yellow-600">Creator is working on your project</p>
             </div>
-            <Package className="h-4 w-4 text-yellow-600" />
+            <Play className="h-4 w-4 text-yellow-600" />
           </div>
         )}
         
@@ -112,11 +120,26 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
             </div>
             
             {/* Display proof links */}
-            {(booking.proof_link || booking.proof_file_url) && (
+            {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
               <div className="p-3 bg-background rounded border">
                 <p className="text-sm font-medium mb-2">Deliverables:</p>
                 <div className="space-y-2 mb-3">
-                  {booking.proof_link && (
+                  {booking.proof_links?.map((link, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <ExternalLink className="h-3 w-3 text-blue-600" />
+                      <span className="text-xs text-muted-foreground font-medium">{link.label}:</span>
+                      <a 
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-600 hover:underline text-sm truncate"
+                      >
+                        {link.url}
+                      </a>
+                    </div>
+                  ))}
+                  
+                  {booking.proof_link && !booking.proof_links?.length && (
                     <div className="flex items-center gap-2">
                       <ExternalLink className="h-3 w-3 text-blue-600" />
                       <a 
@@ -184,11 +207,26 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
             </div>
             
             {/* Display final deliverables */}
-            {(booking.proof_link || booking.proof_file_url) && (
+            {(booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
               <div className="p-3 bg-green-50 rounded border border-green-200">
                 <p className="text-sm font-medium mb-2 text-green-800">Final Deliverables:</p>
                 <div className="space-y-2">
-                  {booking.proof_link && (
+                  {booking.proof_links?.map((link, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <ExternalLink className="h-3 w-3 text-green-600" />
+                      <span className="text-xs text-green-700 font-medium">{link.label}:</span>
+                      <a 
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-600 hover:underline text-sm truncate"
+                      >
+                        {link.url}
+                      </a>
+                    </div>
+                  ))}
+                  
+                  {booking.proof_link && !booking.proof_links?.length && (
                     <div className="flex items-center gap-2">
                       <ExternalLink className="h-3 w-3 text-green-600" />
                       <a 
