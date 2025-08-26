@@ -108,6 +108,7 @@ export const BookingManagement = () => {
 
       console.log('Starting booking update for:', bookingId, 'new status:', status);
 
+      // Build update data object
       const updateData: any = { 
         status, 
         updated_at: new Date().toISOString() 
@@ -115,6 +116,10 @@ export const BookingManagement = () => {
       
       if (deliveredAt) {
         updateData.delivered_at = deliveredAt;
+        // Set release_at to 3 days from delivery for auto-release
+        const releaseDate = new Date(deliveredAt);
+        releaseDate.setDate(releaseDate.getDate() + 3);
+        updateData.release_at = releaseDate.toISOString();
       }
       if (proofLinks && proofLinks.length > 0) {
         updateData.proof_links = proofLinks;
@@ -125,18 +130,25 @@ export const BookingManagement = () => {
 
       console.log('Update data prepared:', updateData);
 
-      // Perform the update with proper error handling
+      // Perform the update with simplified error handling
       const { data, error } = await supabase
         .from('bookings')
         .update(updateData)
         .eq('id', bookingId)
         .eq('creator_id', user.id)
-        .select()
-        .single();
+        .select('*')
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
 
       if (error) {
         console.error('Supabase update error:', error);
-        throw new Error(`Failed to update booking: ${error.message}`);
+        // More specific error handling
+        if (error.code === 'PGRST116') {
+          throw new Error('Booking not found or you do not have permission to update it');
+        } else if (error.message.includes('row-level security')) {
+          throw new Error('You do not have permission to update this booking');
+        } else {
+          throw new Error(`Failed to update booking: ${error.message}`);
+        }
       }
 
       if (!data) {
@@ -148,8 +160,11 @@ export const BookingManagement = () => {
     },
     onSuccess: (data, { status }) => {
       console.log('Booking update success, invalidating queries');
-      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
+      // Debounce query invalidations to prevent cascading updates
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
+      }, 100);
       
       const statusText = status === 'in_progress' ? 'started' : 
                         status === 'delivered' ? 'delivered' : 'updated';
@@ -163,6 +178,8 @@ export const BookingManagement = () => {
         errorMessage = 'Please log in to continue';
       } else if (error?.message?.includes('permission')) {
         errorMessage = 'You do not have permission to update this booking';
+      } else if (error?.message?.includes('not found')) {
+        errorMessage = 'Booking not found';
       } else if (error?.message) {
         errorMessage = error.message;
       }

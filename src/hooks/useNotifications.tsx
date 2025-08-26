@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,9 +20,10 @@ interface Notification {
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const channelRef = useRef<any>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
 
-  // Fetch notifications
+  // Fetch notifications with better error handling
   const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
@@ -30,24 +31,31 @@ export const useNotifications = () => {
       
       console.log('Fetching notifications for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-      if (error) {
-        console.error('Error fetching notifications:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching notifications:', error);
+          throw error;
+        }
+
+        console.log('Fetched notifications:', data?.length || 0, 'items');
+        return data as Notification[];
+      } catch (error) {
+        console.error('Exception fetching notifications:', error);
+        return [];
       }
-
-      console.log('Fetched notifications:', data);
-      return data as Notification[];
     },
     enabled: !!user?.id,
-    retry: 3,
-    retryDelay: 1000
+    retry: 2,
+    retryDelay: 2000,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: false // Prevent excessive refetching
   });
 
   // Get unread count
@@ -105,40 +113,61 @@ export const useNotifications = () => {
     }
   };
 
-  // Set up real-time subscription
+  // Set up real-time subscription with proper connection management
   useEffect(() => {
-    if (!user?.id || isSubscribed) return;
+    if (!user?.id) return;
+
+    // Prevent multiple subscriptions
+    if (channelRef.current) {
+      console.log('Notifications: Cleaning up existing channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     console.log('Setting up notifications subscription for user:', user.id);
+    setConnectionStatus('connecting');
 
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('Notifications realtime event:', payload);
-          // Invalidate and refetch notifications when changes occur
-          queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
-        }
-      )
-      .subscribe((status) => {
-        console.log('Notifications subscription status:', status);
-      });
-
-    setIsSubscribed(true);
+    try {
+      channelRef.current = supabase
+        .channel(`notifications-${user.id}-${Date.now()}`) // Add timestamp to prevent conflicts
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('Notifications realtime event:', payload);
+            // Debounce query invalidation to prevent excessive requests
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+            }, 500);
+          }
+        )
+        .subscribe((status) => {
+          console.log('Notifications subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            setConnectionStatus('connected');
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setConnectionStatus('disconnected');
+          }
+        });
+    } catch (error) {
+      console.error('Error setting up notifications subscription:', error);
+      setConnectionStatus('disconnected');
+    }
 
     return () => {
       console.log('Cleaning up notifications subscription');
-      supabase.removeChannel(channel);
-      setIsSubscribed(false);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      setConnectionStatus('disconnected');
     };
-  }, [user?.id, queryClient, isSubscribed]);
+  }, [user?.id, queryClient]);
 
   return {
     notifications,
@@ -147,5 +176,6 @@ export const useNotifications = () => {
     error,
     markAsRead,
     markAllAsRead,
+    connectionStatus,
   };
 };
