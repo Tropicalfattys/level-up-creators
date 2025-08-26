@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle } from 'lucide-react';
+import { Mail, MessageSquare, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ContactForm = () => {
@@ -80,6 +80,37 @@ export const ContactForm = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Contact Info */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Mail className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Email Support</h3>
+            </div>
+            <p className="text-muted-foreground mb-2">
+              Get help with your account, bookings, or technical issues
+            </p>
+            <p className="font-medium">support@platform.com</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Live Chat</h3>
+            </div>
+            <p className="text-muted-foreground mb-2">
+              Chat with our support team in real-time
+            </p>
+            <Button variant="outline" size="sm">
+              Start Live Chat
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Contact Form */}
       <Card>
         <CardHeader>
