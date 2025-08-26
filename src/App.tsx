@@ -1,4 +1,3 @@
-
 import './App.css';
 import { Toaster } from '@/components/ui/sonner';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -23,6 +22,7 @@ import DirectMessages from '@/pages/DirectMessages';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import Notifications from '@/pages/Notifications';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +128,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DirectMessages />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/notifications" 
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
                     </ProtectedRoute>
                   } 
                 />
