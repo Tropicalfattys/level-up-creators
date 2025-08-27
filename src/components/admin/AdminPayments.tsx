@@ -148,6 +148,14 @@ export const AdminPayments = () => {
     return explorers[network as keyof typeof explorers] || '#';
   };
 
+  // Helper function to get service title display
+  const getServiceTitle = (payment: any) => {
+    if (payment.payment_type === 'creator_tier') {
+      return 'Subscription';
+    }
+    return payment.service?.title || 'Unknown';
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -253,7 +261,7 @@ export const AdminPayments = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{payment.service?.title || 'Unknown'}</div>
+                      <div className="font-medium">{getServiceTitle(payment)}</div>
                       <div className="text-sm text-muted-foreground">${payment.service?.price_usdc || payment.amount}</div>
                     </div>
                   </TableCell>
