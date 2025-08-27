@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,7 +43,7 @@ export const EarningsTracker = () => {
         recentEarnings: []
       };
 
-      // Get payments where this user is the creator
+      // Get payments where this user is the creator AND exclude creator_tier payments
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')
         .select(`
@@ -54,6 +53,7 @@ export const EarningsTracker = () => {
         `)
         .eq('creator_id', user.id)
         .eq('status', 'verified')
+        .neq('payment_type', 'creator_tier') // Exclude subscription payments
         .order('created_at', { ascending: false });
 
       if (paymentsError) {
@@ -97,7 +97,7 @@ export const EarningsTracker = () => {
       // Get completed bookings count
       const completedBookingsCount = bookings?.filter(b => ['accepted', 'released'].includes(b.status))?.length || 0;
 
-      // Format recent earnings from payments
+      // Format recent earnings from payments (already filtered to exclude creator_tier)
       const recentEarnings: PaymentEarning[] = payments?.slice(0, 10).map(p => ({
         id: p.id,
         amount: Number(p.amount || 0) * 0.85, // Show creator's 85% share
