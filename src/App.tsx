@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
 import Home from '@/pages/Home';
+import About from '@/pages/About';
 import Browse from '@/pages/Browse';
 import CreatorProfile from '@/pages/CreatorProfile';
 import Services from '@/pages/Services';
@@ -46,6 +47,7 @@ function App() {
               <Header />
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
                 <Route path="/browse" element={<Browse />} />
                 <Route path="/creator/:handle" element={<CreatorProfile />} />
                 <Route path="/profile/:handle" element={<CreatorProfile />} />
