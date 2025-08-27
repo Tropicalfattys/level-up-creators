@@ -155,19 +155,39 @@ export const BookingManagement = () => {
       console.log('Booking updated successfully:', data);
       return data;
     },
-    onSuccess: (data, { status }) => {
-      console.log('Booking update success, invalidating queries');
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-        queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
-      }, 100);
-      
-      const statusText = status === 'work_started' ? 'Work started' : 
-                        status === 'delivered' ? 'delivered' : 'updated';
-      toast.success(`Project ${statusText} successfully!`);
+    onMutate: async ({ bookingId, status, workStartedAt }) => {
+      // Optimistic update for work_started status
+      if (status === 'work_started' && workStartedAt) {
+        console.log('Applying optimistic update for work started');
+        
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ['creator-bookings'] });
+        
+        // Snapshot the previous value
+        const previousBookings = queryClient.getQueryData(['creator-bookings', user?.id]);
+        
+        // Optimistically update to the new value
+        queryClient.setQueryData(['creator-bookings', user?.id], (old: BookingWithDetails[] | undefined) => {
+          if (!old) return old;
+          
+          return old.map(booking => 
+            booking.id === bookingId 
+              ? { ...booking, work_started_at: workStartedAt }
+              : booking
+          );
+        });
+        
+        // Return a context object with the snapshotted value
+        return { previousBookings };
+      }
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
       console.error('Update booking mutation error:', error);
+      
+      // Rollback optimistic update on error
+      if (context?.previousBookings) {
+        queryClient.setQueryData(['creator-bookings', user?.id], context.previousBookings);
+      }
       
       let errorMessage = 'Failed to update project status';
       if (error?.message?.includes('not authenticated')) {
@@ -181,6 +201,17 @@ export const BookingManagement = () => {
       }
       
       toast.error(errorMessage);
+    },
+    onSuccess: (data, { status }) => {
+      console.log('Booking update success, invalidating queries');
+      
+      // Immediately invalidate queries without delay
+      queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-details', data.id] });
+      
+      const statusText = status === 'work_started' ? 'Work started' : 
+                        status === 'delivered' ? 'delivered' : 'updated';
+      toast.success(`Project ${statusText} successfully!`);
     }
   });
 
@@ -352,6 +383,8 @@ export const BookingManagement = () => {
           {filterBookings(activeTab).map((booking) => {
             const isWorkStarted = !!booking.work_started_at;
             const currentProgress = getStatusProgress(booking.status, isWorkStarted);
+            
+            console.log(`Booking ${booking.id}: status=${booking.status}, work_started_at=${booking.work_started_at}, isWorkStarted=${isWorkStarted}`);
             
             return (
               <Card key={booking.id}>
