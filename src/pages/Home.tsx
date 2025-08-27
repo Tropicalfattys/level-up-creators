@@ -287,7 +287,6 @@ export default function Home() {
         <div className="container mx-auto">
           <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
             <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-            <Link to="/categories" className="hover:text-foreground transition-colors">Categories</Link>
             <Link to="/browse" className="hover:text-foreground transition-colors">Browse Creators</Link>
             <Link to="/become-creator" className="hover:text-foreground transition-colors">Become a Creator</Link>
             <Link to="/careers" className="hover:text-foreground transition-colors">Careers</Link>
