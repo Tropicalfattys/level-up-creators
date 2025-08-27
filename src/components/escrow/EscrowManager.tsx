@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ interface EscrowManagerProps {
 
 export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProps) => {
   const [disputing, setDisputing] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -57,6 +59,8 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
 
   const acceptDelivery = useMutation({
     mutationFn: async () => {
+      console.log('Accepting delivery for booking:', bookingId);
+      
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -65,46 +69,83 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
         })
         .eq('id', bookingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Accept delivery error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success('Delivery accepted! Funds will be released to creator.');
       queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
     },
-    onError: () => {
-      toast.error('Failed to accept delivery');
+    onError: (error: any) => {
+      console.error('Failed to accept delivery:', error);
+      toast.error('Failed to accept delivery: ' + (error.message || 'Unknown error'));
     }
   });
 
   const openDispute = useMutation({
     mutationFn: async (reason: string) => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      if (!reason?.trim()) {
+        throw new Error('Dispute reason is required');
+      }
+
+      console.log('Opening dispute for booking:', bookingId, 'reason:', reason);
+
+      // First update booking status
       const { error: bookingError } = await supabase
         .from('bookings')
         .update({ status: 'disputed' })
         .eq('id', bookingId);
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error('Booking update error:', bookingError);
+        throw new Error(`Failed to update booking status: ${bookingError.message}`);
+      }
 
-      const { error: disputeError } = await supabase
+      // Then create dispute record
+      const { error: disputeError, data: disputeData } = await supabase
         .from('disputes')
         .insert({
           booking_id: bookingId,
           opened_by: isClient ? 'client' : 'creator',
-          reason
-        });
+          reason: reason.trim()
+        })
+        .select()
+        .single();
 
-      if (disputeError) throw disputeError;
+      if (disputeError) {
+        console.error('Dispute creation error:', disputeError);
+        throw new Error(`Failed to create dispute: ${disputeError.message}`);
+      }
+
+      console.log('Dispute created successfully:', disputeData);
+      return disputeData;
     },
     onSuccess: () => {
       toast.success('Dispute opened. Admin will review within 24 hours.');
       setDisputing(false);
+      setDisputeReason('');
       queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['booking-dispute', bookingId] });
     },
-    onError: () => {
-      toast.error('Failed to open dispute');
+    onError: (error: any) => {
+      console.error('Failed to open dispute:', error);
+      toast.error('Failed to open dispute: ' + (error.message || 'Unknown error'));
     }
   });
+
+  const handleOpenDispute = () => {
+    if (!disputeReason.trim()) {
+      toast.error('Please provide a reason for the dispute');
+      return;
+    }
+    openDispute.mutate(disputeReason);
+  };
 
   if (!booking) return <div>Loading...</div>;
 
@@ -233,27 +274,24 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
                 className="w-full p-3 border rounded-lg resize-none text-gray-900 bg-white placeholder-gray-500"
                 rows={4}
                 placeholder="Please describe the issue with the delivery..."
-                id="dispute-reason"
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
               />
               <div className="flex gap-2 mt-4">
                 <Button
-                  onClick={() => {
-                    const reason = (document.getElementById('dispute-reason') as HTMLTextAreaElement)?.value;
-                    if (reason?.trim()) {
-                      openDispute.mutate(reason);
-                    } else {
-                      toast.error('Please provide a reason for the dispute');
-                    }
-                  }}
-                  disabled={openDispute.isPending}
+                  onClick={handleOpenDispute}
+                  disabled={openDispute.isPending || !disputeReason.trim()}
                   variant="destructive"
                   className="flex-1"
                 >
-                  Submit Dispute
+                  {openDispute.isPending ? 'Submitting...' : 'Submit Dispute'}
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setDisputing(false)}
+                  onClick={() => {
+                    setDisputing(false);
+                    setDisputeReason('');
+                  }}
                   className="flex-1"
                 >
                   Cancel

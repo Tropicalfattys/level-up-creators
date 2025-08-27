@@ -15,6 +15,7 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 3;
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     if (!bookingId || !userId) {
@@ -22,14 +23,13 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
       return;
     }
 
-    // Prevent multiple connections
+    // Clean up any existing connections
     if (channelRef.current) {
-      console.log('useBookingChat: Channel already exists, cleaning up first');
+      console.log('useBookingChat: Cleaning up existing channel');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // Clear any existing timeout
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -38,9 +38,14 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
     console.log('useBookingChat: Setting up subscription for booking:', bookingId, 'user:', userId);
 
     const setupChannel = () => {
+      if (!mountedRef.current) return;
+      
       try {
+        // Use consistent channel name without timestamps to prevent conflicts
+        const channelName = `booking-chat-${bookingId}`;
+        
         channelRef.current = supabase
-          .channel(`booking-chat-${bookingId}-${Date.now()}`) // Add timestamp to prevent conflicts
+          .channel(channelName)
           .on(
             'postgres_changes',
             {
@@ -50,10 +55,13 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
               filter: `booking_id=eq.${bookingId}`
             },
             (payload) => {
+              if (!mountedRef.current) return;
               console.log('useBookingChat: New message received:', payload);
-              // Debounce query invalidation
+              // Debounced query invalidation
               setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
+                if (mountedRef.current) {
+                  queryClient.invalidateQueries({ queryKey: ['booking-messages', bookingId] });
+                }
               }, 100);
             }
           )
@@ -66,17 +74,23 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
               filter: `id=eq.${bookingId}`
             },
             (payload) => {
+              if (!mountedRef.current) return;
               console.log('useBookingChat: Booking updated:', payload);
-              // Debounce query invalidation
+              // Debounced query invalidation
               setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
-                queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
-                queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+                if (mountedRef.current) {
+                  queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
+                  queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+                  queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+                }
               }, 200);
             }
           )
           .subscribe((status) => {
+            if (!mountedRef.current) return;
+            
             console.log('useBookingChat: Subscription status:', status);
+            
             if (status === 'SUBSCRIBED') {
               setIsConnected(true);
               setReconnectAttempts(0);
@@ -85,20 +99,23 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
               setIsConnected(false);
               console.log('useBookingChat: Disconnected from booking chat:', bookingId);
               
-              // Implement exponential backoff for reconnection
-              if (reconnectAttempts < maxReconnectAttempts) {
-                const backoffDelay = Math.pow(2, reconnectAttempts) * 1000; // 1s, 2s, 4s
+              // Only attempt reconnection if still mounted and haven't exceeded max attempts
+              if (mountedRef.current && reconnectAttempts < maxReconnectAttempts) {
+                const backoffDelay = Math.pow(2, reconnectAttempts) * 2000; // 2s, 4s, 8s
                 console.log(`useBookingChat: Attempting reconnect in ${backoffDelay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
                 
                 reconnectTimeoutRef.current = setTimeout(() => {
-                  setReconnectAttempts(prev => prev + 1);
-                  if (channelRef.current) {
-                    supabase.removeChannel(channelRef.current);
+                  if (mountedRef.current) {
+                    setReconnectAttempts(prev => prev + 1);
+                    if (channelRef.current) {
+                      supabase.removeChannel(channelRef.current);
+                      channelRef.current = null;
+                    }
+                    setupChannel();
                   }
-                  setupChannel();
                 }, backoffDelay);
-              } else {
-                console.log('useBookingChat: Max reconnection attempts reached');
+              } else if (reconnectAttempts >= maxReconnectAttempts) {
+                console.log('useBookingChat: Max reconnection attempts reached, giving up');
               }
             }
           });
@@ -112,6 +129,8 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
 
     return () => {
       console.log('useBookingChat: Cleaning up subscription');
+      mountedRef.current = false;
+      
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -123,7 +142,15 @@ export const useBookingChat = ({ bookingId, userId }: UseBookingChatProps) => {
       setIsConnected(false);
       setReconnectAttempts(0);
     };
-  }, [bookingId, userId, queryClient, reconnectAttempts]);
+  }, [bookingId, userId, queryClient]);
+
+  // Reset mounted ref when component unmounts
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return { isConnected };
 };
