@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,6 +155,15 @@ export const AdminPayments = () => {
     return payment.service?.title || 'Unknown';
   };
 
+  // Helper function to calculate payout amount (creator's 85% share)
+  const getPayoutAmount = (payment: any) => {
+    // Only calculate payout for service payments, not creator tier subscriptions
+    if (payment.payment_type === 'creator_tier') {
+      return 0; // No payout for subscription payments
+    }
+    return Number(payment.amount) * 0.85; // Creator receives 85%
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -223,6 +231,7 @@ export const AdminPayments = () => {
                 <TableHead>Creator</TableHead>
                 <TableHead>Service</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Payout</TableHead>
                 <TableHead>Network</TableHead>
                 <TableHead>Payment Status</TableHead>
                 <TableHead>Booking Status</TableHead>
@@ -268,6 +277,10 @@ export const AdminPayments = () => {
                   <TableCell>
                     <div className="font-medium">${payment.amount}</div>
                     <div className="text-sm text-muted-foreground">{payment.currency}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">${getPayoutAmount(payment).toFixed(2)}</div>
+                    <div className="text-sm text-muted-foreground">Creator share</div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{payment.network}</Badge>
