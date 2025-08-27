@@ -11,6 +11,7 @@ import CreatorProfile from '@/pages/CreatorProfile';
 import Services from '@/pages/Services';
 import Contact from '@/pages/Contact';
 import HowItWorks from '@/pages/HowItWorks';
+import FAQ from '@/pages/FAQ';
 import Settings from '@/pages/Settings';
 import BecomeCreator from '@/pages/BecomeCreator';
 import CreatorDashboard from '@/pages/CreatorDashboard';
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/creator/:handle" element={<CreatorProfile />} />
                 <Route path="/profile/:handle" element={<CreatorProfile />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/careers" element={<Careers />} />
                 <Route path="/auth" element={<AuthPage />} />
