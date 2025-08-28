@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,11 +16,11 @@ import { NETWORK_CONFIG } from '@/lib/contracts';
 
 // Local configuration for payment network icons in Settings
 const PAYMENT_NETWORK_ICONS = {
-  ethereum: '/lovable-uploads/e5141d3b-9e98-46e4-adcc-78496991b1ea.png',
-  solana: '/lovable-uploads/db20e28c-ca7f-42d6-80f4-ceea38c412a6.png',
-  bsc: '/lovable-uploads/1103c201-b3f5-4b20-9b90-0d890965496c.png',
-  sui: '/lovable-uploads/3fc6c272-0e44-4396-ae10-e27d3fa87af9.png',
-  cardano: '/lovable-uploads/294ccc40-a7a7-4c46-a167-2f80ccbc0a0b.png'
+  ethereum: '/lovable-uploads/4a83282f-962f-4d5b-90c8-644562013a0b.png',
+  solana: '/lovable-uploads/21051bcc-4a6d-46d4-b718-0e86d7888b55.png',
+  bsc: '/lovable-uploads/bb73044a-0c88-445e-95e7-e1dd2e6c25e9.png',
+  sui: '/lovable-uploads/84dadd9f-46f1-44eb-9c27-c17aa2835b0e.png',
+  cardano: '/lovable-uploads/02d69c40-f596-4546-afc2-47271da0fa43.png'
 } as const;
 
 export default function Settings() {
