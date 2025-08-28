@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,31 +78,32 @@ export const AdminUsers = () => {
 
   const createUser = useMutation({
     mutationFn: async (userData: typeof newUserData) => {
-      // Create user using Supabase Auth Admin API
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
-          handle: userData.handle
+      console.log('Calling create-admin-user edge function with:', { 
+        email: userData.email, 
+        handle: userData.handle, 
+        role: userData.role 
+      });
+
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: {
+          email: userData.email,
+          password: userData.password,
+          handle: userData.handle,
+          role: userData.role
         }
       });
-      
-      if (error) throw error;
-      
-      // Update the user's role if it's not 'client'
-      if (userData.role !== 'client' && data.user) {
-        const { error: roleError } = await supabase
-          .from('users')
-          .update({ 
-            role: userData.role,
-            handle: userData.handle 
-          })
-          .eq('id', data.user.id);
-        
-        if (roleError) throw roleError;
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create user');
       }
-      
+
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('User created successfully:', data);
       return data;
     },
     onSuccess: () => {
