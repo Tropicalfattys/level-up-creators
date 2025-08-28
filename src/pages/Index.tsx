@@ -225,7 +225,7 @@ export default function Index() {
         </Card>
       )}
 
-      {!hasCreatorProfile && userRole !== 'admin' && (
+      {!hasCreatorProfile && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -318,7 +318,7 @@ export default function Index() {
                     Profile Settings
                   </Link>
                 </Button>
-                {!hasCreatorProfile && userRole !== 'admin' && (
+                {!hasCreatorProfile && (
                   <Button variant="outline" className="w-full justify-start" asChild>
                     <Link to="/become-creator">
                       <Crown className="h-4 w-4 mr-2" />
