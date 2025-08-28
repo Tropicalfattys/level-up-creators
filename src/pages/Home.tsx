@@ -278,7 +278,36 @@ export default function Home() {
               LeveledUP
             </span>
           </div>
-          <p className="text-muted-foreground">LeveledUP — the crypto creator marketplace</p>
+          <p className="text-muted-foreground mb-4">LeveledUP — the crypto creator marketplace</p>
+          
+          <p className="text-muted-foreground mb-4">Follow us on our socials</p>
+          
+          <div className="flex items-center justify-center space-x-4">
+            <a 
+              href="https://twitter.com/RULeveledUP" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src="/lovable-uploads/6aed84a1-41ef-494b-874f-e8b1b82e2152.png" 
+                alt="X (Twitter)" 
+                className="h-8 w-8"
+              />
+            </a>
+            <a 
+              href="https://instagram.com/RULeveledUp" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src="/lovable-uploads/f8e8abb3-ce3f-46fa-bda6-3fb8e0057f01.png" 
+                alt="Instagram" 
+                className="h-8 w-8"
+              />
+            </a>
+          </div>
         </div>
       </section>
 
