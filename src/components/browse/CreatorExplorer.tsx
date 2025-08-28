@@ -15,6 +15,7 @@ import { useUserFollows } from '@/hooks/useUserFollows';
 
 interface CreatorData {
   id: string;
+  user_id: string;
   handle: string;
   avatar_url?: string;
   headline?: string;
@@ -122,6 +123,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
           return {
             id: creator.id,
+            user_id: creator.user_id,
             handle: creator.users?.handle || 'unknown',
             avatar_url: creator.users?.avatar_url,
             headline: creator.headline,
@@ -153,7 +155,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     } else {
       const creatorToFollow = {
         id: creator.id,
-        user_id: creator.id, // Using creator.id as user_id since that's how the data is structured
+        user_id: creator.user_id,
         handle: creator.handle,
         avatar_url: creator.avatar_url,
         headline: creator.headline
@@ -164,7 +166,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
   const handleSendMessage = (creator: CreatorData, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
-    navigate(`/messages/${creator.id}`);
+    navigate(`/messages/${creator.user_id}`);
   };
 
   const categoryIcons = [
