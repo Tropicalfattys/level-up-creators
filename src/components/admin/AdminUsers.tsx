@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Users, Search, Shield, DollarSign, Plus } from 'lucide-react';
+import { Users, Search, Shield, DollarSign, Plus, ShieldX } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminUsers = () => {
@@ -23,6 +22,9 @@ export const AdminUsers = () => {
     role: 'client'
   });
   const queryClient = useQueryClient();
+
+  // Super admin email that cannot be demoted
+  const SUPER_ADMIN_EMAIL = 'michaelweston1515@gmail.com';
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -123,6 +125,18 @@ export const AdminUsers = () => {
       return;
     }
     createUser.mutate(newUserData);
+  };
+
+  const handleMakeAdmin = (userId: string) => {
+    updateUserRole.mutate({ userId, newRole: 'admin' });
+  };
+
+  const handleRemoveAdmin = (userId: string) => {
+    updateUserRole.mutate({ userId, newRole: 'client' });
+  };
+
+  const isSuperAdmin = (email: string) => {
+    return email === SUPER_ADMIN_EMAIL;
   };
 
   if (isLoading) {
@@ -253,6 +267,11 @@ export const AdminUsers = () => {
                         BANNED
                       </Badge>
                     )}
+                    {isSuperAdmin(user.email || '') && (
+                      <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800">
+                        SUPER ADMIN
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                   <p className="text-xs text-muted-foreground">
@@ -271,17 +290,36 @@ export const AdminUsers = () => {
                   </Badge>
                 )}
                 
-                {/* Make Admin Button - only show for non-admin users */}
-                {user.role !== 'admin' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateUserRole.mutate({ userId: user.id, newRole: 'admin' })}
-                    disabled={updateUserRole.isPending}
-                  >
-                    <Shield className="h-3 w-3 mr-1" />
-                    Make Admin
-                  </Button>
+                {/* Admin Controls */}
+                {!isSuperAdmin(user.email || '') && (
+                  <>
+                    {/* Make Admin Button - only show for non-admin users */}
+                    {user.role !== 'admin' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMakeAdmin(user.id)}
+                        disabled={updateUserRole.isPending}
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        Make Admin
+                      </Button>
+                    )}
+                    
+                    {/* Remove Admin Button - only show for admin users (except super admin) */}
+                    {user.role === 'admin' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRemoveAdmin(user.id)}
+                        disabled={updateUserRole.isPending}
+                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                      >
+                        <ShieldX className="h-3 w-3 mr-1" />
+                        Remove Admin
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
