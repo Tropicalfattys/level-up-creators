@@ -22,7 +22,7 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="creators">Creators</TabsTrigger>
@@ -34,6 +34,7 @@ export default function AdminPanel() {
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="contact-us">Contact Us</TabsTrigger>
           <TabsTrigger value="careers">Careers</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics">
@@ -78,6 +79,13 @@ export default function AdminPanel() {
 
         <TabsContent value="careers">
           <AdminCareers />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <div className="rounded-lg border p-6">
+            <h2 className="text-2xl font-bold mb-4">Notifications Management</h2>
+            <p className="text-muted-foreground">Notification management functionality will be implemented here.</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="audit">
