@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -205,31 +206,31 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
                 { 
                   key: 'ethereum_usdc', 
                   name: 'Ethereum', 
-                  icon: '/lovable-uploads/e61cc91b-6613-4e8b-ab1d-3bcb71a4a892.png', 
+                  icon: '/lovable-uploads/274835f0-6da4-47e6-a418-25e22363de08.png', 
                   fees: 'High fees (~$15-50)' 
                 },
                 { 
                   key: 'solana_usdc', 
                   name: 'Solana', 
-                  icon: '/lovable-uploads/21c9469c-ef8f-4d9e-940f-d0bbcb0db2ff.png', 
+                  icon: '/lovable-uploads/62634403-0cf8-4432-a1e2-28c295b08bd6.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
                   key: 'bsc_usdc', 
                   name: 'BSC', 
-                  icon: '/lovable-uploads/3cd3eb7f-7e7e-45d1-8a59-b93183458a14.png', 
+                  icon: '/lovable-uploads/a78181a3-f679-433a-93ca-e839266d55d5.png', 
                   fees: 'Low fees (~$0.50)' 
                 },
                 { 
                   key: 'sui_usdc', 
                   name: 'Sui', 
-                  icon: '/lovable-uploads/d2419bce-5a6c-4dc7-bf84-32a770044c34.png', 
+                  icon: '/lovable-uploads/821135d2-fa89-4790-9af0-e6234e3a62fc.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
                   key: 'cardano_usdm', 
                   name: 'Cardano', 
-                  icon: '/lovable-uploads/0bca41ec-f453-4a12-9289-7b9089df72a2.png', 
+                  icon: '/lovable-uploads/d172b9fc-950a-4abe-8f59-00d751cecddc.png', 
                   fees: 'Low fees (~$0.30)' 
                 }
               ].map((network) => (
