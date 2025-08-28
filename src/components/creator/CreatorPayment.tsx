@@ -202,11 +202,36 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             <h4 className="font-medium">Select Payment Network</h4>
             <div className="grid gap-3">
               {[
-                { key: 'ethereum_usdc', name: 'Ethereum', icon: '/lovable-uploads/e61cc91b-6613-4e8b-ab1d-3bcb71a4a892.png', fees: 'High fees (~$15-50)' },
-                { key: 'solana_usdc', name: 'Solana', icon: '/lovable-uploads/21c9469c-ef8f-4d9e-940f-d0bbcb0db2ff.png', fees: 'Very low fees (~$0.01)' },
-                { key: 'bsc_usdc', name: 'BSC', icon: '/lovable-uploads/3cd3eb7f-7e7e-45d1-8a59-b93183458a14.png', fees: 'Low fees (~$0.50)' },
-                { key: 'sui_usdc', name: 'Sui', icon: '/lovable-uploads/d2419bce-5a6c-4dc7-bf84-32a770044c34.png', fees: 'Very low fees (~$0.01)' },
-                { key: 'cardano_usdm', name: 'Cardano', icon: '/lovable-uploads/0bca41ec-f453-4a12-9289-7b9089df72a2.png', fees: 'Low fees (~$0.30)' }
+                { 
+                  key: 'ethereum_usdc', 
+                  name: 'Ethereum', 
+                  icon: '/lovable-uploads/e61cc91b-6613-4e8b-ab1d-3bcb71a4a892.png', 
+                  fees: 'High fees (~$15-50)' 
+                },
+                { 
+                  key: 'solana_usdc', 
+                  name: 'Solana', 
+                  icon: '/lovable-uploads/21c9469c-ef8f-4d9e-940f-d0bbcb0db2ff.png', 
+                  fees: 'Very low fees (~$0.01)' 
+                },
+                { 
+                  key: 'bsc_usdc', 
+                  name: 'BSC', 
+                  icon: '/lovable-uploads/3cd3eb7f-7e7e-45d1-8a59-b93183458a14.png', 
+                  fees: 'Low fees (~$0.50)' 
+                },
+                { 
+                  key: 'sui_usdc', 
+                  name: 'Sui', 
+                  icon: '/lovable-uploads/d2419bce-5a6c-4dc7-bf84-32a770044c34.png', 
+                  fees: 'Very low fees (~$0.01)' 
+                },
+                { 
+                  key: 'cardano_usdm', 
+                  name: 'Cardano', 
+                  icon: '/lovable-uploads/0bca41ec-f453-4a12-9289-7b9089df72a2.png', 
+                  fees: 'Low fees (~$0.30)' 
+                }
               ].map((network) => (
                 <Button
                   key={network.key}
@@ -220,6 +245,10 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
                         src={network.icon} 
                         alt={`${network.name} logo`} 
                         className="w-6 h-6 object-contain"
+                        onError={(e) => {
+                          console.error(`Failed to load ${network.name} logo:`, network.icon);
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     </div>
                     <div className="flex-1 text-left">
