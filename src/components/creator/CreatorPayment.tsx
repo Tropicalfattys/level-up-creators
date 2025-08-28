@@ -206,31 +206,31 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
                 { 
                   key: 'ethereum_usdc', 
                   name: 'Ethereum', 
-                  icon: '/lovable-uploads/274835f0-6da4-47e6-a418-25e22363de08.png', 
+                  icon: '/lovable-uploads/4a83282f-962f-4d5b-90c8-644562013a0b.png', 
                   fees: 'High fees (~$15-50)' 
                 },
                 { 
                   key: 'solana_usdc', 
                   name: 'Solana', 
-                  icon: '/lovable-uploads/62634403-0cf8-4432-a1e2-28c295b08bd6.png', 
+                  icon: '/lovable-uploads/84dadd9f-46f1-44eb-9c27-c17aa2835b0e.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
                   key: 'bsc_usdc', 
                   name: 'BSC', 
-                  icon: '/lovable-uploads/a78181a3-f679-433a-93ca-e839266d55d5.png', 
+                  icon: '/lovable-uploads/bb73044a-0c88-445e-95e7-e1dd2e6c25e9.png', 
                   fees: 'Low fees (~$0.50)' 
                 },
                 { 
                   key: 'sui_usdc', 
                   name: 'Sui', 
-                  icon: '/lovable-uploads/821135d2-fa89-4790-9af0-e6234e3a62fc.png', 
+                  icon: '/lovable-uploads/21051bcc-4a6d-46d4-b718-0e86d7888b55.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
                   key: 'cardano_usdm', 
                   name: 'Cardano', 
-                  icon: '/lovable-uploads/d172b9fc-950a-4abe-8f59-00d751cecddc.png', 
+                  icon: '/lovable-uploads/02d69c40-f596-4546-afc2-47271da0fa43.png', 
                   fees: 'Low fees (~$0.30)' 
                 }
               ].map((network) => (
