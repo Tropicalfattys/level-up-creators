@@ -5,10 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
-import { LogOut, User, Settings, DollarSign, Menu, Shield, ShoppingCart } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useShoppingCart } from '@/hooks/useShoppingCart';
-import { ShoppingCartModal } from '@/components/cart/ShoppingCartModal';
+import { LogOut, User, Settings, DollarSign, Menu, Shield } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -16,8 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const Header = () => {
   const { user, userRole, userProfile } = useAuth();
-  const { cartCount } = useShoppingCart();
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
   // Fetch categories from database
@@ -97,27 +92,9 @@ export const Header = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
-          {/* Notification Bell & Cart Icons */}
+          {/* Notification Bell */}
           {user && (
-            <>
-              {/* Notification Bell */}
-              <NotificationBell />
-              
-              {/* Cart Icon */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative text-white/80 hover:text-white hover:bg-zinc-800"
-                onClick={() => setIsCartOpen(true)}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-blue-600 text-white text-xs">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
-            </>
+            <NotificationBell />
           )}
 
           {user ? (
@@ -202,11 +179,6 @@ export const Header = () => {
           </Button>
         </div>
       </div>
-      
-      <ShoppingCartModal 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-      />
     </header>
   );
 };
