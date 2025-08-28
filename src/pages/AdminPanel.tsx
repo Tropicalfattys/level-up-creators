@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminBookings } from '@/components/admin/AdminBookings';
@@ -12,6 +11,7 @@ import { AdminPricing } from '@/components/admin/AdminPricing';
 import { ReferralTestPanel } from '@/components/admin/ReferralTestPanel';
 import { AdminContactUs } from '@/components/admin/AdminContactUs';
 import { AdminCareers } from '@/components/admin/AdminCareers';
+import { AdminNotifications } from '@/components/admin/AdminNotifications';
 
 export default function AdminPanel() {
   return (
@@ -82,10 +82,7 @@ export default function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="notifications">
-          <div className="rounded-lg border p-6">
-            <h2 className="text-2xl font-bold mb-4">Notifications Management</h2>
-            <p className="text-muted-foreground">Notification management functionality will be implemented here.</p>
-          </div>
+          <AdminNotifications />
         </TabsContent>
 
         <TabsContent value="audit">
