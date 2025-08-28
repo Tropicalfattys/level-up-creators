@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Search, Shield, DollarSign, Plus, Ban, Trash2, UserCheck } from 'lucide-react';
+import { Users, Search, Shield, DollarSign, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminUsers = () => {
@@ -54,25 +53,6 @@ export const AdminUsers = () => {
     onError: (error: any) => {
       console.error('Error updating user role:', error);
       toast.error('Failed to update user role: ' + (error.message || 'Unknown error'));
-    }
-  });
-
-  const banUser = useMutation({
-    mutationFn: async ({ userId, banned }: { userId: string; banned: boolean }) => {
-      const { error } = await supabase
-        .from('users')
-        .update({ banned })
-        .eq('id', userId);
-      
-      if (error) throw error;
-    },
-    onSuccess: (_, { banned }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success(banned ? 'User banned successfully' : 'User unbanned successfully');
-    },
-    onError: (error: any) => {
-      console.error('Error updating user status:', error);
-      toast.error('Failed to update user status: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -291,7 +271,7 @@ export const AdminUsers = () => {
                   </Badge>
                 )}
                 
-                {/* Make Admin Button */}
+                {/* Make Admin Button - only show for non-admin users */}
                 {user.role !== 'admin' && (
                   <Button
                     size="sm"
@@ -303,42 +283,6 @@ export const AdminUsers = () => {
                     Make Admin
                   </Button>
                 )}
-
-                {/* Ban/Unban Button */}
-                <Button
-                  size="sm"
-                  variant={user.banned ? "default" : "destructive"}
-                  onClick={() => banUser.mutate({ userId: user.id, banned: !user.banned })}
-                  disabled={banUser.isPending}
-                >
-                  {user.banned ? (
-                    <>
-                      <UserCheck className="h-3 w-3 mr-1" />
-                      Unban
-                    </>
-                  ) : (
-                    <>
-                      <Ban className="h-3 w-3 mr-1" />
-                      Ban
-                    </>
-                  )}
-                </Button>
-
-                {/* Role Selector (keeping existing functionality) */}
-                <Select
-                  value={user.role || 'client'}
-                  onValueChange={(newRole) => updateUserRole.mutate({ userId: user.id, newRole })}
-                  disabled={updateUserRole.isPending}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="creator">Creator</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           ))}
