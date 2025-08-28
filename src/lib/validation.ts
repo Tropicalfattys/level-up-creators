@@ -31,7 +31,7 @@ export const serviceSchema = z.object({
   category: z.string()
     .min(1, 'Please select a category'),
   price_usdc: z.number()
-    .min(1, 'Price must be at least $1 USDC')
+    .min(10, 'Price must be at least $10 USDC')
     .max(10000, 'Price cannot exceed $10,000 USDC'),
   delivery_days: z.number()
     .int('Delivery days must be a whole number')
@@ -67,7 +67,7 @@ export const creatorApplicationSchema = z.object({
 export const bookingSchema = z.object({
   service_id: z.string().uuid('Invalid service ID'),
   usdc_amount: z.number()
-    .min(1, 'Amount must be at least $1 USDC')
+    .min(10, 'Amount must be at least $10 USDC')
     .max(10000, 'Amount cannot exceed $10,000 USDC'),
   payment_address: z.string()
     .min(26, 'Invalid payment address')

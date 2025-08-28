@@ -33,7 +33,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
   const [formData, setFormData] = useState<Service>({
     title: service?.title || '',
     description: service?.description || '',
-    price_usdc: service?.price_usdc || 0,
+    price_usdc: service?.price_usdc || 10,
     delivery_days: service?.delivery_days || 3,
     category: service?.category || 'ama',
     payment_method: service?.payment_method || 'ethereum_usdc',
@@ -93,8 +93,8 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.description || formData.price_usdc <= 0) {
-      toast.error('Please fill in all required fields');
+    if (!formData.title || !formData.description || formData.price_usdc < 10) {
+      toast.error('Please fill in all required fields and ensure price is at least $10 USDC');
       return;
     }
     mutation.mutate(formData);
@@ -144,12 +144,15 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
               <Input
                 id="price"
                 type="number"
-                min="1"
+                min="10"
                 step="0.01"
                 value={formData.price_usdc}
-                onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 10)}
                 className="mt-1"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum $10 USDC
+              </p>
             </div>
             <div>
               <Label htmlFor="delivery">Delivery (Days)</Label>
