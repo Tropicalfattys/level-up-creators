@@ -103,7 +103,7 @@ export default function Home() {
                 <CreditCard className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-4">2. Book & Pay in USDC</h3>
-              <p className="text-muted-foreground">Simple checkout via MetaMask or Phantom, no middlemen.</p>
+              <p className="text-muted-foreground">Simple checkout via ANY crypto wallet, no middlemen.</p>
             </div>
             
             <div className="text-center">
