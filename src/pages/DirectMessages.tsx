@@ -14,10 +14,10 @@ export default function DirectMessages() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Message Not Found</h1>
           <p className="text-muted-foreground mb-4">The requested conversation could not be found.</p>
-          <Link to="/">
+          <Link to="/dashboard">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Home
+              Go to Dashboard
             </Button>
           </Link>
         </div>
@@ -28,10 +28,10 @@ export default function DirectMessages() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-6">
-        <Link to="/browse">
+        <Link to="/dashboard">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Browse
+            Back to Dashboard
           </Button>
         </Link>
       </div>

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, Package, Filter, Search, Heart } from 'lucide-react';
+import { Star, Clock, DollarSign, Package, Filter, Search, Heart, MessageCircle } from 'lucide-react';
 import { useUserFollows } from '@/hooks/useUserFollows';
 
 interface CreatorData {
@@ -162,6 +162,11 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     }
   };
 
+  const handleSendMessage = (creator: CreatorData, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    navigate(`/messages/${creator.id}`);
+  };
+
   const categoryIcons = [
     { name: 'AMA', category: 'ama', icon: '🎤' },
     { name: 'Twitter', category: 'twitter', icon: '🐦' },
@@ -285,6 +290,15 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                                   : 'text-gray-400 hover:text-red-500'
                               }`}
                             />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleSendMessage(creator, e)}
+                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Message
                           </Button>
                           <Button 
                             onClick={() => handleViewProfile(creator.handle)}
