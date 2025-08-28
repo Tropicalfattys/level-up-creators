@@ -212,7 +212,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
                 { 
                   key: 'solana_usdc', 
                   name: 'Solana', 
-                  icon: '/lovable-uploads/84dadd9f-46f1-44eb-9c27-c17aa2835b0e.png', 
+                  icon: '/lovable-uploads/21051bcc-4a6d-46d4-b718-0e86d7888b55.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
@@ -224,7 +224,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
                 { 
                   key: 'sui_usdc', 
                   name: 'Sui', 
-                  icon: '/lovable-uploads/21051bcc-4a6d-46d4-b718-0e86d7888b55.png', 
+                  icon: '/lovable-uploads/84dadd9f-46f1-44eb-9c27-c17aa2835b0e.png', 
                   fees: 'Very low fees (~$0.01)' 
                 },
                 { 
