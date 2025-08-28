@@ -92,7 +92,7 @@ export const MessagesList = () => {
         .from('users')
         .select('id, handle, avatar_url, role')
         .neq('id', user.id) // Exclude current user
-        .and('banned.is.null,banned.eq.false') // Only non-banned users
+        .or('banned.is.null,banned.eq.false') // Only non-banned users
         .ilike('handle', `%${searchTerm.trim()}%`)
         .limit(10);
 
