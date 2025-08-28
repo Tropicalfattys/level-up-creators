@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,12 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Search, Shield, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Users, Search, Shield, DollarSign, Plus, Ban, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    email: '',
+    password: '',
+    handle: '',
+    role: 'client'
+  });
   const queryClient = useQueryClient();
 
   const { data: users, isLoading } = useQuery({
@@ -41,8 +50,69 @@ export const AdminUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast.success('User role updated successfully');
     },
-    onError: () => {
-      toast.error('Failed to update user role');
+    onError: (error: any) => {
+      console.error('Error updating user role:', error);
+      toast.error('Failed to update user role: ' + (error.message || 'Unknown error'));
+    }
+  });
+
+  const banUser = useMutation({
+    mutationFn: async ({ userId, banned }: { userId: string; banned: boolean }) => {
+      const { error } = await supabase
+        .from('users')
+        .update({ banned })
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, { banned }) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success(banned ? 'User banned successfully' : 'User unbanned successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating user status:', error);
+      toast.error('Failed to update user status: ' + (error.message || 'Unknown error'));
+    }
+  });
+
+  const createUser = useMutation({
+    mutationFn: async (userData: typeof newUserData) => {
+      // Create user using Supabase Auth Admin API
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
+          handle: userData.handle
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Update the user's role if it's not 'client'
+      if (userData.role !== 'client' && data.user) {
+        const { error: roleError } = await supabase
+          .from('users')
+          .update({ 
+            role: userData.role,
+            handle: userData.handle 
+          })
+          .eq('id', data.user.id);
+        
+        if (roleError) throw roleError;
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success('User created successfully');
+      setIsCreateUserOpen(false);
+      setNewUserData({ email: '', password: '', handle: '', role: 'client' });
+    },
+    onError: (error: any) => {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -65,6 +135,14 @@ export const AdminUsers = () => {
     }
   };
 
+  const handleCreateUser = () => {
+    if (!newUserData.email || !newUserData.password || !newUserData.handle) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createUser.mutate(newUserData);
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading users...</div>;
   }
@@ -72,13 +150,85 @@ export const AdminUsers = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          User Management
-        </CardTitle>
-        <CardDescription>
-          Manage platform users and their roles
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
+            <CardDescription>
+              Manage platform users and their roles
+            </CardDescription>
+          </div>
+          <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Create a new user account with the specified role.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="handle">Username/Handle</Label>
+                  <Input
+                    id="handle"
+                    value={newUserData.handle}
+                    onChange={(e) => setNewUserData(prev => ({ ...prev, handle: e.target.value }))}
+                    placeholder="username"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={newUserData.role} onValueChange={(value) => setNewUserData(prev => ({ ...prev, role: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="creator">Creator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateUserOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateUser} disabled={createUser.isPending}>
+                  {createUser.isPending ? 'Creating...' : 'Create User'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
@@ -114,7 +264,14 @@ export const AdminUsers = () => {
                   {user.handle?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
                 </div>
                 <div>
-                  <p className="font-medium">{user.handle || 'No username'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{user.handle || 'No username'}</p>
+                    {user.banned && (
+                      <Badge variant="destructive" className="text-xs">
+                        BANNED
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                   <p className="text-xs text-muted-foreground">
                     Joined {new Date(user.created_at).toLocaleDateString()}
@@ -131,9 +288,45 @@ export const AdminUsers = () => {
                     ${user.referral_credits}
                   </Badge>
                 )}
+                
+                {/* Make Admin Button */}
+                {user.role !== 'admin' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateUserRole.mutate({ userId: user.id, newRole: 'admin' })}
+                    disabled={updateUserRole.isPending}
+                  >
+                    <Shield className="h-3 w-3 mr-1" />
+                    Make Admin
+                  </Button>
+                )}
+
+                {/* Ban/Unban Button */}
+                <Button
+                  size="sm"
+                  variant={user.banned ? "default" : "destructive"}
+                  onClick={() => banUser.mutate({ userId: user.id, banned: !user.banned })}
+                  disabled={banUser.isPending}
+                >
+                  {user.banned ? (
+                    <>
+                      <UserCheck className="h-3 w-3 mr-1" />
+                      Unban
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="h-3 w-3 mr-1" />
+                      Ban
+                    </>
+                  )}
+                </Button>
+
+                {/* Role Selector (keeping existing functionality) */}
                 <Select
                   value={user.role || 'client'}
                   onValueChange={(newRole) => updateUserRole.mutate({ userId: user.id, newRole })}
+                  disabled={updateUserRole.isPending}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
