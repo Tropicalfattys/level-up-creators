@@ -292,7 +292,7 @@ export default function Home() {
               <img 
                 src="/lovable-uploads/6aed84a1-41ef-494b-874f-e8b1b82e2152.png" 
                 alt="X (Twitter)" 
-                className="h-8 w-8"
+                className="h-14 w-14"
               />
             </a>
             <a 
@@ -304,7 +304,7 @@ export default function Home() {
               <img 
                 src="/lovable-uploads/f8e8abb3-ce3f-46fa-bda6-3fb8e0057f01.png" 
                 alt="Instagram" 
-                className="h-8 w-8"
+                className="h-14 w-14"
               />
             </a>
           </div>
