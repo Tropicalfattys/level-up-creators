@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +38,13 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
+
+  // Handle URL parameter changes
+  useEffect(() => {
+    if (selectedCategory && selectedCategory !== categoryFilter) {
+      setCategoryFilter(selectedCategory);
+    }
+  }, [selectedCategory]);
 
   // Fetch categories from database
   const { data: categories } = useQuery({
@@ -182,11 +189,43 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     navigate(`/messages/${creator.user_id}`);
   };
 
-  // Create category icons - use the first 8 categories from database with fallback icons
+  // Create category icons with meaningful emojis for each category
+  const getCategoryIcon = (categoryValue: string): string => {
+    const iconMap: Record<string, string> = {
+      'defi': '🏦',
+      'nft': '🎨',
+      'trading': '📈',
+      'development': '💻',
+      'marketing': '📢',
+      'content': '✍️',
+      'education': '🎓',
+      'consulting': '💼',
+      'gaming': '🎮',
+      'social': '👥',
+      'yield-farming': '🌾',
+      'analysis': '📊',
+      'design': '🎨',
+      'video': '🎥',
+      'writing': '📝',
+      'community': '🤝',
+      'memes': '😂',
+      'research': '🔬',
+      'twitter': '🐦',
+      'youtube': '📺',
+      'telegram': '📱',
+      'discord': '💬',
+      'facebook': '📘',
+      'instagram': '📸',
+      'tiktok': '🎵',
+      'linkedin': '💼'
+    };
+    return iconMap[categoryValue] || '📁';
+  };
+
   const categoryIcons = categories?.slice(0, 8).map(category => ({
     name: category.label,
     category: category.value,
-    icon: category.icon || '📁'
+    icon: getCategoryIcon(category.value)
   })) || [];
 
   return (
