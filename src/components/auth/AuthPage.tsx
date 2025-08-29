@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,6 +79,9 @@ export const AuthPage = () => {
           setError('An account with this email already exists. Please sign in instead.');
         } else if (error.message.includes('Password should be at least')) {
           setError('Password must be at least 6 characters long.');
+        } else if (error.message.includes('duplicate key value violates unique constraint "users_handle_key"') || 
+                   error.message.includes('Database error saving new user')) {
+          setError('Username Already Taken');
         } else {
           setError(error.message);
         }
