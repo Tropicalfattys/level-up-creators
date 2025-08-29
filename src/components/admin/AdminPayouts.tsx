@@ -21,7 +21,7 @@ interface PayoutData {
   network: string;
   tx_hash: string;
   payout_tx_hash: string | null;
-  payout_status: string;
+  payout_status: string | null;
   created_at: string;
   paid_out_at: string | null;
   paid_out_by: string | null;
@@ -61,6 +61,8 @@ export const AdminPayouts = () => {
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['admin-payouts', statusFilter, networkFilter],
     queryFn: async (): Promise<PayoutData[]> => {
+      console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
+      
       let query = supabase
         .from('payments')
         .select(`
@@ -83,8 +85,14 @@ export const AdminPayouts = () => {
         .eq('status', 'verified')
         .order('created_at', { ascending: false });
 
+      // Handle payout_status filter - include NULL values for 'pending' since existing records may not have this field set
       if (statusFilter && statusFilter !== 'all') {
-        query = query.eq('payout_status', statusFilter);
+        if (statusFilter === 'pending') {
+          // Include both NULL and 'pending' values
+          query = query.or('payout_status.is.null,payout_status.eq.pending');
+        } else {
+          query = query.eq('payout_status', statusFilter);
+        }
       }
       
       if (networkFilter && networkFilter !== 'all') {
@@ -92,8 +100,12 @@ export const AdminPayouts = () => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching payouts:', error);
+        throw error;
+      }
       
+      console.log('Raw payout data:', data);
       return data || [];
     }
   });
@@ -190,6 +202,8 @@ export const AdminPayouts = () => {
     processPayoutMutation.mutate({ paymentId, payoutTxHash });
   };
 
+  console.log('Rendered payouts:', payouts);
+
   if (isLoading) {
     return (
       <Card>
@@ -261,6 +275,7 @@ export const AdminPayouts = () => {
                 {payouts?.map((payout) => {
                   const walletAddress = getCreatorWalletAddress(payout.creator, payout.network);
                   const isEligible = isPayoutEligible(payout);
+                  const currentPayoutStatus = payout.payout_status || 'pending'; // Handle NULL values
                   
                   return (
                     <TableRow key={payout.id}>
@@ -305,20 +320,20 @@ export const AdminPayouts = () => {
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant={
-                              payout.payout_status === 'completed' ? 'default' : 
-                              payout.payout_status === 'cancelled' ? 'destructive' : 
+                              currentPayoutStatus === 'completed' ? 'default' : 
+                              currentPayoutStatus === 'cancelled' ? 'destructive' : 
                               'secondary'
                             }
                           >
-                            {payout.payout_status}
+                            {currentPayoutStatus}
                           </Badge>
-                          {!isEligible && payout.payout_status === 'pending' && (
+                          {!isEligible && currentPayoutStatus === 'pending' && (
                             <div className="flex items-center gap-1 text-orange-600">
                               <Clock className="h-3 w-3" />
                               <span className="text-xs">Waiting</span>
                             </div>
                           )}
-                          {isEligible && payout.payout_status === 'pending' && (
+                          {isEligible && currentPayoutStatus === 'pending' && (
                             <div className="flex items-center gap-1 text-green-600">
                               <CheckCircle className="h-3 w-3" />
                               <span className="text-xs">Ready</span>
@@ -335,7 +350,7 @@ export const AdminPayouts = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {payout.payout_status === 'pending' && isEligible && walletAddress ? (
+                        {currentPayoutStatus === 'pending' && isEligible && walletAddress ? (
                           <div className="space-y-2">
                             <Input
                               placeholder="Transaction hash..."
@@ -351,7 +366,7 @@ export const AdminPayouts = () => {
                               Process Payout
                             </Button>
                           </div>
-                        ) : payout.payout_status === 'completed' && payout.payout_tx_hash ? (
+                        ) : currentPayoutStatus === 'completed' && payout.payout_tx_hash ? (
                           <div className="flex items-center gap-2">
                             <code className="text-xs bg-muted px-2 py-1 rounded">
                               {payout.payout_tx_hash.slice(0, 8)}...{payout.payout_tx_hash.slice(-8)}
@@ -386,6 +401,9 @@ export const AdminPayouts = () => {
           {(!payouts || payouts.length === 0) && (
             <div className="text-center py-8 text-muted-foreground">
               No payouts found matching your criteria.
+              <div className="text-xs mt-2">
+                Debug: Showing payments where payment_type='service', status='verified', and payout_status is null or 'pending'
+              </div>
             </div>
           )}
         </CardContent>
