@@ -63,6 +63,15 @@ export const AdminPayouts = () => {
     queryFn: async (): Promise<PayoutData[]> => {
       console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
       
+      // First, let's check what payments actually exist
+      const { data: allPayments, error: debugError } = await supabase
+        .from('payments')
+        .select('payment_type, status, payout_status, creator_id')
+        .limit(5);
+      
+      console.log('Sample payments in database:', allPayments);
+      console.log('Debug error:', debugError);
+      
       let query = supabase
         .from('payments')
         .select(`
@@ -81,14 +90,13 @@ export const AdminPayouts = () => {
           booking:bookings!payments_booking_id_fkey(status, delivered_at),
           disputes(status)
         `)
-        .eq('payment_type', 'service')
-        .eq('status', 'verified')
+        .not('creator_id', 'is', null) // Only payments with creators
         .order('created_at', { ascending: false });
 
-      // Handle payout_status filter - include NULL values for 'pending' since existing records may not have this field set
+      // Apply filters - be more flexible with the status field
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'pending') {
-          // Include both NULL and 'pending' values
+          // Include both NULL and 'pending' values for payout_status
           query = query.or('payout_status.is.null,payout_status.eq.pending');
         } else {
           query = query.eq('payout_status', statusFilter);
@@ -106,6 +114,8 @@ export const AdminPayouts = () => {
       }
       
       console.log('Raw payout data:', data);
+      console.log('Number of payments found:', data?.length || 0);
+      
       return data || [];
     }
   });
@@ -402,7 +412,7 @@ export const AdminPayouts = () => {
             <div className="text-center py-8 text-muted-foreground">
               No payouts found matching your criteria.
               <div className="text-xs mt-2">
-                Debug: Showing payments where payment_type='service', status='verified', and payout_status is null or 'pending'
+                Debug: Showing all payments with creators (no payment_type or status filter)
               </div>
             </div>
           )}
