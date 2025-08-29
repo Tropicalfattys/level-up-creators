@@ -192,6 +192,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   // Create category icons with meaningful emojis for each category
   const getCategoryIcon = (categoryValue: string): string => {
     const iconMap: Record<string, string> = {
+      'ama': '💬',
+      'twitter': '🐦',
+      'videos': '🎥',
+      'tutorials': '📚',
+      'reviews': '⭐',
+      'spaces': '🎙️',
+      'instagram': '📸',
+      'facebook': '👍',
       'defi': '🏦',
       'nft': '🎨',
       'trading': '📈',
@@ -210,12 +218,9 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'community': '🤝',
       'memes': '😂',
       'research': '🔬',
-      'twitter': '🐦',
       'youtube': '📺',
       'telegram': '📱',
       'discord': '💬',
-      'facebook': '📘',
-      'instagram': '📸',
       'tiktok': '🎵',
       'linkedin': '💼'
     };
@@ -250,14 +255,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                 key={cat.category}
                 variant="ghost"
                 onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
-                className={`flex-shrink-0 flex flex-col items-center p-4 rounded-full w-20 h-20 ${
+                className={`flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
                   categoryFilter === cat.category 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
                 <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="text-xs text-center leading-tight">{cat.name}</span>
+                <span className="text-xs text-center font-medium leading-tight break-words">{cat.name}</span>
               </Button>
             ))}
           </div>
