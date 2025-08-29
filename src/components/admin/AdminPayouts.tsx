@@ -63,60 +63,94 @@ export const AdminPayouts = () => {
     queryFn: async (): Promise<PayoutData[]> => {
       console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
       
-      // First, let's check what payments actually exist
-      const { data: allPayments, error: debugError } = await supabase
-        .from('payments')
-        .select('payment_type, status, payout_status, creator_id')
-        .limit(5);
-      
-      console.log('Sample payments in database:', allPayments);
-      console.log('Debug error:', debugError);
-      
-      let query = supabase
-        .from('payments')
+      // First check what's in bookings table - this is likely where the payment data is
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
         .select(`
           *,
-          payer:users!payments_user_id_fkey(handle, email),
-          creator:users!payments_creator_id_fkey(
-            handle, 
-            email,
-            payout_address_eth,
-            payout_address_sol,
-            payout_address_bsc,
-            payout_address_sui,
-            payout_address_cardano
-          ),
-          service:services!payments_service_id_fkey(title, price_usdc, payment_method),
-          booking:bookings!payments_booking_id_fkey(status, delivered_at),
+          client:users!bookings_client_id_fkey(handle, email),
+          creator:users!bookings_creator_id_fkey(handle, email),
+          service:services!bookings_service_id_fkey(title, price_usdc, payment_method),
           disputes(status)
         `)
-        .not('creator_id', 'is', null) // Only payments with creators
+        .not('creator_id', 'is', null)
+        .not('tx_hash', 'is', null) // Only bookings with actual payments
+        .in('status', ['paid', 'delivered', 'accepted', 'released'])
         .order('created_at', { ascending: false });
-
-      // Apply filters - be more flexible with the status field
+      
+      console.log('Bookings with payments:', bookingsData);
+      console.log('Bookings error:', bookingsError);
+      
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        throw bookingsError;
+      }
+      
+      // Transform bookings data to match PayoutData interface
+      const transformedData: PayoutData[] = (bookingsData || []).map(booking => ({
+        id: booking.id,
+        user_id: booking.client_id,
+        creator_id: booking.creator_id,
+        service_id: booking.service_id,
+        booking_id: booking.id,
+        amount: Number(booking.usdc_amount),
+        network: booking.chain || 'ethereum',
+        tx_hash: booking.tx_hash,
+        payout_tx_hash: null, // This would be added when payout is processed
+        payout_status: 'pending', // Default for existing bookings
+        created_at: booking.created_at,
+        paid_out_at: null,
+        paid_out_by: null,
+        payer: {
+          handle: booking.client?.handle || 'Unknown',
+          email: booking.client?.email || 'Unknown'
+        },
+        creator: {
+          handle: booking.creator?.handle || 'Unknown',
+          email: booking.creator?.email || 'Unknown',
+          payout_address_eth: booking.creator?.payout_address_eth,
+          payout_address_sol: booking.creator?.payout_address_sol,
+          payout_address_bsc: booking.creator?.payout_address_bsc,
+          payout_address_sui: booking.creator?.payout_address_sui,
+          payout_address_cardano: booking.creator?.payout_address_cardano
+        },
+        service: {
+          title: booking.service?.title || 'Unknown Service',
+          price_usdc: Number(booking.service?.price_usdc || booking.usdc_amount),
+          payment_method: booking.service?.payment_method || 'ethereum_usdc'
+        },
+        booking: {
+          status: booking.status,
+          delivered_at: booking.delivered_at
+        },
+        disputes: booking.disputes || []
+      }));
+      
+      // Apply filters
+      let filteredData = transformedData;
+      
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'pending') {
-          // Include both NULL and 'pending' values for payout_status
-          query = query.or('payout_status.is.null,payout_status.eq.pending');
-        } else {
-          query = query.eq('payout_status', statusFilter);
+          // Show bookings that are delivered or accepted but not yet paid out
+          filteredData = filteredData.filter(payout => 
+            ['delivered', 'accepted'].includes(payout.booking.status)
+          );
+        } else if (statusFilter === 'completed') {
+          // Show bookings that have been released (paid out)
+          filteredData = filteredData.filter(payout => 
+            payout.booking.status === 'released'
+          );
         }
       }
       
       if (networkFilter && networkFilter !== 'all') {
-        query = query.eq('network', networkFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error('Error fetching payouts:', error);
-        throw error;
+        filteredData = filteredData.filter(payout => payout.network === networkFilter);
       }
       
-      console.log('Raw payout data:', data);
-      console.log('Number of payments found:', data?.length || 0);
+      console.log('Final filtered payout data:', filteredData);
+      console.log('Number of payouts found:', filteredData.length);
       
-      return data || [];
+      return filteredData;
     }
   });
 
@@ -124,17 +158,18 @@ export const AdminPayouts = () => {
     mutationFn: async ({ paymentId, payoutTxHash }: { paymentId: string; payoutTxHash: string }) => {
       const { data: currentUser } = await supabase.auth.getUser();
       
+      // Update the booking status to released
       const { error } = await supabase
-        .from('payments')
+        .from('bookings')
         .update({
-          payout_tx_hash: payoutTxHash,
-          payout_status: 'completed',
-          paid_out_at: new Date().toISOString(),
-          paid_out_by: currentUser.user?.id
+          status: 'released'
         })
         .eq('id', paymentId);
 
       if (error) throw error;
+      
+      // TODO: In a real implementation, you might want to store payout transaction details 
+      // in a separate payouts table for better tracking
     },
     onSuccess: () => {
       toast.success('Payout processed successfully!');
@@ -212,8 +247,6 @@ export const AdminPayouts = () => {
     processPayoutMutation.mutate({ paymentId, payoutTxHash });
   };
 
-  console.log('Rendered payouts:', payouts);
-
   if (isLoading) {
     return (
       <Card>
@@ -247,7 +280,6 @@ export const AdminPayouts = () => {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending Payout</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <Select value={networkFilter} onValueChange={setNetworkFilter}>
@@ -285,7 +317,7 @@ export const AdminPayouts = () => {
                 {payouts?.map((payout) => {
                   const walletAddress = getCreatorWalletAddress(payout.creator, payout.network);
                   const isEligible = isPayoutEligible(payout);
-                  const currentPayoutStatus = payout.payout_status || 'pending'; // Handle NULL values
+                  const currentPayoutStatus = payout.booking.status === 'released' ? 'completed' : 'pending';
                   
                   return (
                     <TableRow key={payout.id}>
@@ -331,11 +363,10 @@ export const AdminPayouts = () => {
                           <Badge 
                             variant={
                               currentPayoutStatus === 'completed' ? 'default' : 
-                              currentPayoutStatus === 'cancelled' ? 'destructive' : 
                               'secondary'
                             }
                           >
-                            {currentPayoutStatus}
+                            {currentPayoutStatus === 'completed' ? 'Paid Out' : 'Pending'}
                           </Badge>
                           {!isEligible && currentPayoutStatus === 'pending' && (
                             <div className="flex items-center gap-1 text-orange-600">
@@ -353,11 +384,6 @@ export const AdminPayouts = () => {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">{new Date(payout.created_at).toLocaleDateString()}</div>
-                        {payout.paid_out_at && (
-                          <div className="text-xs text-muted-foreground">
-                            Paid: {new Date(payout.paid_out_at).toLocaleDateString()}
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell>
                         {currentPayoutStatus === 'pending' && isEligible && walletAddress ? (
@@ -376,15 +402,13 @@ export const AdminPayouts = () => {
                               Process Payout
                             </Button>
                           </div>
-                        ) : currentPayoutStatus === 'completed' && payout.payout_tx_hash ? (
+                        ) : currentPayoutStatus === 'completed' ? (
                           <div className="flex items-center gap-2">
-                            <code className="text-xs bg-muted px-2 py-1 rounded">
-                              {payout.payout_tx_hash.slice(0, 8)}...{payout.payout_tx_hash.slice(-8)}
-                            </code>
+                            <Badge variant="default">Completed</Badge>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => window.open(getExplorerUrl(payout.network, payout.payout_tx_hash!), '_blank')}
+                              onClick={() => window.open(getExplorerUrl(payout.network, payout.tx_hash), '_blank')}
                             >
                               <ExternalLink className="h-4 w-4" />
                             </Button>
@@ -412,7 +436,7 @@ export const AdminPayouts = () => {
             <div className="text-center py-8 text-muted-foreground">
               No payouts found matching your criteria.
               <div className="text-xs mt-2">
-                Debug: Showing all payments with creators (no payment_type or status filter)
+                Debug: Showing paid bookings from bookings table that need payouts
               </div>
             </div>
           )}
