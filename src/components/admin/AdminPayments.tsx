@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExternalLink, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminPayouts } from './AdminPayouts';
 
 export const AdminPayments = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -164,210 +167,229 @@ export const AdminPayments = () => {
     return Number(payment.amount) * 0.85; // Creator receives 85%
   };
 
-  if (isLoading) {
+  const PaymentManagementContent = () => {
+    if (isLoading) {
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">Loading payments...</div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading payments...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Management</CardTitle>
-          <CardDescription>
-            Review and verify payment transactions. Verified payments automatically update booking status to "paid".
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Filters */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by transaction hash..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Management</CardTitle>
+            <CardDescription>
+              Review and verify payment transactions. Verified payments automatically update booking status to "paid".
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by transaction hash..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full lg:w-48">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={networkFilter} onValueChange={setNetworkFilter}>
+                <SelectTrigger className="w-full lg:w-48">
+                  <SelectValue placeholder="All Networks" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Networks</SelectItem>
+                  <SelectItem value="ethereum">Ethereum</SelectItem>
+                  <SelectItem value="solana">Solana</SelectItem>
+                  <SelectItem value="bsc">BSC</SelectItem>
+                  <SelectItem value="sui">Sui</SelectItem>
+                  <SelectItem value="cardano">Cardano</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="verified">Verified</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={networkFilter} onValueChange={setNetworkFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Networks" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Networks</SelectItem>
-                <SelectItem value="ethereum">Ethereum</SelectItem>
-                <SelectItem value="solana">Solana</SelectItem>
-                <SelectItem value="bsc">BSC</SelectItem>
-                <SelectItem value="sui">Sui</SelectItem>
-                <SelectItem value="cardano">Cardano</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction</TableHead>
-                <TableHead>Payer</TableHead>
-                <TableHead>Creator</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Payout</TableHead>
-                <TableHead>Network</TableHead>
-                <TableHead>Payment Status</TableHead>
-                <TableHead>Booking Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments?.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => window.open(getExplorerUrl(payment.network, payment.tx_hash), '_blank')}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{payment.payer?.handle || 'Unknown'}</div>
-                      <div className="text-sm text-muted-foreground">{payment.payer?.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{payment.creator?.handle || 'Unknown'}</div>
-                      <div className="text-sm text-muted-foreground">{payment.creator?.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{getServiceTitle(payment)}</div>
-                      <div className="text-sm text-muted-foreground">${payment.service?.price_usdc || payment.amount}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">${payment.amount}</div>
-                    <div className="text-sm text-muted-foreground">{payment.currency}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">${getPayoutAmount(payment).toFixed(2)}</div>
-                    <div className="text-sm text-muted-foreground">Creator share</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{payment.network}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant={
-                          payment.status === 'verified' ? 'default' : 
-                          payment.status === 'rejected' ? 'destructive' : 
-                          'secondary'
-                        }
-                      >
-                        {payment.status}
-                      </Badge>
-                      {payment.status === 'verified' && (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {payment.booking?.status ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction</TableHead>
+                  <TableHead>Payer</TableHead>
+                  <TableHead>Creator</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Payout</TableHead>
+                  <TableHead>Network</TableHead>
+                  <TableHead>Payment Status</TableHead>
+                  <TableHead>Booking Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments?.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-muted px-2 py-1 rounded">
+                          {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => window.open(getExplorerUrl(payment.network, payment.tx_hash), '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{payment.payer?.handle || 'Unknown'}</div>
+                        <div className="text-sm text-muted-foreground">{payment.payer?.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{payment.creator?.handle || 'Unknown'}</div>
+                        <div className="text-sm text-muted-foreground">{payment.creator?.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{getServiceTitle(payment)}</div>
+                        <div className="text-sm text-muted-foreground">${payment.service?.price_usdc || payment.amount}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">${payment.amount}</div>
+                      <div className="text-sm text-muted-foreground">{payment.currency}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">${getPayoutAmount(payment).toFixed(2)}</div>
+                      <div className="text-sm text-muted-foreground">Creator share</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{payment.network}</Badge>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge 
                           variant={
-                            payment.booking.status === 'paid' ? 'default' : 
-                            payment.booking.status === 'accepted' ? 'default' : 
+                            payment.status === 'verified' ? 'default' : 
+                            payment.status === 'rejected' ? 'destructive' : 
                             'secondary'
                           }
                         >
-                          {payment.booking.status}
+                          {payment.status}
                         </Badge>
-                        {payment.status === 'verified' && payment.booking.status === 'paid' && (
+                        {payment.status === 'verified' && (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         )}
                       </div>
-                    ) : (
-                      <Badge variant="outline">No Booking</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="text-sm">{new Date(payment.created_at).toLocaleDateString()}</div>
-                      {payment.verified_at && (
-                        <div className="text-xs text-muted-foreground">
-                          Verified: {new Date(payment.verified_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {payment.booking?.status ? (
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              payment.booking.status === 'paid' ? 'default' : 
+                              payment.booking.status === 'accepted' ? 'default' : 
+                              'secondary'
+                            }
+                          >
+                            {payment.booking.status}
+                          </Badge>
+                          {payment.status === 'verified' && payment.booking.status === 'paid' && (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="outline">No Booking</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="text-sm">{new Date(payment.created_at).toLocaleDateString()}</div>
+                        {payment.verified_at && (
+                          <div className="text-xs text-muted-foreground">
+                            Verified: {new Date(payment.verified_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {payment.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => updatePaymentStatus(payment.id, 'verified')}
+                          >
+                            Verify
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                          >
+                            Reject
+                          </Button>
                         </div>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {payment.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => updatePaymentStatus(payment.id, 'verified')}
-                        >
-                          Verify
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => updatePaymentStatus(payment.id, 'rejected')}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    )}
-                    {payment.status === 'verified' && payment.booking?.status === 'paid' && (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-xs">Synced</span>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      {payment.status === 'verified' && payment.booking?.status === 'paid' && (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-xs">Synced</span>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          {(!payments || payments.length === 0) && (
-            <div className="text-center py-8 text-muted-foreground">
-              No payments found matching your criteria.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            {(!payments || payments.length === 0) && (
+              <div className="text-center py-8 text-muted-foreground">
+                No payments found matching your criteria.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <Tabs defaultValue="payment-management" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="payment-management">Payment Management</TabsTrigger>
+        <TabsTrigger value="payouts">Payouts</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="payment-management">
+        <PaymentManagementContent />
+      </TabsContent>
+
+      <TabsContent value="payouts">
+        <AdminPayouts />
+      </TabsContent>
+    </Tabs>
   );
 };
