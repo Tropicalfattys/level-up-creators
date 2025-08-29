@@ -577,7 +577,11 @@ export type Database = {
           currency: string
           id: string
           network: string
+          paid_out_at: string | null
+          paid_out_by: string | null
           payment_type: string
+          payout_status: string | null
+          payout_tx_hash: string | null
           service_id: string | null
           status: string | null
           tx_hash: string
@@ -595,7 +599,11 @@ export type Database = {
           currency: string
           id?: string
           network: string
+          paid_out_at?: string | null
+          paid_out_by?: string | null
           payment_type: string
+          payout_status?: string | null
+          payout_tx_hash?: string | null
           service_id?: string | null
           status?: string | null
           tx_hash: string
@@ -613,7 +621,11 @@ export type Database = {
           currency?: string
           id?: string
           network?: string
+          paid_out_at?: string | null
+          paid_out_by?: string | null
           payment_type?: string
+          payout_status?: string | null
+          payout_tx_hash?: string | null
           service_id?: string | null
           status?: string | null
           tx_hash?: string
