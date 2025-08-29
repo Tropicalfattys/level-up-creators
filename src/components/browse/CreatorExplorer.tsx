@@ -44,7 +44,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     if (selectedCategory && selectedCategory !== categoryFilter) {
       setCategoryFilter(selectedCategory);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, categoryFilter]);
 
   // Fetch categories from database
   const { data: categories } = useQuery({
@@ -255,14 +255,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                 key={cat.category}
                 variant="ghost"
                 onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
-                className={`flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
+                className={`flex-shrink-0 flex flex-col items-center justify-center p-3 rounded-full w-20 h-20 ${
                   categoryFilter === cat.category 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
-                <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="text-xs text-center font-medium leading-tight break-words">{cat.name}</span>
+                <span className="text-xl mb-1">{cat.icon}</span>
+                <span className="text-[10px] text-center font-medium leading-tight max-w-[60px] overflow-hidden">{cat.name}</span>
               </Button>
             ))}
           </div>
