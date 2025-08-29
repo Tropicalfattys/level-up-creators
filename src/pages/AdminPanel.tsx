@@ -1,9 +1,7 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminBookings } from '@/components/admin/AdminBookings';
 import { AdminPayments } from '@/components/admin/AdminPayments';
-import { AdminPayouts } from '@/components/admin/AdminPayouts';
 import { AdminDisputes } from '@/components/admin/AdminDisputes';
 import { AdminCreators } from '@/components/admin/AdminCreators';
 import { AdminContacts } from '@/components/admin/AdminContacts';
@@ -24,13 +22,12 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-13">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="creators">Creators</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="disputes">Disputes</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -58,10 +55,6 @@ export default function AdminPanel() {
 
         <TabsContent value="payments">
           <AdminPayments />
-        </TabsContent>
-
-        <TabsContent value="payouts">
-          <AdminPayouts />
         </TabsContent>
 
         <TabsContent value="disputes">
