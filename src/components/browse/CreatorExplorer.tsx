@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +43,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     if (selectedCategory && selectedCategory !== categoryFilter) {
       setCategoryFilter(selectedCategory);
     }
-  }, [selectedCategory, categoryFilter]);
+  }, [selectedCategory]);
 
   // Fetch categories from database
   const { data: categories } = useQuery({
