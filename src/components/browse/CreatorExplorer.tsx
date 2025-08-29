@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -38,11 +39,23 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
-  const categories = [
-    'ama', 'twitter', 'video', 'tutorials', 'reviews', 'spaces',
-    'instagram', 'facebook', 'marketing', 'branding', 'discord',
-    'blogs', 'reddit', 'memes'
-  ];
+  // Fetch categories from database instead of using hardcoded array
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+      return data;
+    },
+  });
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['creators-explore', searchQuery, categoryFilter, priceRange],
@@ -109,7 +122,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             )
           );
 
-          // Apply category filter
+          // Apply category filter - match against database categories
           const categoryMatch = categoryFilter === 'all' || 
             creator.category === categoryFilter ||
             services?.some(service => service.category === categoryFilter);
@@ -169,16 +182,12 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     navigate(`/messages/${creator.user_id}`);
   };
 
-  const categoryIcons = [
-    { name: 'AMA', category: 'ama', icon: '🎤' },
-    { name: 'Twitter', category: 'twitter', icon: '🐦' },
-    { name: 'Videos', category: 'video', icon: '🎥' },
-    { name: 'Tutorials', category: 'tutorials', icon: '📚' },
-    { name: 'Reviews', category: 'reviews', icon: '⭐' },
-    { name: 'Spaces', category: 'spaces', icon: '🎙️' },
-    { name: 'Instagram', category: 'instagram', icon: '📸' },
-    { name: 'Facebook', category: 'facebook', icon: '👍' }
-  ];
+  // Create category icons from database categories
+  const categoryIcons = categories?.slice(0, 8).map(category => ({
+    name: category.label,
+    category: category.value,
+    icon: category.icon || '📁'
+  })) || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -346,16 +355,16 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-800 border-zinc-700">
                         <SelectItem value="all" className="text-white">All Categories</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category} className="text-white">
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                        {categories?.map((category) => (
+                          <SelectItem key={category.id} value={category.value} className="text-white">
+                            {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Price Range */}
+                  {/* Price Range - Fixed to handle both min and max */}
                   <div>
                     <Label className="text-sm font-medium mb-2 block">
                       Price Range: ${priceRange[0]} - ${priceRange[1]} USDC
@@ -368,6 +377,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                       step={25}
                       className="w-full"
                     />
+                    <div className="flex justify-between text-xs text-zinc-400 mt-1">
+                      <span>$0</span>
+                      <span>$1000</span>
+                    </div>
                   </div>
 
                   {/* Clear Filters */}
