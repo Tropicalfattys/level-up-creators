@@ -86,6 +86,25 @@ export const signInWithProvider = async (provider: 'google' | 'github' | 'twitte
   }
 };
 
+export const resetPassword = async (email: string) => {
+  try {
+    const redirectUrl = `${window.location.origin}/auth`;
+    
+    console.log('Password reset attempt for:', email);
+    
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl
+    });
+    
+    console.log('Password reset response:', { data: !!data, error });
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Password reset exception:', error);
+    return { data: null, error: error as Error };
+  }
+};
+
 export const signOut = async () => {
   try {
     console.log('SignOut attempt');
