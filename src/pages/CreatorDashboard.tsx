@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +9,7 @@ import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
-import { Package, Calendar, DollarSign, RefreshCw, MessageSquare } from 'lucide-react';
+import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function CreatorDashboard() {
@@ -183,9 +182,9 @@ export default function CreatorDashboard() {
             </Card>
           </div>
 
-          {/* Dashboard Tabs - Using the exact same components as main dashboard */}
+          {/* Dashboard Tabs - Adding Payouts tab */}
           <Tabs defaultValue="services" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="services" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Services
@@ -197,6 +196,10 @@ export default function CreatorDashboard() {
               <TabsTrigger value="earnings" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Earnings
+              </TabsTrigger>
+              <TabsTrigger value="payouts" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Payouts
               </TabsTrigger>
               <TabsTrigger value="messages" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -214,6 +217,20 @@ export default function CreatorDashboard() {
 
             <TabsContent value="earnings">
               <EarningsTracker />
+            </TabsContent>
+
+            <TabsContent value="payouts">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <CreditCard className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">Payouts</h3>
+                    <p className="text-muted-foreground">
+                      Payout management functionality will be available soon.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="messages">
