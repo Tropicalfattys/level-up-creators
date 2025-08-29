@@ -39,7 +39,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
-  // Fetch categories from database instead of using hardcoded array
+  // Fetch categories from database
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -182,7 +182,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     navigate(`/messages/${creator.user_id}`);
   };
 
-  // Create category icons from database categories
+  // Create category icons - use the first 8 categories from database with fallback icons
   const categoryIcons = categories?.slice(0, 8).map(category => ({
     name: category.label,
     category: category.value,
@@ -218,7 +218,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                 }`}
               >
                 <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="text-xs">{cat.name}</span>
+                <span className="text-xs text-center leading-tight">{cat.name}</span>
               </Button>
             ))}
           </div>
@@ -364,7 +364,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                     </Select>
                   </div>
 
-                  {/* Price Range - Fixed to handle both min and max */}
+                  {/* Price Range */}
                   <div>
                     <Label className="text-sm font-medium mb-2 block">
                       Price Range: ${priceRange[0]} - ${priceRange[1]} USDC
