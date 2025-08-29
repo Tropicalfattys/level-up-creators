@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,13 +62,21 @@ export const AdminPayouts = () => {
     queryFn: async (): Promise<PayoutData[]> => {
       console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
       
-      // First check what's in bookings table - this is likely where the payment data is
+      // Query bookings table for payment data with full creator info including payout addresses
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
           *,
           client:users!bookings_client_id_fkey(handle, email),
-          creator:users!bookings_creator_id_fkey(handle, email),
+          creator:users!bookings_creator_id_fkey(
+            handle, 
+            email, 
+            payout_address_eth, 
+            payout_address_sol, 
+            payout_address_bsc, 
+            payout_address_sui, 
+            payout_address_cardano
+          ),
           service:services!bookings_service_id_fkey(title, price_usdc, payment_method),
           disputes(status)
         `)
