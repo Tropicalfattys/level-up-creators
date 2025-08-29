@@ -189,48 +189,48 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     navigate(`/messages/${creator.user_id}`);
   };
 
-  // Create category icons with meaningful emojis for each category
-  const getCategoryIcon = (categoryValue: string): string => {
-    const iconMap: Record<string, string> = {
-      'ama': '💬',
-      'twitter': '🐦',
-      'videos': '🎥',
-      'tutorials': '📚',
-      'reviews': '⭐',
-      'spaces': '🎙️',
-      'instagram': '📸',
-      'facebook': '👍',
-      'defi': '🏦',
-      'nft': '🎨',
-      'trading': '📈',
-      'development': '💻',
-      'marketing': '📢',
-      'content': '✍️',
-      'education': '🎓',
-      'consulting': '💼',
-      'gaming': '🎮',
-      'social': '👥',
-      'yield-farming': '🌾',
-      'analysis': '📊',
-      'design': '🎨',
-      'video': '🎥',
-      'writing': '📝',
-      'community': '🤝',
-      'memes': '😂',
-      'research': '🔬',
-      'youtube': '📺',
-      'telegram': '📱',
-      'discord': '💬',
-      'tiktok': '🎵',
-      'linkedin': '💼'
+  // Create category icons with meaningful emojis and SHORT display names
+  const getCategoryData = (categoryValue: string): { icon: string; displayName: string } => {
+    const categoryMap: Record<string, { icon: string; displayName: string }> = {
+      'ama': { icon: '💬', displayName: 'AMA' },
+      'twitter': { icon: '🐦', displayName: 'Twitter' },
+      'videos': { icon: '🎥', displayName: 'Videos' },
+      'tutorials': { icon: '📚', displayName: 'Tutorials' },
+      'reviews': { icon: '⭐', displayName: 'Reviews' },
+      'spaces': { icon: '🎙️', displayName: 'Spaces' },
+      'instagram': { icon: '📸', displayName: 'Instagram' },
+      'facebook': { icon: '👍', displayName: 'Facebook' },
+      'defi': { icon: '🏦', displayName: 'DeFi' },
+      'nft': { icon: '🎨', displayName: 'NFT' },
+      'trading': { icon: '📈', displayName: 'Trading' },
+      'development': { icon: '💻', displayName: 'Dev' },
+      'marketing': { icon: '📢', displayName: 'Marketing' },
+      'content': { icon: '✍️', displayName: 'Content' },
+      'education': { icon: '🎓', displayName: 'Education' },
+      'consulting': { icon: '💼', displayName: 'Consulting' },
+      'gaming': { icon: '🎮', displayName: 'Gaming' },
+      'social': { icon: '👥', displayName: 'Social' },
+      'yield-farming': { icon: '🌾', displayName: 'Yield' },
+      'analysis': { icon: '📊', displayName: 'Analysis' },
+      'design': { icon: '🎨', displayName: 'Design' },
+      'video': { icon: '🎥', displayName: 'Video' },
+      'writing': { icon: '📝', displayName: 'Writing' },
+      'community': { icon: '🤝', displayName: 'Community' },
+      'memes': { icon: '😂', displayName: 'Memes' },
+      'research': { icon: '🔬', displayName: 'Research' },
+      'youtube': { icon: '📺', displayName: 'YouTube' },
+      'telegram': { icon: '📱', displayName: 'Telegram' },
+      'discord': { icon: '💬', displayName: 'Discord' },
+      'tiktok': { icon: '🎵', displayName: 'TikTok' },
+      'linkedin': { icon: '💼', displayName: 'LinkedIn' }
     };
-    return iconMap[categoryValue] || '📁';
+    return categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
   };
 
   const categoryIcons = categories?.slice(0, 8).map(category => ({
-    name: category.label,
+    name: getCategoryData(category.value).displayName,
     category: category.value,
-    icon: getCategoryIcon(category.value)
+    icon: getCategoryData(category.value).icon
   })) || [];
 
   return (
@@ -255,14 +255,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                 key={cat.category}
                 variant="ghost"
                 onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
-                className={`flex-shrink-0 flex flex-col items-center justify-center p-3 rounded-full w-20 h-20 ${
+                className={`flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
                   categoryFilter === cat.category 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
-                <span className="text-xl mb-1">{cat.icon}</span>
-                <span className="text-[10px] text-center font-medium leading-tight max-w-[60px] overflow-hidden">{cat.name}</span>
+                <span className="text-2xl mb-1">{cat.icon}</span>
+                <span className="text-xs text-center font-medium leading-tight">{cat.name}</span>
               </Button>
             ))}
           </div>
