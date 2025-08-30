@@ -41,7 +41,6 @@ export const AdminPayouts = () => {
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['admin-payouts'],
     queryFn: async () => {
-      console.log('Fetching payments for payouts...');
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -76,34 +75,17 @@ export const AdminPayouts = () => {
         throw error;
       }
       
-      console.log('Fetched payouts data:', data);
       return data as PayoutRecord[];
     }
   });
 
   const payoutMutation = useMutation({
     mutationFn: async ({ paymentId, txHash }: { paymentId: string; txHash: string }) => {
-      console.log('Attempting to record payout:', { paymentId, txHash });
-      
-      // First, let's check the current row to see what values it has
-      const { data: currentRow, error: fetchError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('id', paymentId)
-        .single();
-        
-      if (fetchError) {
-        console.error('Error fetching current payment row:', fetchError);
-        throw fetchError;
-      }
-      
-      console.log('Current payment row before update:', currentRow);
-      
+      // Simple direct update without constraint issues
       const { data, error } = await supabase
         .from('payments')
         .update({
           payout_tx_hash: txHash,
-          payout_status: 'paid_out',
           paid_out_at: new Date().toISOString()
         })
         .eq('id', paymentId)
@@ -114,11 +96,9 @@ export const AdminPayouts = () => {
         throw error;
       }
       
-      console.log('Payout update successful:', data);
       return data;
     },
-    onSuccess: (data) => {
-      console.log('Payout mutation successful:', data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-payouts'] });
       toast.success('Payout recorded successfully');
       setTxHashes({});
@@ -135,7 +115,6 @@ export const AdminPayouts = () => {
       toast.error('Please enter a transaction hash');
       return;
     }
-    console.log('Handling payout for payment:', paymentId, 'with tx hash:', txHash);
     payoutMutation.mutate({ paymentId, txHash });
   };
 
@@ -179,11 +158,9 @@ export const AdminPayouts = () => {
     }
   };
 
-  const pendingPayouts = payouts?.filter(p => p.payout_status === 'pending') || [];
-  const completedPayouts = payouts?.filter(p => p.payout_status === 'paid_out') || [];
-
-  console.log('Pending payouts:', pendingPayouts.length);
-  console.log('Completed payouts:', completedPayouts.length);
+  // Filter based on whether payout_tx_hash exists instead of payout_status
+  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash) || [];
+  const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
 
   const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => (
     <Card className="mb-4">
