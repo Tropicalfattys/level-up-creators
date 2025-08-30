@@ -56,15 +56,35 @@ export const AdminPayouts = () => {
   const [statusFilter, setStatusFilter] = useState<string>('pending');
   const [networkFilter, setNetworkFilter] = useState<string>('all');
   const [payoutHashes, setPayoutHashes] = useState<Record<string, string>>({});
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const queryClient = useQueryClient();
 
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['admin-payouts', statusFilter, networkFilter],
     queryFn: async (): Promise<PayoutData[]> => {
-      console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
+      console.log('=== PAYOUTS DEBUG START ===');
       
-      // Query payments table for verified service payments (this is where tx_hash exists)
-      const { data: paymentsData, error: paymentsError } = await supabase
+      // First, let's see what payment records exist
+      const { data: allPayments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('All payments in database:', allPayments);
+      console.log('Payments query error:', paymentsError);
+      
+      // Check what bookings exist
+      const { data: allBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('All bookings in database:', allBookings);
+      console.log('Bookings query error:', bookingsError);
+      
+      // Now let's get payments that should be eligible for payouts
+      // Looking for any payments that have tx_hash (meaning payment was made) and have creator_id
+      const { data: eligiblePayments, error: eligibleError } = await supabase
         .from('payments')
         .select(`
           *,
@@ -81,27 +101,34 @@ export const AdminPayouts = () => {
           services!payments_service_id_fkey(title, price_usdc, payment_method),
           bookings!payments_booking_id_fkey(status, delivered_at)
         `)
-        .eq('payment_type', 'service')
-        .eq('status', 'verified')
-        .not('creator_id', 'is', null)
         .not('tx_hash', 'is', null)
+        .not('creator_id', 'is', null)
         .order('created_at', { ascending: false });
       
-      console.log('Payments with verified status:', paymentsData);
-      console.log('Payments error:', paymentsError);
+      console.log('Eligible payments for payouts:', eligiblePayments);
+      console.log('Eligible payments error:', eligibleError);
       
-      if (paymentsError) {
-        console.error('Error fetching payments:', paymentsError);
-        throw paymentsError;
+      setDebugInfo({
+        totalPayments: allPayments?.length || 0,
+        totalBookings: allBookings?.length || 0,
+        eligiblePayments: eligiblePayments?.length || 0,
+        paymentTypes: [...new Set(allPayments?.map(p => p.payment_type))],
+        paymentStatuses: [...new Set(allPayments?.map(p => p.status))],
+        bookingStatuses: [...new Set(allBookings?.map(b => b.status))]
+      });
+      
+      if (eligibleError) {
+        console.error('Error fetching eligible payments:', eligibleError);
+        throw eligibleError;
       }
       
-      if (!paymentsData || paymentsData.length === 0) {
-        console.log('No verified payments found');
+      if (!eligiblePayments || eligiblePayments.length === 0) {
+        console.log('No eligible payments found for payouts');
         return [];
       }
       
-      // Now get disputes for these bookings
-      const bookingIds = paymentsData.map(p => p.booking_id).filter(Boolean);
+      // Get disputes for these bookings
+      const bookingIds = eligiblePayments.map(p => p.booking_id).filter(Boolean);
       const { data: disputesData } = await supabase
         .from('disputes')
         .select('booking_id, status')
@@ -109,8 +136,8 @@ export const AdminPayouts = () => {
       
       console.log('Disputes for bookings:', disputesData);
       
-      // Transform payments data to match PayoutData interface
-      const transformedData: PayoutData[] = paymentsData.map(payment => {
+      // Transform the data
+      const transformedData: PayoutData[] = eligiblePayments.map(payment => {
         const relatedDisputes = disputesData?.filter(d => d.booking_id === payment.booking_id) || [];
         
         return {
@@ -158,13 +185,10 @@ export const AdminPayouts = () => {
       
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'pending') {
-          // Show payments that are verified but not yet paid out
           filteredData = filteredData.filter(payout => 
-            payout.payout_status === 'pending' &&
-            ['delivered', 'accepted', 'released'].includes(payout.booking.status)
+            payout.payout_status === 'pending'
           );
         } else if (statusFilter === 'completed') {
-          // Show payments that have been paid out
           filteredData = filteredData.filter(payout => 
             payout.payout_status === 'completed'
           );
@@ -176,7 +200,7 @@ export const AdminPayouts = () => {
       }
       
       console.log('Final filtered payout data:', filteredData);
-      console.log('Number of payouts found:', filteredData.length);
+      console.log('=== PAYOUTS DEBUG END ===');
       
       return filteredData;
     }
@@ -186,7 +210,6 @@ export const AdminPayouts = () => {
     mutationFn: async ({ paymentId, payoutTxHash }: { paymentId: string; payoutTxHash: string }) => {
       const { data: currentUser } = await supabase.auth.getUser();
       
-      // Update the payment record with payout details
       const { error } = await supabase
         .from('payments')
         .update({
@@ -247,15 +270,13 @@ export const AdminPayouts = () => {
     const hasOpenDispute = payout.disputes.some(dispute => dispute.status === 'open');
     if (hasOpenDispute) return false;
 
-    // Check if 48 hours have passed since delivery
-    if (payout.booking.delivered_at) {
-      const deliveredAt = new Date(payout.booking.delivered_at);
-      const hoursSinceDelivery = (Date.now() - deliveredAt.getTime()) / (1000 * 60 * 60);
-      return hoursSinceDelivery >= 48;
-    }
+    // Check if booking is delivered
+    if (!payout.booking.delivered_at) return false;
 
-    // If not delivered yet, not eligible for payout
-    return false;
+    // Check if 48 hours have passed since delivery
+    const deliveredAt = new Date(payout.booking.delivered_at);
+    const hoursSinceDelivery = (Date.now() - deliveredAt.getTime()) / (1000 * 60 * 60);
+    return hoursSinceDelivery >= 48;
   };
 
   const handlePayoutHashChange = (paymentId: string, value: string) => {
@@ -298,6 +319,21 @@ export const AdminPayouts = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Debug Information */}
+          {debugInfo && (
+            <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+              <h4 className="font-semibold mb-2">Debug Information:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>Total Payments: {debugInfo.totalPayments}</div>
+                <div>Total Bookings: {debugInfo.totalBookings}</div>
+                <div>Eligible for Payout: {debugInfo.eligiblePayments}</div>
+                <div>Payment Types: {debugInfo.paymentTypes?.join(', ') || 'None'}</div>
+                <div>Payment Statuses: {debugInfo.paymentStatuses?.join(', ') || 'None'}</div>
+                <div>Booking Statuses: {debugInfo.bookingStatuses?.join(', ') || 'None'}</div>
+              </div>
+            </div>
+          )}
+
           {/* Filters */}
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -464,7 +500,7 @@ export const AdminPayouts = () => {
             <div className="text-center py-8 text-muted-foreground">
               No payouts found matching your criteria.
               <div className="text-xs mt-2">
-                Debug: Showing verified payments from payments table that need payouts
+                Check the debug information above to see what data exists in the database.
               </div>
             </div>
           )}
