@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,7 +49,7 @@ export const EarningsTracker = () => {
           booking:bookings!payments_booking_id_fkey(status, delivered_at)
         `)
         .eq('creator_id', user.id)
-        .eq('payment_type', 'service_booking')
+        .eq('payment_type', 'service')
         .eq('status', 'verified')
         .order('created_at', { ascending: false });
 
