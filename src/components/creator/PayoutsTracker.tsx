@@ -12,16 +12,14 @@ import { Clock, CheckCircle, ExternalLink } from 'lucide-react';
 interface PayoutRecord {
   id: string;
   amount: number;
-  payout_status: string;
   payout_tx_hash: string | null;
   network: string;
   created_at: string;
   paid_out_at: string | null;
   service_id: string;
-}
-
-interface ServiceInfo {
-  title: string;
+  services: {
+    title: string;
+  } | null;
 }
 
 export const PayoutsTracker = () => {
@@ -37,12 +35,14 @@ export const PayoutsTracker = () => {
         .select(`
           id,
           amount,
-          payout_status,
           payout_tx_hash,
           network,
           created_at,
           paid_out_at,
-          service_id
+          service_id,
+          services:services!payments_service_id_fkey (
+            title
+          )
         `)
         .eq('creator_id', user.id)
         .eq('payment_type', 'service_booking')
@@ -59,33 +59,9 @@ export const PayoutsTracker = () => {
     enabled: !!user?.id
   });
 
-  const { data: services } = useQuery({
-    queryKey: ['creator-services-info', user?.id],
-    queryFn: async () => {
-      if (!user?.id || !payouts?.length) return {};
-      
-      const serviceIds = [...new Set(payouts.map(p => p.service_id))];
-      
-      const { data, error } = await supabase
-        .from('services')
-        .select('id, title')
-        .in('id', serviceIds);
-
-      if (error) {
-        console.error('Error fetching service info:', error);
-        return {};
-      }
-
-      return data?.reduce((acc, service) => ({
-        ...acc,
-        [service.id]: service
-      }), {} as Record<string, ServiceInfo>) || {};
-    },
-    enabled: !!user?.id && !!payouts?.length
-  });
-
-  const pendingPayouts = payouts?.filter(p => p.payout_status === 'pending') || [];
-  const completedPayouts = payouts?.filter(p => p.payout_status === 'paid_out') || [];
+  // Filter based on whether payout_tx_hash exists instead of payout_status
+  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash) || [];
+  const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
 
   const formatAmount = (amount: number) => {
     // Calculate 85% of the original amount (platform takes 15%)
@@ -117,7 +93,7 @@ export const PayoutsTracker = () => {
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
             <span className="font-medium">
-              {services?.[payout.service_id]?.title || 'Service'}
+              {payout.services?.title || 'Service'}
             </span>
           </div>
           <Badge variant={isPending ? "secondary" : "default"}>
