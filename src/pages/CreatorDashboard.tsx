@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
+import { PayoutsTracker } from '@/components/creator/PayoutsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
 import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -220,17 +221,7 @@ export default function CreatorDashboard() {
             </TabsContent>
 
             <TabsContent value="payouts">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <CreditCard className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">Payouts</h3>
-                    <p className="text-muted-foreground">
-                      Payout management functionality will be available soon.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <PayoutsTracker />
             </TabsContent>
 
             <TabsContent value="messages">
