@@ -41,6 +41,7 @@ export const AdminPayouts = () => {
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['admin-payouts'],
     queryFn: async () => {
+      console.log('Fetching payments for payouts...');
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -70,32 +71,61 @@ export const AdminPayouts = () => {
         .eq('status', 'verified')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching payouts:', error);
+        throw error;
+      }
+      
+      console.log('Fetched payouts data:', data);
       return data as PayoutRecord[];
     }
   });
 
   const payoutMutation = useMutation({
     mutationFn: async ({ paymentId, txHash }: { paymentId: string; txHash: string }) => {
-      const { error } = await supabase
+      console.log('Attempting to record payout:', { paymentId, txHash });
+      
+      // First, let's check the current row to see what values it has
+      const { data: currentRow, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching current payment row:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log('Current payment row before update:', currentRow);
+      
+      const { data, error } = await supabase
         .from('payments')
         .update({
           payout_tx_hash: txHash,
           payout_status: 'paid_out',
           paid_out_at: new Date().toISOString()
         })
-        .eq('id', paymentId);
+        .eq('id', paymentId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Payout update error:', error);
+        throw error;
+      }
+      
+      console.log('Payout update successful:', data);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Payout mutation successful:', data);
       queryClient.invalidateQueries({ queryKey: ['admin-payouts'] });
       toast.success('Payout recorded successfully');
       setTxHashes({});
     },
     onError: (error) => {
-      toast.error('Failed to record payout');
       console.error('Payout error:', error);
+      toast.error(`Failed to record payout: ${error.message}`);
     }
   });
 
@@ -105,6 +135,7 @@ export const AdminPayouts = () => {
       toast.error('Please enter a transaction hash');
       return;
     }
+    console.log('Handling payout for payment:', paymentId, 'with tx hash:', txHash);
     payoutMutation.mutate({ paymentId, txHash });
   };
 
@@ -150,6 +181,9 @@ export const AdminPayouts = () => {
 
   const pendingPayouts = payouts?.filter(p => p.payout_status === 'pending') || [];
   const completedPayouts = payouts?.filter(p => p.payout_status === 'paid_out') || [];
+
+  console.log('Pending payouts:', pendingPayouts.length);
+  console.log('Completed payouts:', completedPayouts.length);
 
   const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => (
     <Card className="mb-4">
