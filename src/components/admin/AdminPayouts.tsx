@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,13 +63,13 @@ export const AdminPayouts = () => {
     queryFn: async (): Promise<PayoutData[]> => {
       console.log('Fetching payouts with filters:', { statusFilter, networkFilter });
       
-      // Query bookings table for payment data with full creator info including payout addresses
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
+      // Query payments table for verified service payments (this is where tx_hash exists)
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
         .select(`
           *,
-          client:users!bookings_client_id_fkey(handle, email),
-          creator:users!bookings_creator_id_fkey(
+          users!payments_user_id_fkey(handle, email),
+          creators:users!payments_creator_id_fkey(
             handle, 
             email, 
             payout_address_eth, 
@@ -77,75 +78,95 @@ export const AdminPayouts = () => {
             payout_address_sui, 
             payout_address_cardano
           ),
-          service:services!bookings_service_id_fkey(title, price_usdc, payment_method),
-          disputes(status)
+          services!payments_service_id_fkey(title, price_usdc, payment_method),
+          bookings!payments_booking_id_fkey(status, delivered_at)
         `)
+        .eq('payment_type', 'service')
+        .eq('status', 'verified')
         .not('creator_id', 'is', null)
-        .not('tx_hash', 'is', null) // Only bookings with actual payments
-        .in('status', ['paid', 'delivered', 'accepted', 'released'])
+        .not('tx_hash', 'is', null)
         .order('created_at', { ascending: false });
       
-      console.log('Bookings with payments:', bookingsData);
-      console.log('Bookings error:', bookingsError);
+      console.log('Payments with verified status:', paymentsData);
+      console.log('Payments error:', paymentsError);
       
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        throw bookingsError;
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+        throw paymentsError;
       }
       
-      // Transform bookings data to match PayoutData interface
-      const transformedData: PayoutData[] = (bookingsData || []).map(booking => ({
-        id: booking.id,
-        user_id: booking.client_id,
-        creator_id: booking.creator_id,
-        service_id: booking.service_id,
-        booking_id: booking.id,
-        amount: Number(booking.usdc_amount),
-        network: booking.chain || 'ethereum',
-        tx_hash: booking.tx_hash,
-        payout_tx_hash: null, // This would be added when payout is processed
-        payout_status: 'pending', // Default for existing bookings
-        created_at: booking.created_at,
-        paid_out_at: null,
-        paid_out_by: null,
-        payer: {
-          handle: booking.client?.handle || 'Unknown',
-          email: booking.client?.email || 'Unknown'
-        },
-        creator: {
-          handle: booking.creator?.handle || 'Unknown',
-          email: booking.creator?.email || 'Unknown',
-          payout_address_eth: booking.creator?.payout_address_eth,
-          payout_address_sol: booking.creator?.payout_address_sol,
-          payout_address_bsc: booking.creator?.payout_address_bsc,
-          payout_address_sui: booking.creator?.payout_address_sui,
-          payout_address_cardano: booking.creator?.payout_address_cardano
-        },
-        service: {
-          title: booking.service?.title || 'Unknown Service',
-          price_usdc: Number(booking.service?.price_usdc || booking.usdc_amount),
-          payment_method: booking.service?.payment_method || 'ethereum_usdc'
-        },
-        booking: {
-          status: booking.status,
-          delivered_at: booking.delivered_at
-        },
-        disputes: booking.disputes || []
-      }));
+      if (!paymentsData || paymentsData.length === 0) {
+        console.log('No verified payments found');
+        return [];
+      }
+      
+      // Now get disputes for these bookings
+      const bookingIds = paymentsData.map(p => p.booking_id).filter(Boolean);
+      const { data: disputesData } = await supabase
+        .from('disputes')
+        .select('booking_id, status')
+        .in('booking_id', bookingIds);
+      
+      console.log('Disputes for bookings:', disputesData);
+      
+      // Transform payments data to match PayoutData interface
+      const transformedData: PayoutData[] = paymentsData.map(payment => {
+        const relatedDisputes = disputesData?.filter(d => d.booking_id === payment.booking_id) || [];
+        
+        return {
+          id: payment.id,
+          user_id: payment.user_id,
+          creator_id: payment.creator_id,
+          service_id: payment.service_id,
+          booking_id: payment.booking_id,
+          amount: Number(payment.amount),
+          network: payment.network,
+          tx_hash: payment.tx_hash,
+          payout_tx_hash: payment.payout_tx_hash,
+          payout_status: payment.payout_status || 'pending',
+          created_at: payment.created_at,
+          paid_out_at: payment.paid_out_at,
+          paid_out_by: payment.paid_out_by,
+          payer: {
+            handle: payment.users?.handle || 'Unknown',
+            email: payment.users?.email || 'Unknown'
+          },
+          creator: {
+            handle: payment.creators?.handle || 'Unknown',
+            email: payment.creators?.email || 'Unknown',
+            payout_address_eth: payment.creators?.payout_address_eth,
+            payout_address_sol: payment.creators?.payout_address_sol,
+            payout_address_bsc: payment.creators?.payout_address_bsc,
+            payout_address_sui: payment.creators?.payout_address_sui,
+            payout_address_cardano: payment.creators?.payout_address_cardano
+          },
+          service: {
+            title: payment.services?.title || 'Unknown Service',
+            price_usdc: Number(payment.services?.price_usdc || payment.amount),
+            payment_method: payment.services?.payment_method || 'ethereum_usdc'
+          },
+          booking: {
+            status: payment.bookings?.status || 'unknown',
+            delivered_at: payment.bookings?.delivered_at
+          },
+          disputes: relatedDisputes.map(d => ({ status: d.status || 'unknown' }))
+        };
+      });
       
       // Apply filters
       let filteredData = transformedData;
       
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'pending') {
-          // Show bookings that are delivered or accepted but not yet paid out
+          // Show payments that are verified but not yet paid out
           filteredData = filteredData.filter(payout => 
-            ['delivered', 'accepted'].includes(payout.booking.status)
+            payout.payout_status === 'pending' &&
+            ['delivered', 'accepted', 'released'].includes(payout.booking.status)
           );
         } else if (statusFilter === 'completed') {
-          // Show bookings that have been released (paid out)
+          // Show payments that have been paid out
           filteredData = filteredData.filter(payout => 
-            payout.booking.status === 'released'
+            payout.payout_status === 'completed'
           );
         }
       }
@@ -165,18 +186,18 @@ export const AdminPayouts = () => {
     mutationFn: async ({ paymentId, payoutTxHash }: { paymentId: string; payoutTxHash: string }) => {
       const { data: currentUser } = await supabase.auth.getUser();
       
-      // Update the booking status to released
+      // Update the payment record with payout details
       const { error } = await supabase
-        .from('bookings')
+        .from('payments')
         .update({
-          status: 'released'
+          payout_status: 'completed',
+          payout_tx_hash: payoutTxHash,
+          paid_out_at: new Date().toISOString(),
+          paid_out_by: currentUser.user?.id
         })
         .eq('id', paymentId);
 
       if (error) throw error;
-      
-      // TODO: In a real implementation, you might want to store payout transaction details 
-      // in a separate payouts table for better tracking
     },
     onSuccess: () => {
       toast.success('Payout processed successfully!');
@@ -316,7 +337,7 @@ export const AdminPayouts = () => {
                   <TableHead>Network</TableHead>
                   <TableHead>Creator Wallet</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Received Date</TableHead>
+                  <TableHead>Payment Date</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -324,7 +345,7 @@ export const AdminPayouts = () => {
                 {payouts?.map((payout) => {
                   const walletAddress = getCreatorWalletAddress(payout.creator, payout.network);
                   const isEligible = isPayoutEligible(payout);
-                  const currentPayoutStatus = payout.booking.status === 'released' ? 'completed' : 'pending';
+                  const currentPayoutStatus = payout.payout_status || 'pending';
                   
                   return (
                     <TableRow key={payout.id}>
@@ -415,7 +436,7 @@ export const AdminPayouts = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => window.open(getExplorerUrl(payout.network, payout.tx_hash), '_blank')}
+                              onClick={() => window.open(getExplorerUrl(payout.network, payout.payout_tx_hash || payout.tx_hash), '_blank')}
                             >
                               <ExternalLink className="h-4 w-4" />
                             </Button>
@@ -443,7 +464,7 @@ export const AdminPayouts = () => {
             <div className="text-center py-8 text-muted-foreground">
               No payouts found matching your criteria.
               <div className="text-xs mt-2">
-                Debug: Showing paid bookings from bookings table that need payouts
+                Debug: Showing verified payments from payments table that need payouts
               </div>
             </div>
           )}
