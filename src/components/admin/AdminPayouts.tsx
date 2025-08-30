@@ -20,17 +20,14 @@ interface PayoutRecord {
   payout_status: string;
   paid_out_at: string | null;
   service_id: string;
-  creator: {
-    user_id: string;
+  creator_user: {
+    handle: string | null;
+    email: string | null;
     payout_address_eth: string | null;
     payout_address_sol: string | null;
     payout_address_bsc: string | null;
     payout_address_cardano: string | null;
     payout_address_sui: string | null;
-    users: {
-      handle: string | null;
-      email: string | null;
-    } | null;
   } | null;
   services: {
     title: string;
@@ -56,17 +53,14 @@ export const AdminPayouts = () => {
           payout_status,
           paid_out_at,
           service_id,
-          creator:creators!payments_creator_id_fkey (
-            user_id,
+          creator_user:users!payments_creator_id_fkey (
+            handle,
+            email,
             payout_address_eth,
             payout_address_sol,
             payout_address_bsc,
             payout_address_cardano,
-            payout_address_sui,
-            users:users!creators_user_id_fkey (
-              handle,
-              email
-            )
+            payout_address_sui
           ),
           services:services!payments_service_id_fkey (
             title
@@ -114,7 +108,7 @@ export const AdminPayouts = () => {
     payoutMutation.mutate({ paymentId, txHash });
   };
 
-  const getPayoutAddress = (creator: PayoutRecord['creator'], network: string) => {
+  const getPayoutAddress = (creator: PayoutRecord['creator_user'], network: string) => {
     if (!creator) return 'No address';
     
     switch (network.toLowerCase()) {
@@ -169,7 +163,7 @@ export const AdminPayouts = () => {
                 <CheckCircle className="h-4 w-4 text-green-500" />
               )}
               <span className="font-semibold">
-                {payout.creator?.users?.handle || payout.creator?.users?.email || 'Unknown Creator'}
+                {payout.creator_user?.handle || payout.creator_user?.email || 'Unknown Creator'}
               </span>
             </div>
             <Badge variant={isPending ? "secondary" : "default"}>
@@ -199,7 +193,7 @@ export const AdminPayouts = () => {
           <div>
             <span className="text-muted-foreground text-sm">Payout Address:</span>
             <div className="font-mono text-sm bg-muted p-2 rounded break-all">
-              {getPayoutAddress(payout.creator, payout.network)}
+              {getPayoutAddress(payout.creator_user, payout.network)}
             </div>
           </div>
 
