@@ -233,10 +233,13 @@ export const PayoutsTracker = () => {
                   <p>No completed payouts yet</p>
                   <p className="text-sm">Completed payouts will appear here with transaction details.</p>
                 </div>
+              ) : (
+                <div>
+                  {completedPayouts.map((payout) => (
+                    <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                  ))}
+                </div>
               )}
-              {completedPayouts.map((payout) => (
-                <PayoutCard key={payout.id} payout={payout} isPending={false} />
-              ))}
             </TabsContent>
           </Tabs>
         </CardContent>
