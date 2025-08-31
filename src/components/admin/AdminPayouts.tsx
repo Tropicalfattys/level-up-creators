@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Clock, CheckCircle, ExternalLink } from 'lucide-react';
+import { Clock, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface PayoutRecord {
   id: string;
@@ -262,6 +261,10 @@ export const AdminPayouts = () => {
                 <Clock className="h-4 w-4" />
                 Pending ({pendingPayouts.length})
               </TabsTrigger>
+              <TabsTrigger value="refunds" className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Refunds (0)
+              </TabsTrigger>
               <TabsTrigger value="completed" className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Completed ({completedPayouts.length})
@@ -284,6 +287,14 @@ export const AdminPayouts = () => {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="refunds">
+              <div className="text-center py-8 text-muted-foreground">
+                <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No refunds to process</p>
+                <p className="text-sm">Refund requests will appear here when disputes require payment reversals.</p>
+              </div>
             </TabsContent>
 
             <TabsContent value="completed">
