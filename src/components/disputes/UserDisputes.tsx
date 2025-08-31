@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Plus, Clock, Shield, CheckCircle, XCircle, User } from 'lucide-react';
+import { AlertTriangle, Plus, Clock, Shield, CheckCircle, XCircle, User, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, differenceInHours } from 'date-fns';
 
@@ -40,6 +39,8 @@ interface ExistingDispute {
   resolved_at?: string;
   resolved_by?: string;
   resolution_note?: string;
+  refund_tx_hash?: string;
+  refunded_at?: string;
   bookings: BookingForDispute;
 }
 
@@ -102,7 +103,7 @@ export const UserDisputes = () => {
 
       if (bookingIds.length === 0) return [];
 
-      // Then get disputes for those bookings
+      // Then get disputes for those bookings including refund information
       const { data, error } = await supabase
         .from('disputes')
         .select(`
@@ -115,6 +116,8 @@ export const UserDisputes = () => {
           resolved_at,
           resolved_by,
           resolution_note,
+          refund_tx_hash,
+          refunded_at,
           bookings (
             id,
             usdc_amount,
@@ -202,6 +205,17 @@ export const UserDisputes = () => {
       return { winner: 'creator', text: 'Ruled in favor of Creator' };
     }
     return null;
+  };
+
+  const getExplorerUrl = (network: string, txHash: string) => {
+    const explorers = {
+      ethereum: `https://etherscan.io/tx/${txHash}`,
+      solana: `https://explorer.solana.com/tx/${txHash}`,
+      bsc: `https://bscscan.com/tx/${txHash}`,
+      sui: `https://explorer.sui.io/txblock/${txHash}`,
+      cardano: `https://cardanoscan.io/transaction/${txHash}`
+    };
+    return explorers[network as keyof typeof explorers] || '#';
   };
 
   return (
@@ -324,6 +338,23 @@ export const UserDisputes = () => {
                             >
                               {outcome.text}
                             </Badge>
+                            {/* Show refund transaction hash if available and ruled in favor of client */}
+                            {outcome.winner === 'client' && dispute.refund_tx_hash && (
+                              <div className="flex items-center gap-1 ml-2">
+                                <span className="text-xs text-muted-foreground">Refund TX:</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-auto p-1 text-xs"
+                                  onClick={() => window.open(getExplorerUrl('ethereum', dispute.refund_tx_hash!), '_blank')}
+                                >
+                                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                                    {dispute.refund_tx_hash.slice(0, 6)}...{dispute.refund_tx_hash.slice(-6)}
+                                  </code>
+                                  <ExternalLink className="h-3 w-3 ml-1" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
                         
@@ -339,6 +370,12 @@ export const UserDisputes = () => {
                         {dispute.resolved_at && (
                           <p className="text-xs text-gray-500">
                             Resolved: {format(new Date(dispute.resolved_at), 'PPp')}
+                          </p>
+                        )}
+
+                        {dispute.refunded_at && (
+                          <p className="text-xs text-gray-500">
+                            Refunded: {format(new Date(dispute.refunded_at), 'PPp')}
                           </p>
                         )}
                       </div>
