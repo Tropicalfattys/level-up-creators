@@ -171,7 +171,14 @@ export default function Careers() {
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-6">🚀 Careers at LeveledUp</h1>
+          <h1 className="text-4xl font-bold mb-6 flex items-center justify-center gap-3">
+            <img 
+              src="/lovable-uploads/bafd9424-aabd-4841-94b4-9ca93b9b6669.png" 
+              alt="LeveledUp" 
+              className="h-12 w-12"
+            />
+            Careers at LeveledUp
+          </h1>
           <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
             Join us in building the world's first crypto-native creator marketplace, where fans connect directly with influencers, creators, and thought leaders in Web3.
           </p>
