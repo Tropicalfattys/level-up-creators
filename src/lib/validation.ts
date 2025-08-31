@@ -60,6 +60,10 @@ export const creatorApplicationSchema = z.object({
   payout_address_sol: z.string()
     .regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, 'Invalid Solana address')
     .optional()
+    .or(z.literal('')),
+  payout_address_sui: z.string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid SUI address')
+    .optional()
     .or(z.literal(''))
 });
 

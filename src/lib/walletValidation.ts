@@ -16,6 +16,12 @@ export const walletAddressSchemas = {
     .refine(
       (addr) => !addr.startsWith('11111111111111111111111111111111'),
       'Cannot use system program address'
+    ),
+  sui: z.string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid SUI address format')
+    .refine(
+      (addr) => addr !== '0x0000000000000000000000000000000000000000000000000000000000000000',
+      'Cannot use null SUI address'
     )
 };
 
@@ -27,7 +33,7 @@ export interface WalletValidationResult {
 
 export const validateWalletAddress = (
   address: string,
-  chain: 'ethereum' | 'base' | 'solana'
+  chain: 'ethereum' | 'base' | 'solana' | 'sui'
 ): WalletValidationResult => {
   try {
     const sanitizedAddress = sanitizeString(address);
@@ -39,9 +45,15 @@ export const validateWalletAddress = (
       };
     }
 
-    const schema = chain === 'solana' 
-      ? walletAddressSchemas.solana 
-      : walletAddressSchemas.ethereum;
+    let schema;
+    if (chain === 'solana') {
+      schema = walletAddressSchemas.solana;
+    } else if (chain === 'sui') {
+      schema = walletAddressSchemas.sui;
+    } else {
+      // For ethereum and base
+      schema = walletAddressSchemas.ethereum;
+    }
     
     const validation = validateInput(schema, sanitizedAddress);
     
