@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, Clock, Download, ExternalLink, Copy, Hash } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface PaymentEarning {
   id: string;
@@ -31,6 +32,7 @@ interface EarningsData {
 
 export const EarningsTracker = () => {
   const { user } = useAuth();
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: earnings, isLoading } = useQuery({
     queryKey: ['creator-earnings', user?.id],
@@ -122,6 +124,80 @@ export const EarningsTracker = () => {
     enabled: !!user?.id
   });
 
+  const generateCSV = (earnings: EarningsData) => {
+    const headers = [
+      'Date',
+      'Service Title',
+      'Client Handle',
+      'Client Email',
+      'Amount (Creator Share)',
+      'Currency',
+      'Status',
+      'Transaction Hash',
+      'Network'
+    ];
+
+    const rows = earnings.recentEarnings.map(earning => [
+      format(new Date(earning.created_at), 'yyyy-MM-dd HH:mm:ss'),
+      earning.service_title,
+      earning.client_handle,
+      earning.client_email,
+      earning.amount.toFixed(2),
+      earning.currency?.toUpperCase() || 'USDC',
+      earning.status,
+      earning.tx_hash,
+      earning.network?.toUpperCase() || 'N/A'
+    ]);
+
+    // Add summary row at the top
+    const summaryRows = [
+      ['EARNINGS SUMMARY', '', '', '', '', '', '', '', ''],
+      ['Total Earnings', '', '', '', earnings.totalEarnings.toFixed(2), 'USDC', '', '', ''],
+      ['This Month', '', '', '', earnings.monthlyEarnings.toFixed(2), 'USDC', '', '', ''],
+      ['Pending Earnings', '', '', '', earnings.pendingEarnings.toFixed(2), 'USDC', '', '', ''],
+      ['Completed Bookings', '', '', '', earnings.completedBookings.toString(), '', '', '', ''],
+      ['', '', '', '', '', '', '', '', ''], // Empty row separator
+      ['TRANSACTION DETAILS', '', '', '', '', '', '', '', '']
+    ];
+
+    const allRows = [...summaryRows, headers, ...rows];
+    
+    return allRows.map(row => 
+      row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const handleExportReport = async () => {
+    if (!earnings) {
+      toast.error('No earnings data available to export');
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      const csvContent = generateCSV(earnings);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `earnings-report-${format(new Date(), 'yyyy-MM')}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Earnings report exported successfully');
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast.error('Failed to export earnings report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const copyTxHash = (txHash: string) => {
     navigator.clipboard.writeText(txHash);
     toast.success('Transaction hash copied to clipboard');
@@ -205,9 +281,15 @@ export const EarningsTracker = () => {
             <CardDescription>Actions</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button size="sm" variant="outline" className="w-full">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="w-full"
+              onClick={handleExportReport}
+              disabled={isExporting || !earnings.recentEarnings.length}
+            >
               <Download className="h-3 w-3 mr-1" />
-              Export Report
+              {isExporting ? 'Exporting...' : 'Export Report'}
             </Button>
           </CardContent>
         </Card>
