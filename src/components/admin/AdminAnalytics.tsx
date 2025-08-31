@@ -13,9 +13,9 @@ export const AdminAnalytics = () => {
         const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes] = await Promise.all([
           supabase.from('users' as any).select('id, role, created_at'),
           supabase.from('creators' as any).select('id, approved, tier, created_at'),
-          supabase.from('bookings' as any).select('id, status, usdc_amount, platform_fee, created_at'),
+          supabase.from('bookings' as any).select('id, status, usdc_amount, created_at'),
           supabase.from('disputes' as any).select('id, status, created_at'),
-          supabase.from('bookings' as any).select('platform_fee').not('platform_fee', 'is', null)
+          supabase.from('payments' as any).select('amount, payment_type, status').eq('status', 'verified')
         ]);
 
         const users = usersRes.data || [];
@@ -23,7 +23,21 @@ export const AdminAnalytics = () => {
         const bookings = bookingsRes.data || [];
         const disputes = disputesRes.data || [];
 
-        const totalRevenue = revenueRes.data?.reduce((sum: number, booking: any) => sum + (Number(booking.platform_fee) || 0), 0) || 0;
+        // Calculate platform revenue from verified payments
+        const revenueData = revenueRes.data || [];
+        const totalRevenue = revenueData.reduce((sum: number, payment: any) => {
+          const amount = Number(payment.amount) || 0;
+          
+          if (payment.payment_type === 'creator_tier') {
+            // Platform takes 100% of subscription fees
+            return sum + amount;
+          } else if (payment.payment_type === 'service_booking') {
+            // Platform takes 15% of service bookings
+            return sum + (amount * 0.15);
+          }
+          
+          return sum;
+        }, 0);
 
         // Calculate growth data for the last 7 days
         const last7Days = Array.from({ length: 7 }, (_, i) => {
