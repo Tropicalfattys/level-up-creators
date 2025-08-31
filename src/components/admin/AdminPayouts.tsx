@@ -255,6 +255,12 @@ export const AdminPayouts = () => {
     return payoutAmount.toFixed(2);
   };
 
+  const formatRefundAmount = (amount: number) => {
+    // For refunds, we refund 85% (client loses the 15% platform fee)
+    const refundAmount = amount * 0.85;
+    return refundAmount.toFixed(2);
+  };
+
   const getExplorerUrl = (txHash: string, network: string) => {
     switch (network.toLowerCase()) {
       case 'ethereum':
@@ -384,14 +390,18 @@ export const AdminPayouts = () => {
               <div className="font-medium">{refund.bookings?.services?.title || 'Unknown Service'}</div>
             </div>
             <div>
-              <span className="text-muted-foreground">Refund Amount:</span>
-              <div className="font-semibold text-red-600">${refund.amount} USDC</div>
+              <span className="text-muted-foreground">Original Amount:</span>
+              <div className="font-medium">${refund.amount} USDC</div>
             </div>
             <div>
               <span className="text-muted-foreground">Network:</span>
               <div className="capitalize">{refund.network}</div>
             </div>
             <div>
+              <span className="text-muted-foreground">Refund Amount:</span>
+              <div className="font-semibold text-red-600">${formatRefundAmount(refund.amount)} USDC</div>
+            </div>
+            <div className="col-span-2">
               <span className="text-muted-foreground">Dispute Date:</span>
               <div>{new Date(refund.created_at).toLocaleDateString()}</div>
             </div>
