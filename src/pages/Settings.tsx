@@ -144,8 +144,9 @@ export default function Settings() {
       case 'bsc':
         return /^0x[a-fA-F0-9]{40}$/.test(address);
       case 'solana':
-      case 'sui':
         return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+      case 'sui':
+        return /^0x[a-fA-F0-9]{64}$/.test(address);
       case 'cardano':
         return /^addr1[a-z0-9]{98,}$/.test(address);
       default:
@@ -161,8 +162,9 @@ export default function Settings() {
         case 'bsc':
           return 'Invalid Ethereum/BSC address format (must start with 0x)';
         case 'solana':
+          return 'Invalid Solana address format';
         case 'sui':
-          return 'Invalid Solana/Sui address format';
+          return 'Invalid SUI address format (must be 0x followed by 64 hex characters)';
         case 'cardano':
           return 'Invalid Cardano address format (must start with addr1)';
         default:
@@ -570,7 +572,7 @@ export default function Settings() {
                 </Label>
                 <Input
                   id="sui-wallet"
-                  placeholder="Enter Sui address..."
+                  placeholder="0x..."
                   value={profileData.payout_address_sui}
                   onChange={(e) => setProfileData(prev => ({ ...prev, payout_address_sui: e.target.value }))}
                   className={getWalletValidationError(profileData.payout_address_sui, 'sui') ? 'border-red-500' : ''}
