@@ -10,28 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, MessageSquare, Search, Clock, CheckCircle } from 'lucide-react';
+import { Mail, MessageSquare, Search, Clock, CheckCircle, Users, Briefcase, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export const AdminContacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [response, setResponse] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: contacts, isLoading } = useQuery({
+  // Original contact messages query (for contact form submissions)
+  const { data: contacts, isLoading: contactsLoading } = useQuery({
     queryKey: ['admin-contacts'],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from('contacts' as any)
-          .select(`
-            *,
-            responded_by_user:responded_by (
-              handle
-            )
-          `)
+          .from('contact_messages')
+          .select('*')
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -46,23 +44,129 @@ export const AdminContacts = () => {
     }
   });
 
+  // General Messages query (direct_messages table)
+  const { data: generalMessages, isLoading: generalLoading } = useQuery({
+    queryKey: ['admin-general-messages'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('direct_messages')
+          .select(`
+            *,
+            from_user:users!direct_messages_from_user_id_fkey (handle, avatar_url, role),
+            to_user:users!direct_messages_to_user_id_fkey (handle, avatar_url, role)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('General messages query error:', error);
+          return [];
+        }
+
+        // Group messages by conversation pairs
+        const conversationMap = new Map();
+        
+        data?.forEach((message: any) => {
+          const participants = [message.from_user_id, message.to_user_id].sort();
+          const conversationKey = participants.join('-');
+          
+          if (!conversationMap.has(conversationKey)) {
+            conversationMap.set(conversationKey, {
+              id: conversationKey,
+              participants: [message.from_user, message.to_user],
+              lastMessage: message,
+              messageCount: 1,
+              messages: [message]
+            });
+          } else {
+            const conversation = conversationMap.get(conversationKey);
+            conversation.messageCount++;
+            conversation.messages.push(message);
+            if (new Date(message.created_at) > new Date(conversation.lastMessage.created_at)) {
+              conversation.lastMessage = message;
+            }
+          }
+        });
+
+        return Array.from(conversationMap.values());
+      } catch (error) {
+        console.error('General messages fetch error:', error);
+        return [];
+      }
+    }
+  });
+
+  // Service Messages query (messages table with booking context)
+  const { data: serviceMessages, isLoading: serviceLoading } = useQuery({
+    queryKey: ['admin-service-messages'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            *,
+            from_user:users!messages_from_user_id_fkey (handle, avatar_url, role),
+            to_user:users!messages_to_user_id_fkey (handle, avatar_url, role),
+            booking:bookings (
+              id,
+              status,
+              usdc_amount,
+              services (title, description),
+              client:users!bookings_client_id_fkey (handle),
+              creator:users!bookings_creator_id_fkey (handle)
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Service messages query error:', error);
+          return [];
+        }
+
+        // Group messages by booking_id
+        const bookingMap = new Map();
+        
+        data?.forEach((message: any) => {
+          const bookingId = message.booking_id;
+          
+          if (!bookingMap.has(bookingId)) {
+            bookingMap.set(bookingId, {
+              id: bookingId,
+              booking: message.booking,
+              lastMessage: message,
+              messageCount: 1,
+              messages: [message]
+            });
+          } else {
+            const conversation = bookingMap.get(bookingId);
+            conversation.messageCount++;
+            conversation.messages.push(message);
+            if (new Date(message.created_at) > new Date(conversation.lastMessage.created_at)) {
+              conversation.lastMessage = message;
+            }
+          }
+        });
+
+        return Array.from(bookingMap.values());
+      } catch (error) {
+        console.error('Service messages fetch error:', error);
+        return [];
+      }
+    }
+  });
+
   const respondToContact = useMutation({
     mutationFn: async ({ contactId }: { contactId: string }) => {
       const { data: user } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('contacts' as any)
+        .from('contact_messages')
         .update({ 
-          status: 'responded',
-          responded_by: user.user?.id,
-          responded_at: new Date().toISOString()
+          status: 'closed'
         })
         .eq('id', contactId);
       
       if (error) throw error;
-      
-      // In a real app, you'd send an email here using an edge function
-      // For now, we'll just mark it as responded
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-contacts'] });
@@ -86,22 +190,38 @@ export const AdminContacts = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const filteredGeneralMessages = generalMessages?.filter((conversation: any) => {
+    if (!searchTerm) return true;
+    return conversation.participants.some((user: any) => 
+      user?.handle?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || conversation.lastMessage?.body?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const filteredServiceMessages = serviceMessages?.filter((conversation: any) => {
+    if (!searchTerm) return true;
+    return conversation.booking?.services?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           conversation.booking?.client?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           conversation.booking?.creator?.handle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           conversation.lastMessage?.body?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'destructive';
-      case 'responded': return 'default';
-      case 'closed': return 'secondary';
+      case 'open': return 'destructive';
+      case 'closed': return 'default';
       default: return 'outline';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'new': return <Clock className="h-3 w-3 mr-1" />;
-      case 'responded': return <CheckCircle className="h-3 w-3 mr-1" />;
+      case 'open': return <Clock className="h-3 w-3 mr-1" />;
+      case 'closed': return <CheckCircle className="h-3 w-3 mr-1" />;
       default: return null;
     }
   };
+
+  const isLoading = contactsLoading || generalLoading || serviceLoading;
 
   if (isLoading) {
     return <div className="text-center py-8">Loading contacts...</div>;
@@ -116,17 +236,19 @@ export const AdminContacts = () => {
             Contact Management
           </CardTitle>
           <CardDescription>
-            Manage and respond to customer inquiries
+            Manage and respond to customer inquiries and view all platform messages
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="contact-form" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="contact-form">Contact Form</TabsTrigger>
               <TabsTrigger value="general">General Messages</TabsTrigger>
               <TabsTrigger value="service">Service Messages</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="general" className="space-y-4 mt-6">
+            {/* Contact Form Tab */}
+            <TabsContent value="contact-form" className="space-y-4 mt-6">
               {/* Filters */}
               <div className="flex gap-4">
                 <div className="relative flex-1">
@@ -144,8 +266,7 @@ export const AdminContacts = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="responded">Responded</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -168,7 +289,7 @@ export const AdminContacts = () => {
                           "{contact.message?.substring(0, 100) || 'No message'}..."
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Received {new Date(contact.created_at).toLocaleString()}
+                          Received {format(new Date(contact.created_at), 'MMM d, yyyy HH:mm')}
                         </p>
                       </div>
                     </div>
@@ -185,7 +306,8 @@ export const AdminContacts = () => {
                             size="sm"
                             onClick={() => setSelectedContact(contact)}
                           >
-                            View & Respond
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
@@ -200,20 +322,7 @@ export const AdminContacts = () => {
                                   <p><strong>Name:</strong> {contact.name}</p>
                                   <p><strong>Email:</strong> {contact.email}</p>
                                   <p><strong>Status:</strong> {contact.status}</p>
-                                  <p><strong>Received:</strong> {new Date(contact.created_at).toLocaleString()}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <h4 className="font-medium mb-2">Response Info</h4>
-                                <div className="space-y-2 text-sm">
-                                  {contact.responded_by_user ? (
-                                    <>
-                                      <p><strong>Responded By:</strong> {contact.responded_by_user?.handle || 'Admin'}</p>
-                                      <p><strong>Response Date:</strong> {contact.responded_at ? new Date(contact.responded_at).toLocaleString() : 'N/A'}</p>
-                                    </>
-                                  ) : (
-                                    <p className="text-muted-foreground">Not yet responded</p>
-                                  )}
+                                  <p><strong>Received:</strong> {format(new Date(contact.created_at), 'PPpp')}</p>
                                 </div>
                               </div>
                             </div>
@@ -232,30 +341,17 @@ export const AdminContacts = () => {
                               </div>
                             </div>
 
-                            {contact.status === 'new' && (
-                              <div>
-                                <h4 className="font-medium mb-2">Response</h4>
-                                <Textarea
-                                  placeholder="Write your response here... (Note: This is a demo - in production, this would send an email)"
-                                  value={response}
-                                  onChange={(e) => setResponse(e.target.value)}
-                                  className="mb-3"
-                                  rows={4}
-                                />
-                                <div className="flex gap-2">
-                                  <Button 
-                                    onClick={() => respondToContact.mutate({
-                                      contactId: contact.id
-                                    })}
-                                    className="flex-1"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Mark as Responded
-                                  </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  In a production environment, this would automatically send an email response to the customer.
-                                </p>
+                            {contact.status === 'open' && (
+                              <div className="flex gap-2">
+                                <Button 
+                                  onClick={() => respondToContact.mutate({
+                                    contactId: contact.id
+                                  })}
+                                  className="flex-1"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Mark as Closed
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -269,22 +365,228 @@ export const AdminContacts = () => {
                     <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium mb-2">No Contact Inquiries</h3>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      {statusFilter === 'all' 
-                        ? "No customer inquiries have been submitted yet. The contact system is ready to receive messages."
-                        : `No contacts with status "${statusFilter}" found.`}
+                      No customer inquiries have been submitted yet.
                     </p>
                   </div>
                 )}
               </div>
             </TabsContent>
             
+            {/* General Messages Tab */}
+            <TabsContent value="general" className="space-y-4 mt-6">
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search general conversations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {filteredGeneralMessages?.map((conversation: any) => (
+                  <div key={conversation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                        <Users className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          @{conversation.participants[0]?.handle} ↔ @{conversation.participants[1]?.handle}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {conversation.messageCount} message{conversation.messageCount !== 1 ? 's' : ''}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          "{conversation.lastMessage?.body?.substring(0, 100) || 'No content'}..."
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Last: {format(new Date(conversation.lastMessage.created_at), 'MMM d, yyyy HH:mm')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedConversation(conversation)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Conversation
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>General Conversation</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-4 p-3 bg-muted rounded">
+                              <Users className="h-5 w-5" />
+                              <span className="font-medium">
+                                @{conversation.participants[0]?.handle} ↔ @{conversation.participants[1]?.handle}
+                              </span>
+                              <Badge>{conversation.messageCount} messages</Badge>
+                            </div>
+                            
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              {conversation.messages?.sort((a: any, b: any) => 
+                                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                              ).map((message: any) => (
+                                <div key={message.id} className="flex gap-3 p-3 border rounded">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-medium">
+                                      {message.from_user?.handle?.charAt(0) || '?'}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-sm">@{message.from_user?.handle}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm">{message.body}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                ))}
+                {(!filteredGeneralMessages || filteredGeneralMessages.length === 0) && (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No General Messages</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      No direct messages between users found.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            {/* Service Messages Tab */}
             <TabsContent value="service" className="space-y-4 mt-6">
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Service Messages</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Service-related messages and inquiries will be displayed here.
-                </p>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search service conversations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {filteredServiceMessages?.map((conversation: any) => (
+                  <div key={conversation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
+                        <Briefcase className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {conversation.booking?.services?.title || 'Service Booking'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          @{conversation.booking?.client?.handle} → @{conversation.booking?.creator?.handle}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {conversation.messageCount} message{conversation.messageCount !== 1 ? 's' : ''} • 
+                          ${conversation.booking?.usdc_amount} USDC • 
+                          Status: {conversation.booking?.status}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          "{conversation.lastMessage?.body?.substring(0, 100) || 'No content'}..."
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Last: {format(new Date(conversation.lastMessage.created_at), 'MMM d, yyyy HH:mm')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{conversation.booking?.status}</Badge>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedConversation(conversation)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Conversation
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Service Conversation</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4 p-3 bg-muted rounded">
+                              <div>
+                                <h4 className="font-medium mb-2">Service Details</h4>
+                                <p className="text-sm"><strong>Service:</strong> {conversation.booking?.services?.title}</p>
+                                <p className="text-sm"><strong>Amount:</strong> ${conversation.booking?.usdc_amount} USDC</p>
+                                <p className="text-sm"><strong>Status:</strong> {conversation.booking?.status}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium mb-2">Participants</h4>
+                                <p className="text-sm"><strong>Client:</strong> @{conversation.booking?.client?.handle}</p>
+                                <p className="text-sm"><strong>Creator:</strong> @{conversation.booking?.creator?.handle}</p>
+                                <p className="text-sm"><strong>Messages:</strong> {conversation.messageCount}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              {conversation.messages?.sort((a: any, b: any) => 
+                                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                              ).map((message: any) => (
+                                <div key={message.id} className="flex gap-3 p-3 border rounded">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-medium">
+                                      {message.from_user?.handle?.charAt(0) || '?'}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-sm">@{message.from_user?.handle}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {message.from_user?.role}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm">{message.body}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                ))}
+                {(!filteredServiceMessages || filteredServiceMessages.length === 0) && (
+                  <div className="text-center py-12">
+                    <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No Service Messages</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      No service-related conversations found.
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
