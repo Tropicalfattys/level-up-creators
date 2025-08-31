@@ -321,6 +321,8 @@ export type Database = {
           id: string
           opened_by: string
           reason: string
+          refund_tx_hash: string | null
+          refunded_at: string | null
           resolution_note: string | null
           resolved_at: string | null
           resolved_by: string | null
@@ -332,6 +334,8 @@ export type Database = {
           id?: string
           opened_by: string
           reason: string
+          refund_tx_hash?: string | null
+          refunded_at?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -343,6 +347,8 @@ export type Database = {
           id?: string
           opened_by?: string
           reason?: string
+          refund_tx_hash?: string | null
+          refunded_at?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
