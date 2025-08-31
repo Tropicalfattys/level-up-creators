@@ -311,8 +311,7 @@ export default function Careers() {
         <div className="max-w-2xl mx-auto">
           <Card className="border-2">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl flex items-center justify-center gap-2">
-                <Briefcase className="h-6 w-6" />
+              <CardTitle className="text-2xl">
                 📩 Ready to join?
               </CardTitle>
               <CardDescription>
