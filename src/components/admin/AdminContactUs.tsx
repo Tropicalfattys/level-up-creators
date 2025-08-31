@@ -47,15 +47,15 @@ export const AdminContactUs = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">{message.subject}</CardTitle>
+                    <CardTitle className="text-lg break-words">{message.subject}</CardTitle>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
-                        {message.name}
+                        <span className="break-words">{message.name}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Mail className="h-4 w-4" />
-                        {message.email}
+                        <span className="break-words">{message.email}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
@@ -69,7 +69,7 @@ export const AdminContactUs = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap">{message.message}</p>
+                <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.message}</p>
               </CardContent>
             </Card>
           ))}
