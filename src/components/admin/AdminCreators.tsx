@@ -24,11 +24,6 @@ interface Creator {
   approved_at: string;
   category: string;
   created_at: string;
-  payout_address_eth: string;
-  payout_address_sol: string;
-  payout_address_bsc: string;
-  payout_address_sui: string;
-  payout_address_cardano: string;
   users: {
     id: string;
     handle: string;
@@ -36,6 +31,11 @@ interface Creator {
     avatar_url: string;
     bio: string;
     social_links: any;
+    payout_address_eth: string;
+    payout_address_sol: string;
+    payout_address_bsc: string;
+    payout_address_sui: string;
+    payout_address_cardano: string;
   };
 }
 
@@ -51,7 +51,19 @@ export const AdminCreators = () => {
         .from('creators')
         .select(`
           *,
-          users!creators_user_id_fkey(*)
+          users!creators_user_id_fkey(
+            id,
+            handle,
+            email,
+            avatar_url,
+            bio,
+            social_links,
+            payout_address_eth,
+            payout_address_sol,
+            payout_address_bsc,
+            payout_address_sui,
+            payout_address_cardano
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -260,52 +272,52 @@ export const AdminCreators = () => {
                 <div>
                   <h4 className="font-semibold mb-2">Payout Wallet Addresses</h4>
                   <div className="space-y-3 text-sm">
-                    {selectedCreator.payout_address_eth && (
+                    {selectedCreator.users?.payout_address_eth && (
                       <div>
                         <strong>Ethereum:</strong>
                         <div className="bg-muted p-2 rounded font-mono text-xs break-all mt-1">
-                          {selectedCreator.payout_address_eth}
+                          {selectedCreator.users.payout_address_eth}
                         </div>
                       </div>
                     )}
-                    {selectedCreator.payout_address_sol && (
+                    {selectedCreator.users?.payout_address_sol && (
                       <div>
                         <strong>Solana:</strong>
                         <div className="bg-muted p-2 rounded font-mono text-xs break-all mt-1">
-                          {selectedCreator.payout_address_sol}
+                          {selectedCreator.users.payout_address_sol}
                         </div>
                       </div>
                     )}
-                    {selectedCreator.payout_address_bsc && (
+                    {selectedCreator.users?.payout_address_bsc && (
                       <div>
                         <strong>BSC:</strong>
                         <div className="bg-muted p-2 rounded font-mono text-xs break-all mt-1">
-                          {selectedCreator.payout_address_bsc}
+                          {selectedCreator.users.payout_address_bsc}
                         </div>
                       </div>
                     )}
-                    {selectedCreator.payout_address_sui && (
+                    {selectedCreator.users?.payout_address_sui && (
                       <div>
-                        <strong>Sui:</strong>
+                        <strong>SUI:</strong>
                         <div className="bg-muted p-2 rounded font-mono text-xs break-all mt-1">
-                          {selectedCreator.payout_address_sui}
+                          {selectedCreator.users.payout_address_sui}
                         </div>
                       </div>
                     )}
-                    {selectedCreator.payout_address_cardano && (
+                    {selectedCreator.users?.payout_address_cardano && (
                       <div>
                         <strong>Cardano:</strong>
                         <div className="bg-muted p-2 rounded font-mono text-xs break-all mt-1">
-                          {selectedCreator.payout_address_cardano}
+                          {selectedCreator.users.payout_address_cardano}
                         </div>
                       </div>
                     )}
                   </div>
-                  {!selectedCreator.payout_address_eth && 
-                   !selectedCreator.payout_address_sol && 
-                   !selectedCreator.payout_address_bsc && 
-                   !selectedCreator.payout_address_sui && 
-                   !selectedCreator.payout_address_cardano && (
+                  {!selectedCreator.users?.payout_address_eth && 
+                   !selectedCreator.users?.payout_address_sol && 
+                   !selectedCreator.users?.payout_address_bsc && 
+                   !selectedCreator.users?.payout_address_sui && 
+                   !selectedCreator.users?.payout_address_cardano && (
                     <div className="text-muted-foreground text-sm">
                       No payout addresses configured
                     </div>
