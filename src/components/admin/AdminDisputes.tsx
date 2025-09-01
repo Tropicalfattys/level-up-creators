@@ -89,15 +89,18 @@ export const AdminDisputes = () => {
       note: string;
       refundTxHash?: string; 
     }) => {
+      console.log('Resolving dispute:', { disputeId, action, note, refundTxHash });
+      
       const updateData: any = {
         status: 'resolved',
         resolved_at: new Date().toISOString(),
         resolution_note: note
       };
 
-      // Add refund transaction hash if provided
-      if (action === 'refund' && refundTxHash) {
-        updateData.refund_tx_hash = refundTxHash;
+      // Add refund transaction hash if provided and action is refund
+      if (action === 'refund' && refundTxHash && refundTxHash.trim()) {
+        updateData.refund_tx_hash = refundTxHash.trim();
+        console.log('Adding refund_tx_hash to dispute:', refundTxHash.trim());
       }
 
       const { error } = await supabase
@@ -114,9 +117,10 @@ export const AdminDisputes = () => {
         const bookingUpdateData: any = { status: newStatus };
         
         // Add refund details to booking if it's a refund
-        if (action === 'refund' && refundTxHash) {
-          bookingUpdateData.refund_tx_hash = refundTxHash;
+        if (action === 'refund' && refundTxHash && refundTxHash.trim()) {
+          bookingUpdateData.refund_tx_hash = refundTxHash.trim();
           bookingUpdateData.refunded_at = new Date().toISOString();
+          console.log('Adding refund_tx_hash to booking:', refundTxHash.trim());
         }
         
         await supabase
@@ -133,6 +137,7 @@ export const AdminDisputes = () => {
       setRefundTxHash('');
     },
     onError: (error: any) => {
+      console.error('Dispute resolution error:', error);
       toast.error('Failed to resolve dispute: ' + error.message);
     }
   });
@@ -148,11 +153,18 @@ export const AdminDisputes = () => {
       return;
     }
 
-    // For refunds, validate transaction hash if provided
-    if (action === 'refund' && refundTxHash && !refundTxHash.trim()) {
-      toast.error('Please provide a valid refund transaction hash or leave it empty');
+    // For refunds, require transaction hash
+    if (action === 'refund' && (!refundTxHash || !refundTxHash.trim())) {
+      toast.error('Please provide a refund transaction hash when refunding the client');
       return;
     }
+
+    console.log('Handling dispute resolution:', { 
+      action, 
+      disputeId: selectedDispute.id, 
+      note: resolutionNote, 
+      refundTxHash: action === 'refund' ? refundTxHash : undefined 
+    });
 
     resolveDispute.mutate({
       disputeId: selectedDispute.id,
@@ -306,7 +318,7 @@ export const AdminDisputes = () => {
                       </TableCell>
                       <TableCell>
                         {dispute.refund_tx_hash ? (
-                          <div className="text-xs font-mono">
+                          <div className="text-xs font-mono bg-muted px-2 py-1 rounded">
                             {dispute.refund_tx_hash.slice(0, 8)}...{dispute.refund_tx_hash.slice(-6)}
                           </div>
                         ) : (
@@ -370,26 +382,27 @@ export const AdminDisputes = () => {
               {selectedDispute.status === 'open' && (
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="resolution">Resolution Note</Label>
+                    <Label htmlFor="resolution">Resolution Note *</Label>
                     <Textarea
                       id="resolution"
                       value={resolutionNote}
                       onChange={(e) => setResolutionNote(e.target.value)}
                       placeholder="Explain the resolution decision..."
                       className="mt-1"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="refundTxHash">Refund Transaction Hash (Optional - for refunds only)</Label>
+                    <Label htmlFor="refundTxHash">Refund Transaction Hash *</Label>
                     <Input
                       id="refundTxHash"
                       value={refundTxHash}
                       onChange={(e) => setRefundTxHash(e.target.value)}
-                      placeholder="Enter refund transaction hash if refunding client..."
+                      placeholder="Enter the refund transaction hash (required for refunds)"
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Only fill this if you're refunding the client. This will be displayed in the resolved disputes list.
+                      <strong>Required when refunding the client.</strong> This transaction hash will be displayed to both parties as proof of refund.
                     </p>
                   </div>
                   <div className="flex gap-2">
