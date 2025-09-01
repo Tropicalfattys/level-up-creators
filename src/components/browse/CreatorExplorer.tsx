@@ -20,10 +20,11 @@ interface CreatorData {
   avatar_url?: string;
   headline?: string;
   category?: string;
+  tier?: string;
   rating: number;
   review_count: number;
   avg_delivery_days: number;
-  avg_price: number;
+  min_price: number;
   service_count: number;
 }
 
@@ -68,7 +69,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     queryFn: async (): Promise<CreatorData[]> => {
       console.log('Fetching creators with filters:', { searchQuery, categoryFilter, priceRange });
       
-      // Build the query for approved creators with their user data
+      // Build the query for approved creators with their user data and tier
       let query = supabase
         .from('creators')
         .select(`
@@ -76,6 +77,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           user_id,
           headline,
           category,
+          tier,
           rating,
           review_count,
           users!creators_user_id_fkey (
@@ -111,11 +113,11 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             return null;
           }
 
-          // Calculate averages
+          // Calculate minimum price and average delivery
           const prices = services?.map(s => Number(s.price_usdc)).filter(p => p > 0) || [];
           const deliveryDays = services?.map(s => s.delivery_days).filter(d => d > 0) || [];
           
-          const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+          const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
           const avgDelivery = deliveryDays.length > 0 ? Math.round(deliveryDays.reduce((a, b) => a + b, 0) / deliveryDays.length) : 3;
 
           // Apply search filter
@@ -134,7 +136,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             services?.some(service => service.category === categoryFilter);
 
           // Apply price filter
-          const priceMatch = avgPrice === 0 || (avgPrice >= priceRange[0] && avgPrice <= priceRange[1]);
+          const priceMatch = minPrice === 0 || (minPrice >= priceRange[0] && minPrice <= priceRange[1]);
 
           if (!searchMatch || !categoryMatch || !priceMatch) {
             return null;
@@ -147,10 +149,11 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             avatar_url: creator.users?.avatar_url,
             headline: creator.headline,
             category: creator.category,
+            tier: creator.tier,
             rating: Number(creator.rating) || 0,
             review_count: creator.review_count || 0,
             avg_delivery_days: avgDelivery,
-            avg_price: Math.round(avgPrice),
+            min_price: Math.round(minPrice),
             service_count: services?.length || 0
           };
         })
@@ -186,6 +189,22 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const handleSendMessage = (creator: CreatorData, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     navigate(`/messages/${creator.user_id}`);
+  };
+
+  // Helper function to get tier display name
+  const getTierDisplayName = (tier: string | undefined): string => {
+    if (!tier) return 'Basic Creator';
+    
+    switch (tier) {
+      case 'basic':
+        return 'Basic Creator';
+      case 'mid':
+        return 'Creator Plus';
+      case 'pro':
+        return 'Pro Creator';
+      default:
+        return 'Basic Creator';
+    }
   };
 
   // Create category icons with meaningful emojis and SHORT display names
@@ -296,13 +315,13 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold text-lg">@{creator.handle}</h3>
-                            {creator.category && (
-                              <Badge variant="outline" className="border-blue-500 text-blue-400">
-                                {creator.category}
-                              </Badge>
-                            )}
+                            <Badge variant="outline" className="border-blue-500 text-blue-400">
+                              {getTierDisplayName(creator.tier)}
+                            </Badge>
                           </div>
-                          <p className="text-zinc-400 mb-2">{creator.headline || 'Creator'}</p>
+                          {creator.headline && creator.headline !== 'GGGGGGG' && creator.headline !== 'JJJJJ' && (
+                            <p className="text-zinc-400 mb-2">{creator.headline}</p>
+                          )}
                           
                           <div className="flex items-center gap-6 text-sm">
                             <div className="flex items-center gap-1">
@@ -316,10 +335,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                               <span>{creator.avg_delivery_days} day delivery</span>
                             </div>
                             
-                            {creator.avg_price > 0 && (
+                            {creator.min_price > 0 && (
                               <div className="flex items-center gap-1 text-zinc-400">
                                 <DollarSign className="h-4 w-4" />
-                                <span>From ${creator.avg_price} USDC</span>
+                                <span>From ${creator.min_price} USDC</span>
                               </div>
                             )}
                             
