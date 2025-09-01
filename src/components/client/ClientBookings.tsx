@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -137,180 +138,106 @@ export const ClientBookings = () => {
   const tabCounts = getTabCounts();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
-        <p className="text-muted-foreground">
-          Track your service bookings and communicate with creators
-        </p>
-      </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
+          <p className="text-muted-foreground">
+            Track your service bookings and communicate with creators
+          </p>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-          <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
+            <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
+            <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
-          {filterBookings(activeTab).map((booking) => {
-            const isWorkStarted = !!booking.work_started_at;
-            
-            return (
-              <Card key={booking.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{booking.services?.title || 'Service'}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-1">
-                        <User className="h-3 w-3" />
-                        Creator: 
-                        {booking.creator?.handle ? (
-                          <Link 
-                            to={`/profile/${booking.creator.handle}`}
-                            className="text-primary hover:underline"
-                          >
-                            @{booking.creator.handle}
-                          </Link>
-                        ) : (
-                          <span>Unknown</span>
-                        )}
-                      </CardDescription>
-                      {booking.tx_hash && (
+          <TabsContent value={activeTab} className="space-y-4">
+            {filterBookings(activeTab).map((booking) => {
+              const isWorkStarted = !!booking.work_started_at;
+              
+              return (
+                <Card key={booking.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {booking.services?.title || 'Service'}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-md p-4 text-sm">
+                              <div className="space-y-3">
+                                <div className="font-semibold text-base">📌 How the Booking & Delivery Process Works</div>
+                                
+                                <div>
+                                  <div className="font-medium mb-1">1. Booking a Service</div>
+                                  <div className="text-xs space-y-1 ml-2">
+                                    <div>• When you book a service, your payment is held securely in escrow.</div>
+                                    <div>• A booking will show as Pending until our escrow team verifies the funds.</div>
+                                    <div>• Once verified, the status updates to Paid, and the creator may begin work.</div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="font-medium mb-1">2. Collaboration</div>
+                                  <div className="text-xs space-y-1 ml-2">
+                                    <div>• Use the dedicated chat window to share project details, logos, files, or other requirements directly with the creator.</div>
+                                    <div>• Communication and file sharing through the platform are protected and visible for dispute resolution if needed.</div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="font-medium mb-1">3. Delivery & Proof</div>
+                                  <div className="text-xs space-y-1 ml-2">
+                                    <div>• The creator will submit proof of work through verified links and/or uploaded files.</div>
+                                    <div>• Additional materials may also appear in the chat window.</div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="font-medium mb-1">4. Your Options After Delivery</div>
+                                  <div className="text-xs space-y-1 ml-2">
+                                    <div>• Accept Work → Approve the delivery and funds are released from escrow within 72 hours (creator receives 85%, platform 15%).</div>
+                                    <div>• File a Dispute → If the work does not meet agreed requirements, you can open a dispute. Admins will review all platform communications and issue a ruling.</div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="font-medium mb-1">5. Reviews</div>
+                                  <div className="text-xs space-y-1 ml-2">
+                                    <div>• After completion (accepted or disputed), both you and the creator may leave a star rating (1–5) and written review.</div>
+                                    <div>• Reviews appear on profiles and help guide future bookings.</div>
+                                  </div>
+                                </div>
+
+                                <div className="border-t pt-2 mt-3">
+                                  <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
+                                  <div className="text-xs">Keep all communication and file transfers on-platform. Escrow protection and dispute resolution only apply to activity conducted within the platform.</div>
+                                </div>
+
+                                <div className="border-t pt-2 mt-3">
+                                  <div className="font-medium text-orange-600 mb-1">⚠️ Platform Safety Notice</div>
+                                  <div className="text-xs space-y-1">
+                                    <div>This chat and file-sharing feature is provided solely for professional collaboration related to booked services. All communications and uploaded files are monitored and recorded for quality assurance and dispute resolution.</div>
+                                    <div>• Misuse of this feature—including harassment, threats, bullying, spamming, solicitation, or sharing of prohibited content—will result in immediate suspension or permanent removal from the platform.</div>
+                                    <div>• In cases of suspected fraud, malicious activity, or violation of applicable laws, relevant information may be disclosed to law enforcement upon request or in response to a valid warrant.</div>
+                                    <div>• Users are reminded to keep all interactions respectful, professional, and limited to project-related communication. Video calling is not supported.</div>
+                                    <div className="mt-2 font-medium">By using this feature, you agree to conduct yourself professionally and acknowledge that violations of these terms may result in loss of platform access.</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </CardTitle>
                         <CardDescription className="flex items-center gap-2 mt-1">
-                          <Hash className="h-3 w-3" />
-                          <span className="font-mono text-xs">
-                            TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
-                          </span>
-                          <Button
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => copyTxHash(booking.tx_hash!)}
-                            className="h-4 w-4 p-0"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </CardDescription>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={getStatusColor(booking.status)}>
-                        {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
-                      </Badge>
-                      <p className="font-semibold mt-1">
-                        <DollarSign className="h-3 w-3 inline mr-1" />
-                        {booking.usdc_amount} USDC
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Status Information */}
-                  <div className="border rounded-lg p-4 bg-muted/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Project Status</h4>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Current Status:</span> {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
-                      </p>
-                      {booking.status === 'delivered' && (
-                        <div className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
-                          <AlertCircle className="h-4 w-4 text-orange-600" />
-                          <p className="text-sm text-orange-800">
-                            Work has been delivered - please review and accept or open a dispute if needed
-                          </p>
-                        </div>
-                      )}
-                      {(booking.status === 'accepted' || booking.status === 'released') && (
-                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <p className="text-sm text-green-800">
-                            Project completed successfully
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delivered Content */}
-                  {booking.status === 'delivered' && (booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
-                    <div className="border rounded-lg p-4 bg-blue-50">
-                      <h4 className="font-medium mb-3 text-blue-800">Deliverables:</h4>
-                      <div className="space-y-2">
-                        {booking.proof_links?.map((link, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <ExternalLink className="h-3 w-3 text-blue-600" />
-                            <span className="text-xs text-blue-700 font-medium">{link.label}:</span>
-                            <a 
-                              href={link.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-blue-600 hover:underline text-sm truncate"
-                            >
-                              {link.url}
-                            </a>
-                          </div>
-                        ))}
-                        
-                        {booking.proof_link && !booking.proof_links?.length && (
-                          <div className="flex items-center gap-2">
-                            <ExternalLink className="h-3 w-3 text-blue-600" />
-                            <a 
-                              href={booking.proof_link} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-blue-600 hover:underline text-sm"
-                            >
-                              View Social Proof Link
-                            </a>
-                          </div>
-                        )}
-                        
-                        {booking.proof_file_url && (
-                          <div className="flex items-center gap-2">
-                            <ExternalLink className="h-3 w-3 text-blue-600" />
-                            <a 
-                              href={booking.proof_file_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-blue-600 hover:underline text-sm"
-                            >
-                              View Uploaded File
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Escrow Manager - Only show for delivered bookings */}
-                  {booking.status === 'delivered' && (
-                    <EscrowManager bookingId={booking.id} isClient={true} />
-                  )}
-
-                  {/* Review System - FIXED: Now includes 'refunded' status */}
-                  {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.creator && (
-                    <div className="border rounded-lg p-4 bg-muted/20">
-                      <h4 className="font-medium mb-3">Review this service</h4>
-                      <ReviewSystem
-                        bookingId={booking.id}
-                        revieweeId={booking.creator.id}
-                        canReview={true}
-                      />
-                    </div>
-                  )}
-
-                  {/* Chat Component */}
-                  {booking.creator && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <MessageSquare className="h-4 w-4" />
-                        <h4 className="font-medium">
-                          Chat with{' '}
-                          {booking.creator.handle ? (
+                          <User className="h-3 w-3" />
+                          Creator: 
+                          {booking.creator?.handle ? (
                             <Link 
                               to={`/profile/${booking.creator.handle}`}
                               className="text-primary hover:underline"
@@ -318,46 +245,191 @@ export const ClientBookings = () => {
                               @{booking.creator.handle}
                             </Link>
                           ) : (
-                            <span>@{booking.creator.handle || 'Unknown'}</span>
+                            <span>Unknown</span>
                           )}
-                        </h4>
+                        </CardDescription>
+                        {booking.tx_hash && (
+                          <CardDescription className="flex items-center gap-2 mt-1">
+                            <Hash className="h-3 w-3" />
+                            <span className="font-mono text-xs">
+                              TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                            </span>
+                            <Button
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => copyTxHash(booking.tx_hash!)}
+                              className="h-4 w-4 p-0"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </CardDescription>
+                        )}
                       </div>
-                      <BookingChat
-                        bookingId={booking.id}
-                        otherUserId={booking.creator.id}
-                        otherUserHandle={booking.creator.handle}
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                      <div className="text-right">
+                        <Badge variant={getStatusColor(booking.status)}>
+                          {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                        </Badge>
+                        <p className="font-semibold mt-1">
+                          <DollarSign className="h-3 w-3 inline mr-1" />
+                          {booking.usdc_amount} USDC
+                        </p>
                       </div>
-                      {booking.delivered_at && (
-                        <div className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Delivered {format(new Date(booking.delivered_at), 'MMM d')}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Status Information */}
+                    <div className="border rounded-lg p-4 bg-muted/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">Project Status</h4>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm">
+                          <span className="font-medium">Current Status:</span> {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                        </p>
+                        {booking.status === 'delivered' && (
+                          <div className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                            <AlertCircle className="h-4 w-4 text-orange-600" />
+                            <p className="text-sm text-orange-800">
+                              Work has been delivered - please review and accept or open a dispute if needed
+                            </p>
+                          </div>
+                        )}
+                        {(booking.status === 'accepted' || booking.status === 'released') && (
+                          <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <p className="text-sm text-green-800">
+                              Project completed successfully
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-          {filterBookings(activeTab).length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No bookings in this category yet
-              </p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+                    {/* Delivered Content */}
+                    {booking.status === 'delivered' && (booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
+                      <div className="border rounded-lg p-4 bg-blue-50">
+                        <h4 className="font-medium mb-3 text-blue-800">Deliverables:</h4>
+                        <div className="space-y-2">
+                          {booking.proof_links?.map((link, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                              <span className="text-xs text-blue-700 font-medium">{link.label}:</span>
+                              <a 
+                                href={link.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-sm truncate"
+                              >
+                                {link.url}
+                              </a>
+                            </div>
+                          ))}
+                          
+                          {booking.proof_link && !booking.proof_links?.length && (
+                            <div className="flex items-center gap-2">
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                              <a 
+                                href={booking.proof_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-sm"
+                              >
+                                View Social Proof Link
+                              </a>
+                            </div>
+                          )}
+                          
+                          {booking.proof_file_url && (
+                            <div className="flex items-center gap-2">
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                              <a 
+                                href={booking.proof_file_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-sm"
+                              >
+                                View Uploaded File
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Escrow Manager - Only show for delivered bookings */}
+                    {booking.status === 'delivered' && (
+                      <EscrowManager bookingId={booking.id} isClient={true} />
+                    )}
+
+                    {/* Review System - FIXED: Now includes 'refunded' status */}
+                    {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.creator && (
+                      <div className="border rounded-lg p-4 bg-muted/20">
+                        <h4 className="font-medium mb-3">Review this service</h4>
+                        <ReviewSystem
+                          bookingId={booking.id}
+                          revieweeId={booking.creator.id}
+                          canReview={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* Chat Component */}
+                    {booking.creator && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <MessageSquare className="h-4 w-4" />
+                          <h4 className="font-medium">
+                            Chat with{' '}
+                            {booking.creator.handle ? (
+                              <Link 
+                                to={`/profile/${booking.creator.handle}`}
+                                className="text-primary hover:underline"
+                              >
+                                @{booking.creator.handle}
+                              </Link>
+                            ) : (
+                              <span>@{booking.creator.handle || 'Unknown'}</span>
+                            )}
+                          </h4>
+                        </div>
+                        <BookingChat
+                          bookingId={booking.id}
+                          otherUserId={booking.creator.id}
+                          otherUserHandle={booking.creator.handle}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
+                        </div>
+                        {booking.delivered_at && (
+                          <div className="flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Delivered {format(new Date(booking.delivered_at), 'MMM d')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {filterBookings(activeTab).length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No bookings in this category yet
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </TooltipProvider>
   );
 };
