@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Eye, Check, X, User } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface PaymentInfo {
+  network: string;
+  amount: number;
+}
 
 interface BookingWithRelations {
   id: string;
@@ -32,6 +38,7 @@ interface BookingWithRelations {
     title: string;
     description: string;
   };
+  payments?: PaymentInfo[];
 }
 
 interface DisputeWithRelations {
@@ -66,7 +73,8 @@ export const AdminDisputes = () => {
             *,
             client:users!bookings_client_id_fkey(handle, email),
             creator:users!bookings_creator_id_fkey(handle, email),
-            services!inner(title, description)
+            services!inner(title, description),
+            payments(network, amount)
           )
         `)
         .order('created_at', { ascending: false });
@@ -187,6 +195,27 @@ export const AdminDisputes = () => {
       return { winner: 'creator', text: 'Ruled in favor of Creator', color: 'bg-green-100 text-green-800' };
     }
     return null;
+  };
+
+  const getBlockchainNetwork = (dispute: DisputeWithRelations): string => {
+    if (!dispute.booking?.payments || dispute.booking.payments.length === 0) {
+      return 'Unknown';
+    }
+    
+    const networkMap: { [key: string]: string } = {
+      'ethereum': 'Ethereum',
+      'solana': 'Solana',
+      'sui': 'SUI',
+      'bsc': 'BSC',
+      'cardano': 'Cardano'
+    };
+    
+    const network = dispute.booking.payments[0].network;
+    return networkMap[network] || network.charAt(0).toUpperCase() + network.slice(1);
+  };
+
+  const getRefundAmount = (originalAmount: number): number => {
+    return Number((originalAmount * 0.85).toFixed(2));
   };
 
   if (isLoading) {
@@ -361,7 +390,9 @@ export const AdminDisputes = () => {
                   <h4 className="font-semibold mb-2">Service Information</h4>
                   <div className="text-sm space-y-1">
                     <div><strong>Title:</strong> {selectedDispute.booking?.services?.title}</div>
-                    <div><strong>Amount:</strong> ${selectedDispute.booking?.usdc_amount}</div>
+                    <div><strong>Blockchain:</strong> {getBlockchainNetwork(selectedDispute)}</div>
+                    <div><strong>Amount:</strong> ${selectedDispute.booking?.usdc_amount} USDC</div>
+                    <div><strong>Refund Amount:</strong> ${getRefundAmount(selectedDispute.booking?.usdc_amount || 0)} USDC (85%)</div>
                     <div><strong>Status:</strong> {selectedDispute.booking?.status}</div>
                   </div>
                 </div>
@@ -396,16 +427,16 @@ export const AdminDisputes = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="refundTxHash">Refund Transaction Hash *</Label>
+                    <Label htmlFor="refundTxHash">Refund Transaction Hash</Label>
                     <Input
                       id="refundTxHash"
                       value={refundTxHash}
                       onChange={(e) => setRefundTxHash(e.target.value)}
-                      placeholder="Enter the refund transaction hash (required for refunds)"
+                      placeholder="Enter the refund transaction hash (required only for client refunds)"
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      <strong>Required when refunding the client.</strong> This transaction hash will be displayed to both parties as proof of refund.
+                      <strong>Required only when refunding the client.</strong> Not needed when releasing funds to creator.
                     </p>
                   </div>
                   <div className="flex gap-2">
