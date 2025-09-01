@@ -1,15 +1,18 @@
+
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Star, Crown } from 'lucide-react';
+import { CheckCircle, Star, Crown, RefreshCw } from 'lucide-react';
 import { CreatorPayment } from '@/components/creator/CreatorPayment';
 import { useAuth } from '@/hooks/useAuth';
+import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
 import { toast } from 'sonner';
 
-const tiers = [
+// Fallback tiers in case database fetch fails
+const fallbackTiers = [
   {
     id: 'basic' as const,
     name: 'Basic',
@@ -67,6 +70,7 @@ export default function BecomeCreator() {
   const [showPayment, setShowPayment] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
 
   const createCreatorApplication = useMutation({
     mutationFn: async (tier: 'basic' | 'mid' | 'pro') => {
@@ -112,7 +116,8 @@ export default function BecomeCreator() {
 
   const handleTierSelect = (tier: 'basic' | 'mid' | 'pro') => {
     setSelectedTier(tier);
-    if (tier === 'basic') {
+    const tierPrice = getTierPrice(tier);
+    if (tierPrice === 0) {
       // For free tier, create application immediately
       createCreatorApplication.mutate(tier);
     } else {
@@ -124,6 +129,30 @@ export default function BecomeCreator() {
   const handlePaymentSuccess = (tier: 'basic' | 'mid' | 'pro') => {
     // Create creator application after successful payment
     createCreatorApplication.mutate(tier);
+  };
+
+  const getTierPrice = (tierName: 'basic' | 'mid' | 'pro'): number => {
+    if (dynamicTiers && dynamicTiers[tierName]) {
+      return dynamicTiers[tierName].price;
+    }
+    const fallbackTier = fallbackTiers.find(t => t.id === tierName);
+    return fallbackTier?.price || 0;
+  };
+
+  const getTierDisplayName = (tierName: 'basic' | 'mid' | 'pro'): string => {
+    if (dynamicTiers && dynamicTiers[tierName]) {
+      return dynamicTiers[tierName].displayName;
+    }
+    const fallbackTier = fallbackTiers.find(t => t.id === tierName);
+    return fallbackTier?.name || tierName;
+  };
+
+  const getTierFeatures = (tierName: 'basic' | 'mid' | 'pro'): string[] => {
+    if (dynamicTiers && dynamicTiers[tierName]) {
+      return dynamicTiers[tierName].features;
+    }
+    const fallbackTier = fallbackTiers.find(t => t.id === tierName);
+    return fallbackTier?.features || [];
   };
 
   if (!user) {
@@ -141,6 +170,33 @@ export default function BecomeCreator() {
     );
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">Become a Creator</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Join our marketplace and start offering your services to clients worldwide.
+            Choose the tier that best fits your needs.
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2">Loading pricing information...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Use dynamic tiers if available, otherwise use fallback
+  const displayTiers = fallbackTiers.map(tier => ({
+    ...tier,
+    name: getTierDisplayName(tier.id),
+    price: getTierPrice(tier.id),
+    features: getTierFeatures(tier.id)
+  }));
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
@@ -152,7 +208,7 @@ export default function BecomeCreator() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {tiers.map((tier) => (
+        {displayTiers.map((tier) => (
           <Card 
             key={tier.id} 
             className={`relative ${tier.color} ${tier.popular ? 'ring-2 ring-primary' : ''}`}
