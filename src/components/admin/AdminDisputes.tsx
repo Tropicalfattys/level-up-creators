@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -419,117 +420,119 @@ export const AdminDisputes = () => {
 
       {/* Dispute Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Dispute Details</DialogTitle>
             <DialogDescription>
               Review and resolve this dispute
             </DialogDescription>
           </DialogHeader>
-          {selectedDispute && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Service Information</h4>
-                  <div className="text-sm space-y-1">
-                    <div><strong>Title:</strong> {selectedDispute.booking?.services?.title}</div>
-                    <div><strong>Blockchain:</strong> {getBlockchainNetwork(selectedDispute)}</div>
-                    <div><strong>Amount:</strong> ${selectedDispute.booking?.usdc_amount} USDC</div>
-                    <div><strong>Refund Amount:</strong> ${getRefundAmount(selectedDispute.booking?.usdc_amount || 0)} USDC (85%)</div>
-                    <div><strong>Status:</strong> {selectedDispute.booking?.status}</div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Parties</h4>
-                  <div className="text-sm space-y-1">
-                    <div><strong>Client:</strong> {selectedDispute.booking?.client?.handle}</div>
-                    <div><strong>Creator:</strong> {selectedDispute.booking?.creator?.handle}</div>
-                    <div><strong>Opened by:</strong> {selectedDispute.opened_by}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-2">Dispute Reason</h4>
-                <div className="bg-muted p-3 rounded text-sm">
-                  {selectedDispute.reason}
-                </div>
-              </div>
-
-              {selectedDispute.status === 'open' && (
-                <div className="space-y-4">
+          <ScrollArea className="max-h-[70vh] pr-4">
+            {selectedDispute && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="resolution">Resolution Note *</Label>
-                    <Textarea
-                      id="resolution"
-                      value={resolutionNote}
-                      onChange={(e) => setResolutionNote(e.target.value)}
-                      placeholder="Explain the resolution decision..."
-                      className="mt-1"
-                      required
-                    />
+                    <h4 className="font-semibold mb-2">Service Information</h4>
+                    <div className="text-sm space-y-1">
+                      <div><strong>Title:</strong> {selectedDispute.booking?.services?.title}</div>
+                      <div><strong>Blockchain:</strong> {getBlockchainNetwork(selectedDispute)}</div>
+                      <div><strong>Amount:</strong> ${selectedDispute.booking?.usdc_amount} USDC</div>
+                      <div><strong>Refund Amount:</strong> ${getRefundAmount(selectedDispute.booking?.usdc_amount || 0)} USDC (85%)</div>
+                      <div><strong>Status:</strong> {selectedDispute.booking?.status}</div>
+                    </div>
                   </div>
-
-                  {/* Client Refund Address Section */}
-                  {(() => {
-                    const { address, network } = getClientRefundAddress(selectedDispute);
-                    return (
-                      <div>
-                        <Label>Client Refund Address ({getBlockchainNetwork(selectedDispute)})</Label>
-                        {address ? (
-                          <div className="mt-1 flex items-center gap-2 p-2 bg-muted rounded border">
-                            <code className="flex-1 text-xs break-all">{address}</code>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => copyToClipboard(address, 'Refund address')}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="mt-1 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-                            ⚠️ No {getBlockchainNetwork(selectedDispute)} wallet address found for this client
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
                   <div>
-                    <Label htmlFor="refundTxHash">Refund Transaction Hash</Label>
-                    <Input
-                      id="refundTxHash"
-                      value={refundTxHash}
-                      onChange={(e) => setRefundTxHash(e.target.value)}
-                      placeholder="Enter the refund transaction hash (required only for client refunds)"
-                      className="mt-1"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <strong>Required only when refunding the client.</strong> Not needed when releasing funds to creator.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleResolveDispute('refund')}
-                      disabled={resolveDispute.isPending}
-                      variant="destructive"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Refund Client
-                    </Button>
-                    <Button
-                      onClick={() => handleResolveDispute('release')}
-                      disabled={resolveDispute.isPending}
-                    >
-                      <Check className="h-4 w-4 mr-2" />
-                      Release to Creator
-                    </Button>
+                    <h4 className="font-semibold mb-2">Parties</h4>
+                    <div className="text-sm space-y-1">
+                      <div><strong>Client:</strong> {selectedDispute.booking?.client?.handle}</div>
+                      <div><strong>Creator:</strong> {selectedDispute.booking?.creator?.handle}</div>
+                      <div><strong>Opened by:</strong> {selectedDispute.opened_by}</div>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+
+                <div>
+                  <h4 className="font-semibold mb-2">Dispute Reason</h4>
+                  <div className="bg-muted p-3 rounded text-sm">
+                    {selectedDispute.reason}
+                  </div>
+                </div>
+
+                {selectedDispute.status === 'open' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="resolution">Resolution Note *</Label>
+                      <Textarea
+                        id="resolution"
+                        value={resolutionNote}
+                        onChange={(e) => setResolutionNote(e.target.value)}
+                        placeholder="Explain the resolution decision..."
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+
+                    {/* Client Refund Address Section */}
+                    {(() => {
+                      const { address, network } = getClientRefundAddress(selectedDispute);
+                      return (
+                        <div>
+                          <Label>Client Refund Address ({getBlockchainNetwork(selectedDispute)})</Label>
+                          {address ? (
+                            <div className="mt-1 flex items-center gap-2 p-2 bg-muted rounded border">
+                              <code className="flex-1 text-xs break-all">{address}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyToClipboard(address, 'Refund address')}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="mt-1 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                              ⚠️ No {getBlockchainNetwork(selectedDispute)} wallet address found for this client
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <div>
+                      <Label htmlFor="refundTxHash">Refund Transaction Hash</Label>
+                      <Input
+                        id="refundTxHash"
+                        value={refundTxHash}
+                        onChange={(e) => setRefundTxHash(e.target.value)}
+                        placeholder="Enter the refund transaction hash (required only for client refunds)"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <strong>Required only when refunding the client.</strong> Not needed when releasing funds to creator.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleResolveDispute('refund')}
+                        disabled={resolveDispute.isPending}
+                        variant="destructive"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Refund Client
+                      </Button>
+                      <Button
+                        onClick={() => handleResolveDispute('release')}
+                        disabled={resolveDispute.isPending}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Release to Creator
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
