@@ -10,12 +10,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, Eye, Check, X, User } from 'lucide-react';
+import { AlertTriangle, Eye, Check, X, User, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentInfo {
   network: string;
   amount: number;
+}
+
+interface ClientUserInfo {
+  handle: string;
+  email: string;
+  payout_address_eth: string | null;
+  payout_address_sol: string | null;
+  payout_address_sui: string | null;
+  payout_address_bsc: string | null;
+  payout_address_cardano: string | null;
 }
 
 interface BookingWithRelations {
@@ -26,10 +36,7 @@ interface BookingWithRelations {
   usdc_amount: number;
   status: string;
   created_at: string;
-  client: {
-    handle: string;
-    email: string;
-  };
+  client: ClientUserInfo;
   creator: {
     handle: string;
     email: string;
@@ -71,7 +78,15 @@ export const AdminDisputes = () => {
           *,
           booking:bookings!inner(
             *,
-            client:users!bookings_client_id_fkey(handle, email),
+            client:users!bookings_client_id_fkey(
+              handle, 
+              email,
+              payout_address_eth,
+              payout_address_sol,
+              payout_address_sui,
+              payout_address_bsc,
+              payout_address_cardano
+            ),
             creator:users!bookings_creator_id_fkey(handle, email),
             services!inner(title, description),
             payments(network, amount)
@@ -83,6 +98,34 @@ export const AdminDisputes = () => {
       return data as DisputeWithRelations[];
     }
   });
+
+  // Helper function to get the client's refund address based on payment network
+  const getClientRefundAddress = (dispute: DisputeWithRelations): { address: string | null; network: string } => {
+    if (!dispute.booking?.payments || dispute.booking.payments.length === 0) {
+      return { address: null, network: 'Unknown' };
+    }
+
+    const paymentNetwork = dispute.booking.payments[0].network;
+    const client = dispute.booking.client;
+
+    const networkToAddressMap: { [key: string]: string | null } = {
+      'ethereum': client.payout_address_eth,
+      'solana': client.payout_address_sol,
+      'sui': client.payout_address_sui,
+      'bsc': client.payout_address_bsc,
+      'cardano': client.payout_address_cardano
+    };
+
+    return {
+      address: networkToAddressMap[paymentNetwork] || null,
+      network: paymentNetwork
+    };
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`);
+  };
 
   const resolveDispute = useMutation({
     mutationFn: async ({ 
@@ -426,6 +469,33 @@ export const AdminDisputes = () => {
                       required
                     />
                   </div>
+
+                  {/* Client Refund Address Section */}
+                  {(() => {
+                    const { address, network } = getClientRefundAddress(selectedDispute);
+                    return (
+                      <div>
+                        <Label>Client Refund Address ({getBlockchainNetwork(selectedDispute)})</Label>
+                        {address ? (
+                          <div className="mt-1 flex items-center gap-2 p-2 bg-muted rounded border">
+                            <code className="flex-1 text-xs break-all">{address}</code>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(address, 'Refund address')}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="mt-1 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                            ⚠️ No {getBlockchainNetwork(selectedDispute)} wallet address found for this client
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div>
                     <Label htmlFor="refundTxHash">Refund Transaction Hash</Label>
                     <Input
