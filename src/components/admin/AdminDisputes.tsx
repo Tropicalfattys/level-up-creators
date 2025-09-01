@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Eye, Check, X, User } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,6 +45,7 @@ interface DisputeWithRelations {
   resolved_at?: string;
   resolved_by?: string;
   resolution_note?: string;
+  refund_tx_hash?: string;
   booking: BookingWithRelations;
 }
 
@@ -51,6 +53,7 @@ export const AdminDisputes = () => {
   const [selectedDispute, setSelectedDispute] = useState<DisputeWithRelations | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [resolutionNote, setResolutionNote] = useState('');
+  const [refundTxHash, setRefundTxHash] = useState('');
   const queryClient = useQueryClient();
 
   const { data: disputes, isLoading } = useQuery({
@@ -78,19 +81,28 @@ export const AdminDisputes = () => {
     mutationFn: async ({ 
       disputeId, 
       action, 
-      note 
+      note,
+      refundTxHash 
     }: { 
       disputeId: string; 
       action: 'refund' | 'release'; 
-      note: string; 
+      note: string;
+      refundTxHash?: string; 
     }) => {
+      const updateData: any = {
+        status: 'resolved',
+        resolved_at: new Date().toISOString(),
+        resolution_note: note
+      };
+
+      // Add refund transaction hash if provided
+      if (action === 'refund' && refundTxHash) {
+        updateData.refund_tx_hash = refundTxHash;
+      }
+
       const { error } = await supabase
         .from('disputes')
-        .update({
-          status: 'resolved',
-          resolved_at: new Date().toISOString(),
-          resolution_note: note
-        })
+        .update(updateData)
         .eq('id', disputeId);
 
       if (error) throw error;
@@ -99,9 +111,17 @@ export const AdminDisputes = () => {
       const dispute = disputes?.find(d => d.id === disputeId);
       if (dispute?.booking_id) {
         const newStatus = action === 'refund' ? 'refunded' : 'released';
+        const bookingUpdateData: any = { status: newStatus };
+        
+        // Add refund details to booking if it's a refund
+        if (action === 'refund' && refundTxHash) {
+          bookingUpdateData.refund_tx_hash = refundTxHash;
+          bookingUpdateData.refunded_at = new Date().toISOString();
+        }
+        
         await supabase
           .from('bookings')
-          .update({ status: newStatus })
+          .update(bookingUpdateData)
           .eq('id', dispute.booking_id);
       }
     },
@@ -110,6 +130,7 @@ export const AdminDisputes = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-disputes'] });
       setShowDetails(false);
       setResolutionNote('');
+      setRefundTxHash('');
     },
     onError: (error: any) => {
       toast.error('Failed to resolve dispute: ' + error.message);
@@ -127,10 +148,17 @@ export const AdminDisputes = () => {
       return;
     }
 
+    // For refunds, validate transaction hash if provided
+    if (action === 'refund' && refundTxHash && !refundTxHash.trim()) {
+      toast.error('Please provide a valid refund transaction hash or leave it empty');
+      return;
+    }
+
     resolveDispute.mutate({
       disputeId: selectedDispute.id,
       action,
-      note: resolutionNote
+      note: resolutionNote,
+      refundTxHash: action === 'refund' ? refundTxHash : undefined
     });
   };
 
@@ -247,6 +275,7 @@ export const AdminDisputes = () => {
                   <TableHead>Service</TableHead>
                   <TableHead>Parties</TableHead>
                   <TableHead>Dispute Outcome</TableHead>
+                  <TableHead>Refund TX Hash</TableHead>
                   <TableHead>Admin Resolution Note</TableHead>
                   <TableHead>Resolved Date</TableHead>
                 </TableRow>
@@ -273,6 +302,15 @@ export const AdminDisputes = () => {
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">No outcome data</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {dispute.refund_tx_hash ? (
+                          <div className="text-xs font-mono">
+                            {dispute.refund_tx_hash.slice(0, 8)}...{dispute.refund_tx_hash.slice(-6)}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -340,6 +378,19 @@ export const AdminDisputes = () => {
                       placeholder="Explain the resolution decision..."
                       className="mt-1"
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="refundTxHash">Refund Transaction Hash (Optional - for refunds only)</Label>
+                    <Input
+                      id="refundTxHash"
+                      value={refundTxHash}
+                      onChange={(e) => setRefundTxHash(e.target.value)}
+                      placeholder="Enter refund transaction hash if refunding client..."
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only fill this if you're refunding the client. This will be displayed in the resolved disputes list.
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button

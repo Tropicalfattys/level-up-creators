@@ -658,7 +658,8 @@ export const BookingManagement = () => {
                     </div>
                   </div>
 
-                  {(booking.status === 'accepted' || booking.status === 'released') && booking.client && (
+                  {/* Review System - FIXED: Now includes 'refunded' status */}
+                  {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.client && (
                     <div className="border rounded-lg p-4 bg-muted/20">
                       <h4 className="font-medium mb-3">Rate your client experience</h4>
                       <ReviewSystem
@@ -669,6 +670,7 @@ export const BookingManagement = () => {
                     </div>
                   )}
 
+                  {/* Chat Component */}
                   {booking.client && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">

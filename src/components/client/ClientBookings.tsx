@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -292,8 +291,8 @@ export const ClientBookings = () => {
                     <EscrowManager bookingId={booking.id} isClient={true} />
                   )}
 
-                  {/* Review System - Only show for completed bookings */}
-                  {(booking.status === 'accepted' || booking.status === 'released') && booking.creator && (
+                  {/* Review System - FIXED: Now includes 'refunded' status */}
+                  {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.creator && (
                     <div className="border rounded-lg p-4 bg-muted/20">
                       <h4 className="font-medium mb-3">Review this service</h4>
                       <ReviewSystem
