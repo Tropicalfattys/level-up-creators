@@ -44,6 +44,22 @@ interface UserProfile {
   banned?: boolean;
 }
 
+// Helper function to safely parse social_links JSON
+const parseSocialLinks = (socialLinks: any) => {
+  if (!socialLinks) return {};
+  if (typeof socialLinks === 'string') {
+    try {
+      return JSON.parse(socialLinks);
+    } catch {
+      return {};
+    }
+  }
+  if (typeof socialLinks === 'object') {
+    return socialLinks;
+  }
+  return {};
+};
+
 export const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -174,8 +190,13 @@ export const AdminUsers = () => {
     return email === SUPER_ADMIN_EMAIL;
   };
 
-  const viewUserDetails = (user: UserProfile) => {
-    setSelectedUser(user);
+  const viewUserDetails = (user: any) => {
+    // Transform the user data to match UserProfile interface with proper social_links parsing
+    const transformedUser: UserProfile = {
+      ...user,
+      social_links: parseSocialLinks(user.social_links)
+    };
+    setSelectedUser(transformedUser);
     setShowUserDetails(true);
   };
 
