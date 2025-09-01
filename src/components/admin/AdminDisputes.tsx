@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,19 +113,23 @@ export const AdminDisputes = () => {
       const dispute = disputes?.find(d => d.id === disputeId);
       if (dispute?.booking_id) {
         const newStatus = action === 'refund' ? 'refunded' : 'released';
-        const bookingUpdateData: any = { status: newStatus };
         
-        // Add refund details to booking if it's a refund
-        if (action === 'refund' && refundTxHash && refundTxHash.trim()) {
-          bookingUpdateData.refund_tx_hash = refundTxHash.trim();
-          bookingUpdateData.refunded_at = new Date().toISOString();
-          console.log('Adding refund_tx_hash to booking:', refundTxHash.trim());
-        }
+        // Only update the status - no other columns exist in bookings table
+        const bookingUpdateData = { status: newStatus };
         
-        await supabase
+        console.log('Updating booking status to:', newStatus);
+        
+        const { error: bookingError } = await supabase
           .from('bookings')
           .update(bookingUpdateData)
           .eq('id', dispute.booking_id);
+          
+        if (bookingError) {
+          console.error('Booking update error:', bookingError);
+          throw new Error(`Failed to update booking status: ${bookingError.message}`);
+        }
+        
+        console.log('Booking status updated successfully');
       }
     },
     onSuccess: () => {
