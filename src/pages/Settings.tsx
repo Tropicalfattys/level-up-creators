@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin, Wallet } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -196,8 +198,92 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
+              <CardDescription className="flex flex-col gap-1">
                 Update your public profile information
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
+                      How It Works
+                    </span>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-96 p-0" side="bottom" align="start">
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg mb-3">Profile & Settings Information</h4>
+                      <ScrollArea className="h-96">
+                        <div className="text-sm space-y-4 pr-4">
+                          <p>Your account settings are organized into five tabs: Profile, Social Links, Payments, Notifications, and Security. Please review the following carefully to ensure your account is properly configured:</p>
+                          
+                          <div>
+                            <h5 className="font-semibold mb-2">1. Profile</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Upload a profile photo to personalize your account.</li>
+                              <li>Update your handle (your public name on the platform).</li>
+                              <li>Add or edit your bio information.</li>
+                              <li>Note: Your registered email address cannot be changed.</li>
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold mb-2">2. Social Links</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Add links to your website, portfolio, and supported social platforms: YouTube, Twitter (X), Facebook, Telegram, Instagram, Discord, Medium, and LinkedIn.</li>
+                              <li>These links appear on your public profile.</li>
+                              <li><strong>Verification Requirement:</strong></li>
+                              <li>To apply for verification, you must maintain at least two active social media accounts (e.g., Twitter + YouTube).</li>
+                              <li>You must also post your unique referral link (found in your dashboard's referral section) on each social media account you submit.</li>
+                              <li>During verification, our team will check your profile links and confirm ownership by verifying the posted referral link on your external accounts.</li>
+                              <li>Verification requires a fee and unlocks additional benefits.</li>
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold mb-2">3. Payments</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Add up to five cryptocurrency wallets.</li>
+                              <li>These wallets are used for:</li>
+                              <li className="ml-4">• Payouts (for creators providing services).</li>
+                              <li className="ml-4">• Refunds (if issued through dispute resolution).</li>
+                              <li>It is your responsibility to keep wallet addresses accurate and up-to-date.</li>
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold mb-2">4. Notifications</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Manage your email, push, and in-app notification preferences.</li>
+                              <li>Ensure you remain informed about bookings, payments, and updates.</li>
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold mb-2">5. Security</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Review and update your security settings, such as two-factor authentication (2FA).</li>
+                              <li>Keeping your account secure helps protect both you and your clients/creators.</li>
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold mb-2">Verified Pro Creator Features</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Once your account achieves Verified Pro Creator status, you may upload a profile video to your account.</li>
+                              <li>This feature is available only to verified pro creators and will appear in your public profile settings that clients see when booking services.</li>
+                            </ul>
+                          </div>
+
+                          <div className="border-t pt-4">
+                            <p className="font-semibold text-amber-600">⚠️ Important:</p>
+                            <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
+                              <li>Keep all profile details, wallet addresses, and social links accurate.</li>
+                              <li>Failure to maintain correct information may delay payouts, refunds, or verification status.</li>
+                              <li>Verification is contingent on active, up-to-date social accounts and posted referral links.</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
