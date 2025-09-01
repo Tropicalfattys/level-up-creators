@@ -206,7 +206,7 @@ export default function Settings() {
                       How It Works
                     </span>
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-96 p-0" side="bottom" align="start">
+                  <HoverCardContent className="w-96 p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50" side="top" align="center">
                     <div className="p-4">
                       <h4 className="font-semibold text-lg mb-3">Profile & Settings Information</h4>
                       <ScrollArea className="h-96">
