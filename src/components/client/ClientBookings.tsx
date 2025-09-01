@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -170,67 +171,69 @@ export const ClientBookings = () => {
                             <TooltipTrigger asChild>
                               <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-md p-4 text-sm">
-                              <div className="space-y-3">
-                                <div className="font-semibold text-base">📌 How the Booking & Delivery Process Works</div>
-                                
-                                <div>
-                                  <div className="font-medium mb-1">1. Booking a Service</div>
-                                  <div className="text-xs space-y-1 ml-2">
-                                    <div>• When you book a service, your payment is held securely in escrow.</div>
-                                    <div>• A booking will show as Pending until our escrow team verifies the funds.</div>
-                                    <div>• Once verified, the status updates to Paid, and the creator may begin work.</div>
+                            <TooltipContent side="right" className="max-w-md p-0">
+                              <ScrollArea className="h-96 w-full">
+                                <div className="p-4 text-sm space-y-3">
+                                  <div className="font-semibold text-base">📌 How the Booking & Delivery Process Works</div>
+                                  
+                                  <div>
+                                    <div className="font-medium mb-1">1. Booking a Service</div>
+                                    <div className="text-xs space-y-1 ml-2">
+                                      <div>• When you book a service, your payment is held securely in escrow.</div>
+                                      <div>• A booking will show as Pending until our escrow team verifies the funds.</div>
+                                      <div>• Once verified, the status updates to Paid, and the creator may begin work.</div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="font-medium mb-1">2. Collaboration</div>
+                                    <div className="text-xs space-y-1 ml-2">
+                                      <div>• Use the dedicated chat window to share project details, logos, files, or other requirements directly with the creator.</div>
+                                      <div>• Communication and file sharing through the platform are protected and visible for dispute resolution if needed.</div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="font-medium mb-1">3. Delivery & Proof</div>
+                                    <div className="text-xs space-y-1 ml-2">
+                                      <div>• The creator will submit proof of work through verified links and/or uploaded files.</div>
+                                      <div>• Additional materials may also appear in the chat window.</div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="font-medium mb-1">4. Your Options After Delivery</div>
+                                    <div className="text-xs space-y-1 ml-2">
+                                      <div>• Accept Work → Approve the delivery and funds are released from escrow within 72 hours (creator receives 85%, platform 15%).</div>
+                                      <div>• File a Dispute → If the work does not meet agreed requirements, you can open a dispute. Admins will review all platform communications and issue a ruling.</div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="font-medium mb-1">5. Reviews</div>
+                                    <div className="text-xs space-y-1 ml-2">
+                                      <div>• After completion (accepted or disputed), both you and the creator may leave a star rating (1–5) and written review.</div>
+                                      <div>• Reviews appear on profiles and help guide future bookings.</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="border-t pt-2 mt-3">
+                                    <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
+                                    <div className="text-xs">Keep all communication and file transfers on-platform. Escrow protection and dispute resolution only apply to activity conducted within the platform.</div>
+                                  </div>
+
+                                  <div className="border-t pt-2 mt-3">
+                                    <div className="font-medium text-orange-600 mb-1">⚠️ Platform Safety Notice</div>
+                                    <div className="text-xs space-y-1">
+                                      <div>This chat and file-sharing feature is provided solely for professional collaboration related to booked services. All communications and uploaded files are monitored and recorded for quality assurance and dispute resolution.</div>
+                                      <div>• Misuse of this feature—including harassment, threats, bullying, spamming, solicitation, or sharing of prohibited content—will result in immediate suspension or permanent removal from the platform.</div>
+                                      <div>• In cases of suspected fraud, malicious activity, or violation of applicable laws, relevant information may be disclosed to law enforcement upon request or in response to a valid warrant.</div>
+                                      <div>• Users are reminded to keep all interactions respectful, professional, and limited to project-related communication. Video calling is not supported.</div>
+                                      <div className="mt-2 font-medium">By using this feature, you agree to conduct yourself professionally and acknowledge that violations of these terms may result in loss of platform access.</div>
+                                    </div>
                                   </div>
                                 </div>
-
-                                <div>
-                                  <div className="font-medium mb-1">2. Collaboration</div>
-                                  <div className="text-xs space-y-1 ml-2">
-                                    <div>• Use the dedicated chat window to share project details, logos, files, or other requirements directly with the creator.</div>
-                                    <div>• Communication and file sharing through the platform are protected and visible for dispute resolution if needed.</div>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <div className="font-medium mb-1">3. Delivery & Proof</div>
-                                  <div className="text-xs space-y-1 ml-2">
-                                    <div>• The creator will submit proof of work through verified links and/or uploaded files.</div>
-                                    <div>• Additional materials may also appear in the chat window.</div>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <div className="font-medium mb-1">4. Your Options After Delivery</div>
-                                  <div className="text-xs space-y-1 ml-2">
-                                    <div>• Accept Work → Approve the delivery and funds are released from escrow within 72 hours (creator receives 85%, platform 15%).</div>
-                                    <div>• File a Dispute → If the work does not meet agreed requirements, you can open a dispute. Admins will review all platform communications and issue a ruling.</div>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <div className="font-medium mb-1">5. Reviews</div>
-                                  <div className="text-xs space-y-1 ml-2">
-                                    <div>• After completion (accepted or disputed), both you and the creator may leave a star rating (1–5) and written review.</div>
-                                    <div>• Reviews appear on profiles and help guide future bookings.</div>
-                                  </div>
-                                </div>
-
-                                <div className="border-t pt-2 mt-3">
-                                  <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
-                                  <div className="text-xs">Keep all communication and file transfers on-platform. Escrow protection and dispute resolution only apply to activity conducted within the platform.</div>
-                                </div>
-
-                                <div className="border-t pt-2 mt-3">
-                                  <div className="font-medium text-orange-600 mb-1">⚠️ Platform Safety Notice</div>
-                                  <div className="text-xs space-y-1">
-                                    <div>This chat and file-sharing feature is provided solely for professional collaboration related to booked services. All communications and uploaded files are monitored and recorded for quality assurance and dispute resolution.</div>
-                                    <div>• Misuse of this feature—including harassment, threats, bullying, spamming, solicitation, or sharing of prohibited content—will result in immediate suspension or permanent removal from the platform.</div>
-                                    <div>• In cases of suspected fraud, malicious activity, or violation of applicable laws, relevant information may be disclosed to law enforcement upon request or in response to a valid warrant.</div>
-                                    <div>• Users are reminded to keep all interactions respectful, professional, and limited to project-related communication. Video calling is not supported.</div>
-                                    <div className="mt-2 font-medium">By using this feature, you agree to conduct yourself professionally and acknowledge that violations of these terms may result in loss of platform access.</div>
-                                  </div>
-                                </div>
-                              </div>
+                              </ScrollArea>
                             </TooltipContent>
                           </Tooltip>
                         </CardTitle>
