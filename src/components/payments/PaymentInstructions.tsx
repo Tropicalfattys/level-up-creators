@@ -101,8 +101,9 @@ export const PaymentInstructions = ({
       case 'bsc':
         return /^0x[a-fA-F0-9]{64}$/.test(hash);
       case 'solana':
+        return /^[1-9A-HJ-NP-Za-km-z]{88}$/.test(hash);
       case 'sui':
-        return /^[1-9A-HJ-NP-Za-km-z]{64,88}$/.test(hash);
+        return /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(hash);
       case 'cardano':
         return /^[a-fA-F0-9]{64}$/.test(hash);
       default:

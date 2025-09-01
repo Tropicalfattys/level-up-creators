@@ -87,6 +87,8 @@ export const validateTransactionHash = (txHash: string, chain: string): boolean 
   
   if (chain === 'solana') {
     return /^[1-9A-HJ-NP-Za-km-z]{88}$/.test(txHash);
+  } else if (chain === 'sui') {
+    return /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(txHash);
   } else {
     return /^0x[a-fA-F0-9]{64}$/.test(txHash);
   }
