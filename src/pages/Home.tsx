@@ -212,7 +212,7 @@ export default function Home() {
               <CardContent className="p-8 text-center">
                 <Shield className="h-12 w-12 mx-auto mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
-                <p className="text-muted-foreground">Funds are held until services are delivered.</p>
+                <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
               </CardContent>
             </Card>
             
