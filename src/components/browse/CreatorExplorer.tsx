@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -211,14 +210,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   // Create category icons with meaningful emojis and SHORT display names
   const getCategoryData = (categoryValue: string): { icon?: string; image?: string; displayName: string } => {
     const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
-      'ama': { image: '/lovable-uploads/99486a9d-a27f-4f18-8174-5028092135bb.png', displayName: 'AMA' },
-      'twitter': { image: '/lovable-uploads/0e88c9c5-5e10-4ce6-b651-9d37b9bb03ce.png', displayName: 'Twitter' },
-      'video': { image: '/lovable-uploads/a3a19718-b233-4339-b2d3-036743e72d9b.png', displayName: 'Videos' },
-      'tutorials': { image: '/lovable-uploads/35e44b66-9ca9-4aa7-8c54-3db70d670ecf.png', displayName: 'Tutorials' },
+      'ama': { image: '/lovable-uploads/1d6becc0-316c-476a-a44f-055e32e03cad.png', displayName: 'AMA' },
+      'twitter': { image: '/lovable-uploads/aa3352c4-6cba-4ab1-9331-0f796f07ab5e.png', displayName: 'Twitter' },
+      'video': { image: '/lovable-uploads/56a83a5c-0ee2-4b64-b90b-fef5033fb4e1.png', displayName: 'Videos' },
+      'tutorials': { image: '/lovable-uploads/ae9792f3-c505-45ee-9589-f1e86ade6a49.png', displayName: 'Tutorials' },
       'reviews': { icon: '⭐', displayName: 'Reviews' },
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
-      'instagram': { image: '/lovable-uploads/9369173c-0356-4ceb-8cbe-c623229748e8.png', displayName: 'Instagram' },
-      'facebook': { image: '/lovable-uploads/01230a97-bdb2-4b63-a7ca-4f99eee69a88.png', displayName: 'Facebook' },
+      'instagram': { image: '/lovable-uploads/6e728aae-87be-425c-bac3-d2eaa030f21e.png', displayName: 'Instagram' },
+      'facebook': { image: '/lovable-uploads/fd21a1b1-d00f-44f0-b1e0-0f82895ed607.png', displayName: 'Facebook' },
       'defi': { icon: '🏦', displayName: 'DeFi' },
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
