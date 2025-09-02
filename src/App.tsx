@@ -24,6 +24,8 @@ import BookingConfirmation from '@/pages/BookingConfirmation';
 import Chat from '@/pages/Chat';
 import DirectMessages from '@/pages/DirectMessages';
 import Careers from '@/pages/Careers';
+import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -58,6 +60,8 @@ function App() {
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/careers" element={<Careers />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/auth" element={<AuthPage />} />
                   
                   {/* Protected Routes */}
