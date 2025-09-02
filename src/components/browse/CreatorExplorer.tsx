@@ -213,7 +213,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
       'ama': { image: '/lovable-uploads/99486a9d-a27f-4f18-8174-5028092135bb.png', displayName: 'AMA' },
       'twitter': { image: '/lovable-uploads/0e88c9c5-5e10-4ce6-b651-9d37b9bb03ce.png', displayName: 'Twitter' },
-      'videos': { image: '/lovable-uploads/a3a19718-b233-4339-b2d3-036743e72d9b.png', displayName: 'Videos' },
+      'video': { image: '/lovable-uploads/a3a19718-b233-4339-b2d3-036743e72d9b.png', displayName: 'Videos' },
       'tutorials': { image: '/lovable-uploads/35e44b66-9ca9-4aa7-8c54-3db70d670ecf.png', displayName: 'Tutorials' },
       'reviews': { icon: '⭐', displayName: 'Reviews' },
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
@@ -232,7 +232,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'yield-farming': { icon: '🌾', displayName: 'Yield' },
       'analysis': { icon: '📊', displayName: 'Analysis' },
       'design': { icon: '🎨', displayName: 'Design' },
-      'video': { icon: '🎥', displayName: 'Video' },
+      'videos': { icon: '🎥', displayName: 'Video' },
       'writing': { icon: '📝', displayName: 'Writing' },
       'community': { icon: '🤝', displayName: 'Community' },
       'memes': { icon: '😂', displayName: 'Memes' },
@@ -289,6 +289,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                     src={cat.image} 
                     alt={cat.name}
                     className="w-8 h-8 mb-1 object-contain"
+                    onError={(e) => {
+                      console.log('Image failed to load:', cat.image);
+                      e.currentTarget.style.display = 'none';
+                      const span = document.createElement('span');
+                      span.className = 'text-2xl mb-1';
+                      span.textContent = '📁';
+                      e.currentTarget.parentNode?.appendChild(span);
+                    }}
                   />
                 ) : (
                   <span className="text-2xl mb-1">{cat.icon}</span>
