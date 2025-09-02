@@ -361,8 +361,42 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle>Social Media & Links</CardTitle>
-              <CardDescription>
+              <CardDescription className="flex flex-col gap-1">
                 Add your social media profiles and website links to appear on your creator profile
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
+                      Important Disclaimer
+                    </span>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-96 p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50" side="top" align="center">
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg mb-3">Social Media Links Disclaimer</h4>
+                      <ScrollArea className="h-96">
+                        <div className="text-sm space-y-4 pr-4">
+                          <ul className="list-disc list-inside space-y-2">
+                            <li>All social media links you add here will be publicly visible on your profile.</li>
+                            <li>If you are applying to become a Pro Creator (verified status), your social links will be reviewed as part of the verification process.</li>
+                          </ul>
+                          
+                          <div>
+                            <h5 className="font-semibold mb-2">Verification Requirements:</h5>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>You must connect at least two active social media accounts (e.g., Twitter + YouTube, Instagram + LinkedIn).</li>
+                              <li>On each of these accounts, you are required to post your unique referral link (found in your dashboard's referral section).</li>
+                              <li>Our team will verify that the referral link is live and visible on your accounts before your application can be approved.</li>
+                            </ul>
+                          </div>
+
+                          <div className="border-t pt-4">
+                            <p className="font-semibold text-amber-600">⚠️ Important:</p>
+                            <p className="mt-2">If your referral links are not posted and visible on at least two connected social accounts, your Pro Creator application will be denied.</p>
+                          </div>
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
