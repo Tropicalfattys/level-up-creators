@@ -544,14 +544,14 @@ export const CreatorProfile = () => {
                     <div className="space-y-4">
                       <Users className="h-12 w-12 mx-auto text-muted-foreground" />
                       <div>
-                        <p className="text-lg font-medium mb-2">Client Member</p>
+                        <p className="text-lg font-medium mb-2">Based Client</p>
                         <p className="text-muted-foreground">
-                          This user books services from creators on our platform.
+                          This user is straight-up ballin'—booking the coolest creators and stacking legendary projects
                         </p>
                       </div>
                       {reviews && reviews.length > 0 && (
                         <p className="text-sm text-muted-foreground">
-                          View their reviews and activity in the sidebar.
+                          This user books epic services from top creators and keeps the marketplace buzzing
                         </p>
                       )}
                     </div>
