@@ -9,6 +9,7 @@ interface PricingTier {
   display_name: string;
   description: string;
   features: string[];
+  service_limit: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -53,12 +54,13 @@ export const useDynamicCreatorTiers = () => {
         price: tier.price_usdc,
         displayName: tier.display_name,
         description: tier.description,
-        features: tier.features
+        features: tier.features,
+        serviceLimit: tier.service_limit
       };
     }
     
     return acc;
-  }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; description: string; features: string[] }>);
+  }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; description: string; features: string[]; serviceLimit: number | null }>);
 
   return {
     ...queryResult,

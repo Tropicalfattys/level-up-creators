@@ -687,6 +687,7 @@ export type Database = {
           features: Json
           id: string
           price_usdc: number
+          service_limit: number | null
           tier_name: string
           updated_at: string
         }
@@ -698,6 +699,7 @@ export type Database = {
           features?: Json
           id?: string
           price_usdc?: number
+          service_limit?: number | null
           tier_name: string
           updated_at?: string
         }
@@ -709,6 +711,7 @@ export type Database = {
           features?: Json
           id?: string
           price_usdc?: number
+          service_limit?: number | null
           tier_name?: string
           updated_at?: string
         }

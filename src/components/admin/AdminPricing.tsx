@@ -19,6 +19,7 @@ interface PricingTier {
   display_name: string;
   description: string;
   features: string[];
+  service_limit: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -78,6 +79,11 @@ export const AdminPricing = () => {
         [field]: value
       }
     }));
+  };
+
+  const handleServiceLimitChange = (tierId: string, value: string) => {
+    const numericValue = value === '' || value === 'unlimited' ? null : parseInt(value);
+    handleInputChange(tierId, 'service_limit', numericValue);
   };
 
   const handleFeatureChange = (tierId: string, featureIndex: number, value: string) => {
@@ -176,6 +182,7 @@ export const AdminPricing = () => {
             <div className="grid gap-6">
               {pricingTiers.map((tier) => {
                 const currentFeatures = getCurrentValue(tier, 'features') as string[] || [];
+                const currentServiceLimit = getCurrentValue(tier, 'service_limit') as number | null;
                 
                 return (
                   <Card key={tier.id}>
@@ -198,7 +205,7 @@ export const AdminPricing = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor={`price-${tier.id}`}>Price (USDC)</Label>
                           <Input
@@ -219,6 +226,21 @@ export const AdminPricing = () => {
                             onChange={(e) => handleInputChange(tier.id, 'display_name', e.target.value)}
                             placeholder="e.g., Starter, Plus, Pro"
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`service-limit-${tier.id}`}>Service Limit</Label>
+                          <Input
+                            id={`service-limit-${tier.id}`}
+                            type="number"
+                            min="1"
+                            value={currentServiceLimit === null ? '' : currentServiceLimit}
+                            onChange={(e) => handleServiceLimitChange(tier.id, e.target.value)}
+                            placeholder="Leave empty for unlimited"
+                            className="font-mono"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {currentServiceLimit === null ? 'Unlimited services' : `Maximum ${currentServiceLimit} services`}
+                          </p>
                         </div>
                       </div>
 

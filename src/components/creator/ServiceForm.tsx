@@ -61,6 +61,64 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
     },
   });
 
+  // Check service limits for new services
+  const { data: serviceLimitCheck } = useQuery({
+    queryKey: ['service-limit-check', user?.id],
+    queryFn: async () => {
+      if (!user?.id || service?.id) return { canCreate: true }; // Skip check for existing services
+
+      // Get creator info and tier
+      const { data: creator, error: creatorError } = await supabase
+        .from('creators')
+        .select('tier')
+        .eq('user_id', user.id)
+        .single();
+
+      if (creatorError || !creator) {
+        console.error('Error fetching creator:', creatorError);
+        return { canCreate: false, error: 'Creator profile not found' };
+      }
+
+      // Get pricing tier limits
+      const { data: pricingTier, error: pricingError } = await supabase
+        .from('pricing_tiers')
+        .select('service_limit')
+        .eq('tier_name', creator.tier)
+        .single();
+
+      if (pricingError) {
+        console.error('Error fetching pricing tier:', pricingError);
+        return { canCreate: false, error: 'Failed to check service limits' };
+      }
+
+      // If service_limit is null, unlimited services allowed
+      if (pricingTier.service_limit === null) {
+        return { canCreate: true };
+      }
+
+      // Count existing active services
+      const { count, error: countError } = await supabase
+        .from('services')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id)
+        .eq('active', true);
+
+      if (countError) {
+        console.error('Error counting services:', countError);
+        return { canCreate: false, error: 'Failed to count existing services' };
+      }
+
+      const canCreate = (count || 0) < pricingTier.service_limit;
+      return { 
+        canCreate, 
+        currentCount: count || 0, 
+        limit: pricingTier.service_limit,
+        tier: creator.tier
+      };
+    },
+    enabled: !!user?.id && !service?.id,
+  });
+
   const mutation = useMutation({
     mutationFn: async (data: Service) => {
       if (!user) throw new Error('User not authenticated');
@@ -73,6 +131,11 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
           .eq('id', service.id);
         if (error) throw error;
       } else {
+        // Check service limits before creating new service
+        if (serviceLimitCheck && !serviceLimitCheck.canCreate) {
+          throw new Error(serviceLimitCheck.error || 'Service limit exceeded');
+        }
+
         // Create new service
         const { error } = await supabase
           .from('services')
@@ -83,11 +146,12 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
     onSuccess: () => {
       toast.success(service?.id ? 'Service updated successfully!' : 'Service created successfully!');
       queryClient.invalidateQueries({ queryKey: ['creator-services'] });
+      queryClient.invalidateQueries({ queryKey: ['service-limit-check'] });
       onClose();
     },
     onError: (error) => {
       console.error('Service form error:', error);
-      toast.error('Failed to save service. Please try again.');
+      toast.error(error.message || 'Failed to save service. Please try again.');
     }
   });
 
@@ -97,12 +161,22 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
       toast.error('Please fill in all required fields and ensure price is at least $10 USDC');
       return;
     }
+
+    // Additional check for service limits on new services
+    if (!service?.id && serviceLimitCheck && !serviceLimitCheck.canCreate) {
+      toast.error(`Service limit reached. Your ${serviceLimitCheck.tier} tier allows up to ${serviceLimitCheck.limit} services.`);
+      return;
+    }
+
     mutation.mutate(formData);
   };
 
   const handleChange = (field: keyof Service, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Show service limit warning for new services
+  const showLimitWarning = !service?.id && serviceLimitCheck && !serviceLimitCheck.canCreate;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -114,6 +188,15 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
           </DialogDescription>
         </DialogHeader>
 
+        {showLimitWarning && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-yellow-800">
+              <strong>Service Limit Reached:</strong> Your {serviceLimitCheck?.tier} tier allows up to {serviceLimitCheck?.limit} services. 
+              You currently have {serviceLimitCheck?.currentCount} active services.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="title">Service Title *</Label>
@@ -123,6 +206,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
               onChange={(e) => handleChange('title', e.target.value)}
               placeholder="e.g., Trading Strategy Review"
               className="mt-1"
+              disabled={showLimitWarning}
             />
           </div>
 
@@ -135,6 +219,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
               placeholder="Describe what you'll deliver to clients..."
               rows={3}
               className="mt-1"
+              disabled={showLimitWarning}
             />
           </div>
 
@@ -149,6 +234,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                 value={formData.price_usdc}
                 onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 10)}
                 className="mt-1"
+                disabled={showLimitWarning}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Minimum $10 USDC
@@ -164,13 +250,18 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                 value={formData.delivery_days}
                 onChange={(e) => handleChange('delivery_days', parseInt(e.target.value) || 3)}
                 className="mt-1"
+                disabled={showLimitWarning}
               />
             </div>
           </div>
 
           <div>
             <Label htmlFor="category">Category *</Label>
-            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+            <Select 
+              value={formData.category} 
+              onValueChange={(value) => handleChange('category', value)}
+              disabled={showLimitWarning}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -186,7 +277,11 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
 
           <div>
             <Label htmlFor="payment-method">Payment Method *</Label>
-            <Select value={formData.payment_method} onValueChange={(value) => handleChange('payment_method', value)}>
+            <Select 
+              value={formData.payment_method} 
+              onValueChange={(value) => handleChange('payment_method', value)}
+              disabled={showLimitWarning}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -207,7 +302,11 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
             <Button variant="outline" type="button" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
+            <Button 
+              type="submit" 
+              className="flex-1" 
+              disabled={mutation.isPending || showLimitWarning}
+            >
               {mutation.isPending ? 'Saving...' : (service?.id ? 'Update' : 'Create')}
             </Button>
           </div>
