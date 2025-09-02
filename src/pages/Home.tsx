@@ -204,7 +204,7 @@ export default function Home() {
               <CardContent className="p-8 text-center">
                 <CreditCard className="h-12 w-12 mx-auto mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-4">Crypto-Native Payments</h3>
-                <p className="text-muted-foreground">Pay in USDC (ETH, Solana, Sui, Cardano soon).</p>
+                <p className="text-muted-foreground">Pay in USDC & USDM (ETH, Solana, Sui, BSC, & Cardano).</p>
               </CardContent>
             </Card>
             
