@@ -263,11 +263,11 @@ export default function Home() {
                      stopOnInteraction: false,
                    }),
                  ]}
-                 className="w-full max-w-6xl mx-auto"
+                 className="w-full max-w-4xl mx-auto"
                >
                  <CarouselContent className="-ml-2 md:-ml-4">
                    {proCreators.map((creator) => (
-                     <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                     <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/4">
                        <Link to={`/profile/${creator.users.handle}`}>
                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden">
                            <div className="hover:scale-105 transition-transform duration-300">
