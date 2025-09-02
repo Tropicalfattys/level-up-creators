@@ -6,17 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Bell, Send, Users } from 'lucide-react';
+import { UserSelector } from './UserSelector';
 
 const notificationSchema = z.object({
   type: z.string().min(1, 'Please select a notification type'),
   title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
   message: z.string().min(1, 'Message is required').max(500, 'Message must be less than 500 characters'),
+  recipientType: z.enum(['all', 'role', 'specific']),
+  role: z.string().optional(),
+  userIds: z.array(z.string()).optional(),
 });
 
 type NotificationFormData = z.infer<typeof notificationSchema>;
@@ -30,6 +36,12 @@ const notificationTypes = [
   { value: 'feature_release', label: 'Feature Release' },
 ];
 
+const userRoles = [
+  { value: 'admin', label: 'Admins' },
+  { value: 'creator', label: 'Creators' },
+  { value: 'client', label: 'Clients' },
+];
+
 export const AdminNotifications = () => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,6 +51,9 @@ export const AdminNotifications = () => {
       type: '',
       title: '',
       message: '',
+      recipientType: 'all',
+      role: '',
+      userIds: [],
     },
   });
 
@@ -46,10 +61,17 @@ export const AdminNotifications = () => {
     setIsLoading(true);
     
     try {
-      console.log('Sending mass notification:', data);
+      console.log('Sending notification:', data);
       
       const { data: result, error } = await supabase.functions.invoke('send-mass-notification', {
-        body: data
+        body: {
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          recipientType: data.recipientType,
+          role: data.role,
+          userIds: data.userIds,
+        }
       });
 
       if (error) {
@@ -60,10 +82,10 @@ export const AdminNotifications = () => {
         return;
       }
 
-      console.log('Mass notification result:', result);
+      console.log('Notification result:', result);
       
-      toast.success('Mass notification sent successfully!', {
-        description: `Notification sent to ${result.count} users`
+      toast.success('Notification sent successfully!', {
+        description: `Notification sent to ${result.count} user${result.count !== 1 ? 's' : ''}`
       });
 
       // Reset form
@@ -80,6 +102,19 @@ export const AdminNotifications = () => {
   };
 
   const watchedValues = form.watch();
+  const recipientType = watchedValues.recipientType;
+
+  const getButtonText = () => {
+    switch (recipientType) {
+      case 'role':
+        return watchedValues.role ? `Send to ${userRoles.find(r => r.value === watchedValues.role)?.label}` : 'Send to Role';
+      case 'specific':
+        const count = watchedValues.userIds?.length || 0;
+        return count > 0 ? `Send to ${count} User${count !== 1 ? 's' : ''}` : 'Send to Selected Users';
+      default:
+        return 'Send to All Users';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -87,7 +122,7 @@ export const AdminNotifications = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            Send Mass Notification
+            Send Notification
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -150,13 +185,90 @@ export const AdminNotifications = () => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="recipientType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Recipients</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="all" />
+                          <Label htmlFor="all">All Users</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="role" id="role" />
+                          <Label htmlFor="role">By Role</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="specific" id="specific" />
+                          <Label htmlFor="specific">Specific Users</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {recipientType === 'role' && (
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select user role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {userRoles.map((role) => (
+                            <SelectItem key={role.value} value={role.value}>
+                              {role.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {recipientType === 'specific' && (
+                <FormField
+                  control={form.control}
+                  name="userIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Users</FormLabel>
+                      <FormControl>
+                        <UserSelector
+                          selectedUserIds={field.value || []}
+                          onSelectionChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <Button 
                 type="submit" 
                 disabled={isLoading}
                 className="w-full"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {isLoading ? 'Sending...' : 'Send to All Users'}
+                {isLoading ? 'Sending...' : getButtonText()}
               </Button>
             </form>
           </Form>

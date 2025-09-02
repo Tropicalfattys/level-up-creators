@@ -57,7 +57,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { type, title, message } = await req.json()
+    const { type, title, message, recipientType = 'all', role, userIds } = await req.json()
 
     if (!type || !title || !message) {
       return new Response(
@@ -66,12 +66,39 @@ serve(async (req) => {
       )
     }
 
-    console.log('Creating mass notification:', { type, title })
+    console.log('Creating notification:', { type, title, recipientType, role, userIds: userIds?.length })
 
-    // Get all user IDs
-    const { data: users, error: usersError } = await supabaseClient
-      .from('users')
-      .select('id')
+    // Build query based on recipient type
+    let query = supabaseClient.from('users').select('id')
+
+    switch (recipientType) {
+      case 'role':
+        if (!role) {
+          return new Response(
+            JSON.stringify({ error: 'Role is required for role-based notifications' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        query = query.eq('role', role)
+        break
+      
+      case 'specific':
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'User IDs are required for specific user notifications' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        query = query.in('id', userIds)
+        break
+      
+      case 'all':
+      default:
+        // No additional filters - get all users
+        break
+    }
+
+    const { data: users, error: usersError } = await query
 
     if (usersError) {
       console.error('Error fetching users:', usersError)
@@ -83,12 +110,12 @@ serve(async (req) => {
 
     if (!users || users.length === 0) {
       return new Response(
-        JSON.stringify({ message: 'No users found', count: 0 }),
+        JSON.stringify({ message: 'No users found matching criteria', count: 0 }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create notifications for all users
+    // Create notifications for selected users
     const notifications = users.map(user => ({
       user_id: user.id,
       type,
@@ -109,12 +136,13 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Successfully created ${users.length} notifications`)
+    console.log(`Successfully created ${users.length} notifications for ${recipientType} recipients`)
 
     return new Response(
       JSON.stringify({ 
-        message: 'Mass notification sent successfully', 
-        count: users.length 
+        message: 'Notification sent successfully', 
+        count: users.length,
+        recipientType 
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
