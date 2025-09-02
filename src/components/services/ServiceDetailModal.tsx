@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, ShoppingCart } from 'lucide-react';
-import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { Star, Clock, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookingModal } from './BookingModal';
 import { useState } from 'react';
@@ -38,27 +37,9 @@ interface ServiceDetailModalProps {
 
 export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailModalProps) => {
   const { user } = useAuth();
-  const { addToCart, isAddingToCart, cartItems } = useShoppingCart();
   const [showBookingModal, setShowBookingModal] = useState(false);
   
   if (!service) return null;
-
-  const isInCart = cartItems.some(item => item.service_id === service.id);
-  
-  const handleAddToCart = () => {
-    if (!user) {
-      // Redirect to auth page or show login modal
-      return;
-    }
-    
-    // Get the correct creator ID
-    const creatorId = service.creator_id || service.creator?.user_id || '';
-    
-    addToCart({
-      serviceId: service.id,
-      creatorId: creatorId
-    });
-  };
 
   const handleBookNow = () => {
     if (!user) {
@@ -146,23 +127,12 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
                 Close
               </Button>
               {user ? (
-                <>
-                  <Button 
-                    onClick={handleAddToCart}
-                    disabled={isAddingToCart || isInCart}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    {isInCart ? 'In Cart' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
-                  </Button>
-                  <Button 
-                    onClick={handleBookNow}
-                    className="flex-1"
-                  >
-                    Book Now
-                  </Button>
-                </>
+                <Button 
+                  onClick={handleBookNow}
+                  className="flex-1"
+                >
+                  Book Now
+                </Button>
               ) : (
                 <Button asChild className="flex-1">
                   <a href="/auth">Sign In to Book</a>
