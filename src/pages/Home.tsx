@@ -27,36 +27,44 @@ export default function Home() {
     queryFn: async () => {
       console.log('Fetching pro creators...');
       
-      const { data, error } = await supabase
+      // Step 1: Get pro creators with user info
+      const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
         .select(`
           *,
-          users!left(handle, avatar_url),
-          services(id)
+          users!inner(handle, avatar_url)
         `)
         .eq('tier', 'pro')
         .eq('approved', true)
         .order('rating', { ascending: false })
         .order('review_count', { ascending: false });
 
-      console.log('Pro creators query result:', { data, error });
-
-      if (error) {
-        console.error('Pro creators query error:', error);
-        throw error;
+      if (creatorsError) {
+        console.error('Pro creators query error:', creatorsError);
+        throw creatorsError;
       }
+
+      console.log('Pro creators found:', creatorsData?.length || 0);
+
+      // Step 2: Get service counts for each creator
+      const creatorsWithServiceCount = await Promise.all(
+        (creatorsData || []).map(async (creator) => {
+          const { count } = await supabase
+            .from('services')
+            .select('*', { count: 'exact', head: true })
+            .eq('creator_id', creator.user_id)
+            .eq('active', true);
+
+          return {
+            ...creator,
+            serviceCount: count || 0
+          };
+        })
+      );
       
-      // Filter out creators without user data and map the results
-      const validCreators = (data || [])
-        .filter(creator => creator.users && creator.users.handle)
-        .map(creator => ({
-          ...creator,
-          serviceCount: creator.services?.length || 0
-        }));
+      console.log('Pro creators with service counts:', creatorsWithServiceCount);
       
-      console.log('Valid pro creators found:', validCreators.length, validCreators);
-      
-      return validCreators;
+      return creatorsWithServiceCount;
     },
     staleTime: 5 * 60 * 1000,
   });
