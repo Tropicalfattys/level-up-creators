@@ -109,12 +109,63 @@ export const signOut = async () => {
   try {
     console.log('SignOut attempt');
     const { error } = await supabase.auth.signOut();
+    
+    // If signOut fails with session missing error, force clear local state
+    if (error && error.message?.includes('Auth session missing')) {
+      console.log('Session missing, forcing local cleanup');
+      
+      // Clear localStorage
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-cpxqkiajkkeizsewhoel-auth-token');
+        // Clear any other auth-related localStorage items
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('auth') || key.includes('supabase')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (localStorageError) {
+        console.error('Error clearing localStorage:', localStorageError);
+      }
+      
+      // Force trigger auth state change to clear session
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          console.log('Forced sign out completed');
+        }
+      });
+      
+      return { error: null }; // Return success since we handled the cleanup
+    }
+    
     if (error) {
       console.error('SignOut error:', error);
+      // Even if there's an error, try to clear local state
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-cpxqkiajkkeizsewhoel-auth-token');
+      } catch (localStorageError) {
+        console.error('Error clearing localStorage during error:', localStorageError);
+      }
     }
+    
     return { error };
   } catch (error) {
     console.error('SignOut exception:', error);
+    
+    // Force cleanup even on exception
+    try {
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-cpxqkiajkkeizsewhoel-auth-token');
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('auth') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (localStorageError) {
+      console.error('Error clearing localStorage during exception:', localStorageError);
+    }
+    
     return { error: error as Error };
   }
 };

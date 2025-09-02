@@ -34,8 +34,25 @@ export const Header = () => {
   });
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      console.log('Header: Starting sign out process');
+      const result = await signOut();
+      
+      // Always navigate to home, even if there was an error
+      console.log('Header: Sign out completed, navigating to home');
+      navigate('/');
+      
+      // Force a page reload on production to ensure clean state
+      if (window.location.hostname !== 'localhost') {
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Header: Sign out error:', error);
+      // Still navigate even if there's an error
+      navigate('/');
+    }
   };
 
   return (
