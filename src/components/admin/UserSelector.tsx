@@ -139,8 +139,7 @@ export const UserSelector = ({ selectedUserIds, onSelectionChange }: UserSelecto
                 {filteredUsers.map(user => (
                   <div
                     key={user.id}
-                    className="flex items-center space-x-3 p-2 hover:bg-zinc-800/50 rounded cursor-pointer"
-                    onClick={() => handleUserToggle(user.id)}
+                    className="flex items-center space-x-3 p-2 hover:bg-zinc-800/50 rounded"
                   >
                     <Checkbox
                       checked={selectedUserIds.includes(user.id)}
