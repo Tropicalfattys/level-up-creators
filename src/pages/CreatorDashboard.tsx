@@ -10,6 +10,7 @@ import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { PayoutsTracker } from '@/components/creator/PayoutsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
+import { VideoIntroManager } from '@/components/creator/VideoIntroManager';
 import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -233,17 +234,7 @@ export default function CreatorDashboard() {
             </TabsContent>
 
             <TabsContent value="video-intro">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <Video className="h-16 w-16 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">Video Intro</h3>
-                    <p className="text-muted-foreground">
-                      Video intro management coming soon...
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <VideoIntroManager />
             </TabsContent>
           </Tabs>
         </>

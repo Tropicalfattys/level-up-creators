@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase, Heart } from 'lucide-react';
+import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase, Heart, Play, Crown } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { useUserFollows } from '@/hooks/useUserFollows';
 import { format } from 'date-fns';
@@ -434,43 +435,75 @@ export const CreatorProfile = () => {
           )}
         </div>
 
-        {/* Right Column - Services (only for approved creators) */}
+        {/* Right Column - Video Intro + Services (only for approved creators) */}
         <div className="lg:col-span-2">
           {isCreator && services ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Services</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {services.length > 0 ? (
-                  <div className="grid gap-4">
-                    {services.map((service: any) => (
-                      <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold">{service.title}</h3>
-                          <Badge variant="outline">${service.price_usdc}</Badge>
+            <div className="space-y-6">
+              {/* Video Intro Section - Only for Pro creators with video */}
+              {creator?.tier === 'pro' && creator?.intro_video_url && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Play className="h-5 w-5" />
+                      Video Introduction
+                      <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Pro
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                      <video
+                        controls
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                        poster="/placeholder.svg"
+                      >
+                        <source src={creator.intro_video_url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Services Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Services</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {services.length > 0 ? (
+                    <div className="grid gap-4">
+                      {services.map((service: any) => (
+                        <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-semibold">{service.title}</h3>
+                            <Badge variant="outline">${service.price_usdc}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {service.description}
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">
+                              Delivery: {service.delivery_days} days
+                            </span>
+                            <Button size="sm" onClick={() => handleBookService(service)}>
+                              Book Now
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {service.description}
-                        </p>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">
-                            Delivery: {service.delivery_days} days
-                          </span>
-                          <Button size="sm" onClick={() => handleBookService(service)}>
-                            Book Now
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No services available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No services available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             <Card>
               <CardHeader>
