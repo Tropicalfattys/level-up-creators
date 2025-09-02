@@ -43,7 +43,8 @@ export function RecentActivity() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
+      // Fetch client bookings (where user is the client)
+      const { data: clientBookings, error: clientError } = await supabase
         .from('bookings')
         .select(`
           id,
@@ -52,33 +53,64 @@ export function RecentActivity() {
           updated_at,
           client_id,
           creator_id,
-          services!inner(
-            title,
-            creator_id
-          ),
-          client:users!bookings_client_id_fkey(handle),
-          creator:users!bookings_creator_id_fkey(handle)
+          services (title),
+          creator:users!bookings_creator_id_fkey (handle)
         `)
-        .or(`client_id.eq.${user.id},creator_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false })
-        .limit(6);
+        .eq('client_id', user.id)
+        .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching recent activity:', error);
-        throw error;
+      if (clientError) {
+        console.error('Error fetching client bookings:', clientError);
+        throw clientError;
       }
 
-      return data?.map((booking): RecentActivityItem => ({
-        id: booking.id,
-        status: booking.status,
-        created_at: booking.created_at,
-        updated_at: booking.updated_at,
-        service_title: booking.services?.title || 'Unknown Service',
-        role: booking.client_id === user.id ? 'client' : 'creator',
-        other_party_handle: booking.client_id === user.id 
-          ? (booking.creator?.handle || 'Unknown Creator')
-          : (booking.client?.handle || 'Unknown Client')
-      })) || [];
+      // Fetch creator bookings (where user is the creator)
+      const { data: creatorBookings, error: creatorError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          status,
+          created_at,
+          updated_at,
+          client_id,
+          creator_id,
+          services (title),
+          client:users!bookings_client_id_fkey (handle)
+        `)
+        .eq('creator_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (creatorError) {
+        console.error('Error fetching creator bookings:', creatorError);
+        throw creatorError;
+      }
+
+      // Combine and map the results
+      const allBookings = [
+        ...(clientBookings || []).map((booking): RecentActivityItem => ({
+          id: booking.id,
+          status: booking.status,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+          service_title: booking.services?.title || 'Unknown Service',
+          role: 'client' as const,
+          other_party_handle: booking.creator?.handle || 'Unknown Creator'
+        })),
+        ...(creatorBookings || []).map((booking): RecentActivityItem => ({
+          id: booking.id,
+          status: booking.status,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+          service_title: booking.services?.title || 'Unknown Service',
+          role: 'creator' as const,
+          other_party_handle: booking.client?.handle || 'Unknown Client'
+        }))
+      ];
+
+      // Sort by updated_at and take the first 6
+      return allBookings
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 6);
     },
     enabled: !!user?.id,
   });
