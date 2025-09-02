@@ -66,7 +66,7 @@ export const signIn = async (email: string, password: string) => {
   }
 };
 
-export const signInWithProvider = async (provider: 'google' | 'github' | 'twitter') => {
+export const signInWithProvider = async (provider: 'google' | 'twitter') => {
   try {
     const redirectUrl = `${window.location.origin}/`;
     

@@ -128,7 +128,7 @@ export const AuthPage = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'github' | 'twitter') => {
+  const handleSocialLogin = async (provider: 'google' | 'twitter') => {
     if (socialLoading) return;
     
     setSocialLoading(provider);
@@ -379,7 +379,7 @@ export const AuthPage = () => {
                   </div>
                 </div>
                 
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-3">
                   <Button 
                     variant="outline" 
                     onClick={() => handleSocialLogin('google')}
@@ -390,18 +390,6 @@ export const AuthPage = () => {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       'Google'
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleSocialLogin('github')}
-                    disabled={loading || !!socialLoading}
-                    className="w-full"
-                  >
-                    {socialLoading === 'github' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'GitHub'
                     )}
                   </Button>
                   <Button 
