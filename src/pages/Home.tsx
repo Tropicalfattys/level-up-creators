@@ -98,8 +98,9 @@ export default function Home() {
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Hire the right Content Creator for your budget & Amplify Your Project.
-            <br />
+            <div className="mb-2">
+              Hire the right Content Creator for your budget & Amplify Your Project.
+            </div>
             <span className="bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] bg-clip-text text-transparent">
               Seamless stablecoin payments, no matter which chain you're on.
             </span>
