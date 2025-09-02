@@ -144,7 +144,7 @@ export const UserSelector = ({ selectedUserIds, onSelectionChange }: UserSelecto
                   >
                     <Checkbox
                       checked={selectedUserIds.includes(user.id)}
-                      onChange={() => handleUserToggle(user.id)}
+                      onCheckedChange={() => handleUserToggle(user.id)}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
