@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Search, Users, CreditCard, Shield, Globe, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +20,32 @@ import Autoplay from "embla-carousel-autoplay";
 
 export default function Home() {
   const { user } = useAuth();
+
+  // Fetch Pro creators for featured section
+  const { data: proCreators = [], isLoading } = useQuery({
+    queryKey: ['pro-creators'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('creators')
+        .select(`
+          *,
+          users!inner(handle, avatar_url),
+          services(id)
+        `)
+        .eq('tier', 'pro')
+        .eq('approved', true)
+        .order('rating', { ascending: false })
+        .order('review_count', { ascending: false });
+
+      if (error) throw error;
+      
+      return data.map(creator => ({
+        ...creator,
+        serviceCount: creator.services?.length || 0
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const services = [
     { name: 'Host an AMA', icon: MessageSquare, description: 'Telegram, Twitter, Discord' },
@@ -176,28 +205,95 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Creators Section */}
+      {/* Featured Pro Creators Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Featured Creators</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Featured Pro Creators</h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { title: 'Top AMA Hosts', description: 'Expert hosts for live sessions', count: 'Coming Soon' },
-              { title: 'Best at Twitter Campaigns', description: 'Proven Twitter growth specialists', count: 'Coming Soon' },
-              { title: 'Rising Video Creators', description: 'Trending video content makers', count: 'Coming Soon' }
-            ].map((category) => (
-              <Card key={category.title} className="bg-card border-border">
-                <CardContent className="p-6 text-center">
-                  <h3 className="text-xl font-semibold mb-2">{category.title}</h3>
-                  <p className="text-muted-foreground mb-4">{category.description}</p>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                    {category.count}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="bg-card border-border animate-pulse">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4"></div>
+                    <div className="h-4 bg-muted rounded mb-2"></div>
+                    <div className="h-3 bg-muted rounded mb-4"></div>
+                    <div className="h-6 bg-muted rounded-full w-20 mx-auto"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : proCreators.length > 0 ? (
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 4000,
+                }),
+              ]}
+              className="w-full max-w-6xl mx-auto"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {proCreators.map((creator) => (
+                  <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                    <Link to={`/profile/${creator.users.handle}`}>
+                      <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border h-full">
+                        <CardContent className="p-6 text-center">
+                          <div className="relative mb-4">
+                            <Avatar className="w-16 h-16 mx-auto">
+                              <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
+                              <AvatarFallback className="text-lg font-semibold">
+                                {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Badge className="absolute -top-1 -right-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                              Pro
+                            </Badge>
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">@{creator.users.handle}</h3>
+                          <div className="flex items-center justify-center gap-1 mb-3">
+                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm font-medium">
+                              {creator.rating ? Number(creator.rating).toFixed(1) : '5.0'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({creator.review_count || 0} reviews)
+                            </span>
+                          </div>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                            {creator.serviceCount} {creator.serviceCount === 1 ? 'service' : 'services'} available
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { title: 'Pro Creators', description: 'Premium creators coming soon', count: 'Coming Soon' },
+                { title: 'Expert Specialists', description: 'Top-tier professionals', count: 'Coming Soon' },
+                { title: 'Verified Pros', description: 'Trusted pro creators', count: 'Coming Soon' }
+              ].map((category) => (
+                <Card key={category.title} className="bg-card border-border">
+                  <CardContent className="p-6 text-center">
+                    <h3 className="text-xl font-semibold mb-2">{category.title}</h3>
+                    <p className="text-muted-foreground mb-4">{category.description}</p>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      {category.count}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
