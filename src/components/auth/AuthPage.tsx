@@ -379,29 +379,16 @@ export const AuthPage = () => {
                   </div>
                 </div>
                 
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-4">
                   <Button 
-                    variant="outline" 
                     onClick={() => handleSocialLogin('google')}
                     disabled={loading || !!socialLoading}
-                    className="w-full"
+                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white border-0"
                   >
                     {socialLoading === 'google' ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      'Google'
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleSocialLogin('twitter')}
-                    disabled={loading || !!socialLoading}
-                    className="w-full"
-                  >
-                    {socialLoading === 'twitter' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Twitter'
+                      'Continue with Google'
                     )}
                   </Button>
                 </div>
