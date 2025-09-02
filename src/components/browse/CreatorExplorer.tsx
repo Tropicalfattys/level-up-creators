@@ -209,16 +209,16 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   };
 
   // Create category icons with meaningful emojis and SHORT display names
-  const getCategoryData = (categoryValue: string): { icon: string; displayName: string } => {
-    const categoryMap: Record<string, { icon: string; displayName: string }> = {
-      'ama': { icon: '💬', displayName: 'AMA' },
-      'twitter': { icon: '🐦', displayName: 'Twitter' },
-      'videos': { icon: '🎥', displayName: 'Videos' },
-      'tutorials': { icon: '📚', displayName: 'Tutorials' },
+  const getCategoryData = (categoryValue: string): { icon?: string; image?: string; displayName: string } => {
+    const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
+      'ama': { image: '/lovable-uploads/99486a9d-a27f-4f18-8174-5028092135bb.png', displayName: 'AMA' },
+      'twitter': { image: '/lovable-uploads/0e88c9c5-5e10-4ce6-b651-9d37b9bb03ce.png', displayName: 'Twitter' },
+      'videos': { image: '/lovable-uploads/a3a19718-b233-4339-b2d3-036743e72d9b.png', displayName: 'Videos' },
+      'tutorials': { image: '/lovable-uploads/35e44b66-9ca9-4aa7-8c54-3db70d670ecf.png', displayName: 'Tutorials' },
       'reviews': { icon: '⭐', displayName: 'Reviews' },
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
-      'instagram': { icon: '📸', displayName: 'Instagram' },
-      'facebook': { icon: '👍', displayName: 'Facebook' },
+      'instagram': { image: '/lovable-uploads/9369173c-0356-4ceb-8cbe-c623229748e8.png', displayName: 'Instagram' },
+      'facebook': { image: '/lovable-uploads/01230a97-bdb2-4b63-a7ca-4f99eee69a88.png', displayName: 'Facebook' },
       'defi': { icon: '🏦', displayName: 'DeFi' },
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
@@ -246,11 +246,15 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     return categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
   };
 
-  const categoryIcons = categories?.slice(0, 8).map(category => ({
-    name: getCategoryData(category.value).displayName,
-    category: category.value,
-    icon: getCategoryData(category.value).icon
-  })) || [];
+  const categoryIcons = categories?.slice(0, 8).map(category => {
+    const categoryData = getCategoryData(category.value);
+    return {
+      name: categoryData.displayName,
+      category: category.value,
+      icon: categoryData.icon,
+      image: categoryData.image
+    };
+  }) || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -280,7 +284,15 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
-                <span className="text-2xl mb-1">{cat.icon}</span>
+                {cat.image ? (
+                  <img 
+                    src={cat.image} 
+                    alt={cat.name}
+                    className="w-8 h-8 mb-1 object-contain"
+                  />
+                ) : (
+                  <span className="text-2xl mb-1">{cat.icon}</span>
+                )}
                 <span className="text-xs text-center font-medium leading-tight">{cat.name}</span>
               </Button>
             ))}
