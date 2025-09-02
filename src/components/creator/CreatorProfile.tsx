@@ -30,6 +30,22 @@ export const CreatorProfile = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
+  // Helper function to get tier display name
+  const getTierDisplayName = (tier: string | undefined): string => {
+    if (!tier) return 'Basic Creator';
+    
+    switch (tier) {
+      case 'basic':
+        return 'Basic Creator';
+      case 'mid':
+        return 'Creator Plus';
+      case 'pro':
+        return 'Pro Creator';
+      default:
+        return 'Basic Creator';
+    }
+  };
+
   // Fetch user data by handle
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', handle],
@@ -228,9 +244,6 @@ export const CreatorProfile = () => {
                       </Button>
                     )}
                   </div>
-                  {creator?.headline && (
-                    <p className="text-muted-foreground">{creator.headline}</p>
-                  )}
                 </div>
 
                 {/* Rating - only show if user has reviews */}
@@ -252,9 +265,7 @@ export const CreatorProfile = () => {
                 {/* Role Badge */}
                 <Badge variant={isCreator ? 'default' : 'secondary'}>
                   {isCreator ? (
-                    <>
-                      {creator?.tier ? creator.tier.charAt(0).toUpperCase() + creator.tier.slice(1) : 'Basic'} Creator
-                    </>
+                    getTierDisplayName(creator?.tier)
                   ) : (
                     'Client'
                   )}
