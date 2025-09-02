@@ -10,6 +10,7 @@ import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCar
 import { UserDisputes } from '@/components/disputes/UserDisputes';
 import { ClientBookings } from '@/components/client/ClientBookings';
 import { ReferralSystem } from '@/components/referrals/ReferralSystem';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { 
   DollarSign, 
   Users, 
@@ -342,9 +343,7 @@ export default function Index() {
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-sm">
-                  No recent activity to show
-                </p>
+                <RecentActivity />
               </CardContent>
             </Card>
 
