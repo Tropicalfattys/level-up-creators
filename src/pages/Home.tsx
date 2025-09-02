@@ -269,7 +269,7 @@ export default function Home() {
                   {proCreators.map((creator) => (
                     <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
                       <Link to={`/profile/${creator.users.handle}`}>
-                        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border border-border hover:border-border h-full">
+                        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-2 border-border h-full">
                           <CardContent className="p-6 text-center">
                             <div className="mb-4">
                               <Avatar className="w-16 h-16 mx-auto">
