@@ -40,6 +40,7 @@ export const PricingDebug = () => {
               <p>• ID: {tier.id}</p>
               <p>• tier_name: "{tier.tier_name}"</p>
               <p>• display_name: "{tier.display_name}"</p>
+              <p>• description: "{tier.description}"</p>
               <p>• price_usdc: {tier.price_usdc}</p>
               <p>• active: {tier.active ? 'true' : 'false'}</p>
               <p>• features: {JSON.stringify(tier.features)}</p>

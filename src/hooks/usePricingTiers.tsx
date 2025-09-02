@@ -7,6 +7,7 @@ interface PricingTier {
   tier_name: string;
   price_usdc: number;
   display_name: string;
+  description: string;
   features: string[];
   active: boolean;
   created_at: string;
@@ -51,12 +52,13 @@ export const useDynamicCreatorTiers = () => {
       acc[tierName] = {
         price: tier.price_usdc,
         displayName: tier.display_name,
+        description: tier.description,
         features: tier.features
       };
     }
     
     return acc;
-  }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; features: string[] }>);
+  }, {} as Record<'basic' | 'mid' | 'pro', { price: number; displayName: string; description: string; features: string[] }>);
 
   return {
     ...queryResult,

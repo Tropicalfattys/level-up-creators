@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { DollarSign, Save, RefreshCw, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,6 +17,7 @@ interface PricingTier {
   tier_name: string;
   price_usdc: number;
   display_name: string;
+  description: string;
   features: string[];
   active: boolean;
   created_at: string;
@@ -218,6 +220,17 @@ export const AdminPricing = () => {
                             placeholder="e.g., Starter, Plus, Pro"
                           />
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`description-${tier.id}`}>Description</Label>
+                        <Textarea
+                          id={`description-${tier.id}`}
+                          value={getCurrentValue(tier, 'description') as string}
+                          onChange={(e) => handleInputChange(tier.id, 'description', e.target.value)}
+                          placeholder="e.g., Perfect for getting started"
+                          className="min-h-[60px]"
+                        />
                       </div>
 
                       <div className="space-y-3">

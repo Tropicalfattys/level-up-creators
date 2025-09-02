@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,8 +16,8 @@ const fallbackTiers = [
     id: 'basic' as const,
     name: 'Basic',
     price: 0,
-    icon: <CheckCircle className="h-8 w-8" />,
     description: 'Perfect for getting started',
+    icon: <CheckCircle className="h-8 w-8" />,
     features: [
       'Basic creator profile',
       'Up to 3 active services',
@@ -32,8 +31,8 @@ const fallbackTiers = [
     id: 'mid' as const,
     name: 'Premium',
     price: 25,
-    icon: <Star className="h-8 w-8" />,
     description: 'Enhanced features for growth',
+    icon: <Star className="h-8 w-8" />,
     features: [
       'Enhanced creator profile',
       'Up to 10 active services',
@@ -49,8 +48,8 @@ const fallbackTiers = [
     id: 'pro' as const,
     name: 'Pro',
     price: 50,
-    icon: <Crown className="h-8 w-8" />,
     description: 'Premium features for professionals',
+    icon: <Crown className="h-8 w-8" />,
     features: [
       'Premium creator profile',
       'Unlimited active services',
@@ -147,6 +146,14 @@ export default function BecomeCreator() {
     return fallbackTier?.name || tierName;
   };
 
+  const getTierDescription = (tierName: 'basic' | 'mid' | 'pro'): string => {
+    if (dynamicTiers && dynamicTiers[tierName]) {
+      return dynamicTiers[tierName].description;
+    }
+    const fallbackTier = fallbackTiers.find(t => t.id === tierName);
+    return fallbackTier?.description || 'Perfect for getting started';
+  };
+
   const getTierFeatures = (tierName: 'basic' | 'mid' | 'pro'): string[] => {
     if (dynamicTiers && dynamicTiers[tierName]) {
       return dynamicTiers[tierName].features;
@@ -194,6 +201,7 @@ export default function BecomeCreator() {
     ...tier,
     name: getTierDisplayName(tier.id),
     price: getTierPrice(tier.id),
+    description: getTierDescription(tier.id),
     features: getTierFeatures(tier.id)
   }));
 
