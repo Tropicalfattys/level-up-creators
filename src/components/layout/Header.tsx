@@ -83,6 +83,9 @@ export const Header = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
+          <Link to="/services" className="text-white/80 hover:text-white transition-colors">
+            Services
+          </Link>
           <Link to="/how-it-works" className="text-white/80 hover:text-white transition-colors">
             How it works
           </Link>
