@@ -71,7 +71,7 @@ export default function Home() {
 
   const services = [
     { name: 'Host an AMA', icon: MessageSquare, description: 'Telegram, Twitter, Discord' },
-    { name: 'Tweet Campaigns & Threads', icon: Hash, description: 'Engaging Twitter content' },
+    { name: 'Tweet & Threads', icon: Hash, description: 'Engaging Twitter content' },
     { name: 'Promo Videos', icon: Video, description: 'TikTok, Reels, YouTube Shorts' },
     { name: 'Product Tutorials', icon: FileText, description: 'Walkthroughs & guides' },
     { name: 'Product Reviews', icon: Star, description: 'Honest project reviews' },
