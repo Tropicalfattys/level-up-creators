@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -319,9 +320,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                               {getTierDisplayName(creator.tier)}
                             </Badge>
                           </div>
-                          {creator.headline && creator.headline !== 'GGGGGGG' && creator.headline !== 'JJJJJ' && (
-                            <p className="text-zinc-400 mb-2">{creator.headline}</p>
-                          )}
                           
                           <div className="flex items-center gap-6 text-sm">
                             <div className="flex items-center gap-1">
