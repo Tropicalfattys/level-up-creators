@@ -46,7 +46,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     }
   }, [selectedCategory]);
 
-  // Fetch categories from database
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -210,14 +209,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   // Create category icons with meaningful emojis and SHORT display names
   const getCategoryData = (categoryValue: string): { icon?: string; image?: string; displayName: string } => {
     const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
-      'ama': { image: '/lovable-uploads/db8f62e1-a8c6-4de1-9aa1-03ba9c84e048.png', displayName: 'AMA' },
+      'ama': { image: '/lovable-uploads/ee03592b-f3eb-4c13-9a78-0ca967c6f502.png', displayName: 'AMA' },
       'twitter': { image: '/lovable-uploads/6aed84a1-41ef-494b-874f-e8b1b82e2152.png', displayName: 'Twitter' },
-      'video': { image: '/lovable-uploads/7e84e7e5-a26c-4029-80b7-f86538584c8f.png', displayName: 'Videos' },
-      'tutorials': { image: '/lovable-uploads/4cac218a-57fd-4cb8-a061-e3b7ce7163be.png', displayName: 'Tutorials' },
+      'video': { image: '/lovable-uploads/9c470ddb-90ce-45af-85bc-d38ccba8daab.png', displayName: 'Videos' },
+      'tutorials': { image: '/lovable-uploads/5cc45c13-a443-4c00-b140-8bdd75aea9fe.png', displayName: 'Tutorials' },
       'reviews': { icon: '⭐', displayName: 'Reviews' },
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
       'instagram': { image: '/lovable-uploads/f8e8abb3-ce3f-46fa-bda6-3fb8e0057f01.png', displayName: 'Instagram' },
-      'facebook': { image: '/lovable-uploads/8265219f-eae8-43d4-b33b-b558b74547e8.png', displayName: 'Facebook' },
+      'facebook': { image: '/lovable-uploads/e9b48aec-1998-4751-8062-ba0e3e48abd0.png', displayName: 'Facebook' },
       'defi': { icon: '🏦', displayName: 'DeFi' },
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
