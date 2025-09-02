@@ -22,14 +22,16 @@ export default function Home() {
   const { user } = useAuth();
 
   // Fetch Pro creators for featured section
-  const { data: proCreators = [], isLoading } = useQuery({
+  const { data: proCreators = [], isLoading, error: proCreatorsError } = useQuery({
     queryKey: ['pro-creators'],
     queryFn: async () => {
+      console.log('Fetching pro creators...');
+      
       const { data, error } = await supabase
         .from('creators')
         .select(`
           *,
-          users!inner(handle, avatar_url),
+          users!left(handle, avatar_url),
           services(id)
         `)
         .eq('tier', 'pro')
@@ -37,12 +39,24 @@ export default function Home() {
         .order('rating', { ascending: false })
         .order('review_count', { ascending: false });
 
-      if (error) throw error;
+      console.log('Pro creators query result:', { data, error });
+
+      if (error) {
+        console.error('Pro creators query error:', error);
+        throw error;
+      }
       
-      return data.map(creator => ({
-        ...creator,
-        serviceCount: creator.services?.length || 0
-      }));
+      // Filter out creators without user data and map the results
+      const validCreators = (data || [])
+        .filter(creator => creator.users && creator.users.handle)
+        .map(creator => ({
+          ...creator,
+          serviceCount: creator.services?.length || 0
+        }));
+      
+      console.log('Valid pro creators found:', validCreators.length, validCreators);
+      
+      return validCreators;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -210,7 +224,12 @@ export default function Home() {
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Featured Pro Creators</h2>
           
-          {isLoading ? (
+           {proCreatorsError ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-2">Error loading pro creators</p>
+              <p className="text-sm text-muted-foreground">{proCreatorsError.message}</p>
+            </div>
+           ) : isLoading ? (
             <div className="grid md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="bg-card border-border animate-pulse">
@@ -223,7 +242,7 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : proCreators.length > 0 ? (
+           ) : proCreators.length > 0 ? (
             <Carousel
               opts={{
                 align: "start",
