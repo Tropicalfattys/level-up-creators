@@ -210,14 +210,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   // Create category icons with meaningful emojis and SHORT display names
   const getCategoryData = (categoryValue: string): { icon?: string; image?: string; displayName: string } => {
     const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
-      'ama': { image: '/lovable-uploads/1d6becc0-316c-476a-a44f-055e32e03cad.png', displayName: 'AMA' },
-      'twitter': { image: '/lovable-uploads/aa3352c4-6cba-4ab1-9331-0f796f07ab5e.png', displayName: 'Twitter' },
-      'video': { image: '/lovable-uploads/56a83a5c-0ee2-4b64-b90b-fef5033fb4e1.png', displayName: 'Videos' },
-      'tutorials': { image: '/lovable-uploads/ae9792f3-c505-45ee-9589-f1e86ade6a49.png', displayName: 'Tutorials' },
+      'ama': { image: '/lovable-uploads/8d4bf701-5c83-4fe6-b8ea-d3f2366511a5.png', displayName: 'AMA' },
+      'twitter': { image: '/lovable-uploads/273ace1f-71f5-4b90-9a12-13da23e0d6dd.png', displayName: 'Twitter' },
+      'video': { image: '/lovable-uploads/7dd5c2dd-bf07-4e05-a6be-9acd7d5e3077.png', displayName: 'Videos' },
+      'tutorials': { image: '/lovable-uploads/e2f6b4b8-2bd4-424c-8263-9c90b1e6bf47.png', displayName: 'Tutorials' },
       'reviews': { icon: '⭐', displayName: 'Reviews' },
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
-      'instagram': { image: '/lovable-uploads/6e728aae-87be-425c-bac3-d2eaa030f21e.png', displayName: 'Instagram' },
-      'facebook': { image: '/lovable-uploads/fd21a1b1-d00f-44f0-b1e0-0f82895ed607.png', displayName: 'Facebook' },
+      'instagram': { image: '/lovable-uploads/cc3e2d7a-0de0-42ce-8e88-c4c9d8cd1b26.png', displayName: 'Instagram' },
+      'facebook': { image: '/lovable-uploads/bc71fcb1-cd19-47ce-8f5a-5ac5a6a54b23.png', displayName: 'Facebook' },
       'defi': { icon: '🏦', displayName: 'DeFi' },
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
