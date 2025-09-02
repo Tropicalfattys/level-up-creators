@@ -10,7 +10,7 @@ import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { PayoutsTracker } from '@/components/creator/PayoutsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
-import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard } from 'lucide-react';
+import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function CreatorDashboard() {
@@ -183,9 +183,9 @@ export default function CreatorDashboard() {
             </Card>
           </div>
 
-          {/* Dashboard Tabs - Adding Payouts tab */}
+          {/* Dashboard Tabs - Updated to include Video Intro tab */}
           <Tabs defaultValue="services" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="services" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Services
@@ -205,6 +205,10 @@ export default function CreatorDashboard() {
               <TabsTrigger value="messages" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Messages
+              </TabsTrigger>
+              <TabsTrigger value="video-intro" className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video Intro
               </TabsTrigger>
             </TabsList>
 
@@ -226,6 +230,20 @@ export default function CreatorDashboard() {
 
             <TabsContent value="messages">
               <MessagesList />
+            </TabsContent>
+
+            <TabsContent value="video-intro">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <Video className="h-16 w-16 mx-auto text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">Video Intro</h3>
+                    <p className="text-muted-foreground">
+                      Video intro management coming soon...
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>
