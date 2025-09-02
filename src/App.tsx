@@ -71,11 +71,7 @@ function App() {
                   />
                   <Route 
                     path="/services" 
-                    element={
-                      <ProtectedRoute>
-                        <Services />
-                      </ProtectedRoute>
-                    } 
+                    element={<Services />} 
                   />
                   <Route 
                     path="/settings" 

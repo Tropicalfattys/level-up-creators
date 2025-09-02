@@ -64,7 +64,7 @@ export default function Home() {
               <Link to="/browse">Browse Creators</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link to="/browse">Hire a Creator</Link>
+              <Link to="/services">Browse Services</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link to="/become-creator">Become a Creator</Link>
