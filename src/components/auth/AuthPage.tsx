@@ -150,7 +150,7 @@ export const AuthPage = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Welcome to LeveledUp</CardTitle>
           <CardDescription className="text-center">
-            Connect with crypto experts and grow your skills
+            Connect with content creators for any niche and grow your project!
           </CardDescription>
         </CardHeader>
         <CardContent>
