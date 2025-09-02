@@ -112,6 +112,33 @@ export const CreatorProfile = () => {
     enabled: !!handle && handle !== 'unknown'
   });
 
+  // Fetch signed URL for video intro if it exists
+  const { data: videoUrl } = useQuery({
+    queryKey: ['profile-video-intro-url', profile?.user?.id, profile?.creator?.intro_video_url],
+    queryFn: async () => {
+      if (!profile?.creator?.intro_video_url || !profile?.user?.id) return null;
+      
+      try {
+        const fileName = `intro-videos/${profile.user.id}/intro.${profile.creator.intro_video_url.split('.').pop()}`;
+        
+        const { data, error } = await supabase.storage
+          .from('deliverables')
+          .createSignedUrl(fileName, 3600); // 1 hour expiry
+
+        if (error) {
+          console.error('Error creating signed URL:', error);
+          return null;
+        }
+
+        return data.signedUrl;
+      } catch (error) {
+        console.error('Error getting video URL:', error);
+        return null;
+      }
+    },
+    enabled: !!profile?.creator?.intro_video_url && !!profile?.user?.id
+  });
+
   // Fetch user reviews
   const { data: reviews } = useQuery({
     queryKey: ['user-reviews', profile?.user?.id],
@@ -440,7 +467,7 @@ export const CreatorProfile = () => {
           {isCreator && services ? (
             <div className="space-y-6">
               {/* Video Intro Section - Only for Pro creators with video */}
-              {creator?.tier === 'pro' && creator?.intro_video_url && (
+              {creator?.tier === 'pro' && creator?.intro_video_url && videoUrl && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -460,7 +487,7 @@ export const CreatorProfile = () => {
                         preload="metadata"
                         poster="/placeholder.svg"
                       >
-                        <source src={creator.intro_video_url} type="video/mp4" />
+                        <source src={videoUrl} type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
                     </div>

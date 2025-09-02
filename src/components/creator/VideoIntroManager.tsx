@@ -38,6 +38,34 @@ export const VideoIntroManager = () => {
     enabled: !!user?.id
   });
 
+  // Fetch signed URL for video if it exists
+  const { data: videoUrl } = useQuery({
+    queryKey: ['video-intro-url', user?.id, creator?.intro_video_url],
+    queryFn: async () => {
+      if (!creator?.intro_video_url || !user?.id) return null;
+      
+      try {
+        // Extract the file path from the stored URL
+        const fileName = `intro-videos/${user.id}/intro.${creator.intro_video_url.split('.').pop()}`;
+        
+        const { data, error } = await supabase.storage
+          .from('deliverables')
+          .createSignedUrl(fileName, 3600); // 1 hour expiry
+
+        if (error) {
+          console.error('Error creating signed URL:', error);
+          return null;
+        }
+
+        return data.signedUrl;
+      } catch (error) {
+        console.error('Error getting video URL:', error);
+        return null;
+      }
+    },
+    enabled: !!creator?.intro_video_url && !!user?.id
+  });
+
   const isPro = creator?.tier === 'pro';
   const hasIntroVideo = creator?.intro_video_url;
 
@@ -76,8 +104,8 @@ export const VideoIntroManager = () => {
 
       // Delete existing video if it exists
       if (hasIntroVideo) {
-        const existingPath = hasIntroVideo.split('/').slice(-2).join('/');
-        await supabase.storage.from('deliverables').remove([existingPath]);
+        const existingFileName = `intro-videos/${user.id}/intro.${hasIntroVideo.split('.').pop()}`;
+        await supabase.storage.from('deliverables').remove([existingFileName]);
       }
 
       // Upload new video
@@ -90,21 +118,20 @@ export const VideoIntroManager = () => {
 
       if (error) throw error;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('deliverables')
-        .getPublicUrl(fileName);
+      // Store just the file extension in the database (we'll construct the path when needed)
+      const videoUrl = `intro.${fileExt}`;
 
       // Update creator profile with new video URL
       const { error: updateError } = await supabase
         .from('creators')
-        .update({ intro_video_url: publicUrl })
+        .update({ intro_video_url: videoUrl })
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
       toast.success('Video intro uploaded successfully!');
       queryClient.invalidateQueries({ queryKey: ['creator-profile', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['video-intro-url', user.id] });
       
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -122,14 +149,12 @@ export const VideoIntroManager = () => {
     if (!hasIntroVideo || !user?.id) return;
 
     try {
-      // Extract file path from URL
-      const url = new URL(hasIntroVideo);
-      const filePath = url.pathname.split('/').slice(-2).join('/');
+      const fileName = `intro-videos/${user.id}/intro.${hasIntroVideo.split('.').pop()}`;
       
       // Delete from storage
       const { error: deleteError } = await supabase.storage
         .from('deliverables')
-        .remove([filePath]);
+        .remove([fileName]);
 
       if (deleteError) throw deleteError;
 
@@ -143,6 +168,7 @@ export const VideoIntroManager = () => {
 
       toast.success('Video intro deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['creator-profile', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['video-intro-url', user.id] });
       
     } catch (error: any) {
       console.error('Delete error:', error);
@@ -203,7 +229,7 @@ export const VideoIntroManager = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {hasIntroVideo ? (
+        {hasIntroVideo && videoUrl ? (
           <div className="space-y-4">
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
               <video
@@ -211,7 +237,7 @@ export const VideoIntroManager = () => {
                 className="w-full h-full object-contain"
                 preload="metadata"
               >
-                <source src={hasIntroVideo} type="video/mp4" />
+                <source src={videoUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
