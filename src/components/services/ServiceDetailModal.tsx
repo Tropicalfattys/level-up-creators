@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Star, Clock, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookingModal } from './BookingModal';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface Service {
   id: string;
@@ -81,7 +81,17 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
               <div>
                 <DialogTitle className="text-xl">{service.title}</DialogTitle>
                 <DialogDescription className="flex items-center gap-2 mt-1">
-                  <span>by @{service.creator?.users.handle || 'Unknown'}</span>
+                  <span>by </span>
+                  {service.creator?.users.handle ? (
+                    <Link 
+                      to={`/profile/${service.creator.users.handle}`}
+                      className="text-primary hover:underline"
+                    >
+                      @{service.creator.users.handle}
+                    </Link>
+                  ) : (
+                    <span>@Unknown</span>
+                  )}
                   {service.creator && (
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
