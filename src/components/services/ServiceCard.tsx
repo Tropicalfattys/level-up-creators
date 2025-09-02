@@ -15,8 +15,10 @@ interface ServiceCardProps {
     category: string;
     payment_method: string;
     creator: {
-      handle: string;
-      avatar_url?: string;
+      users: {
+        handle: string;
+        avatar_url?: string;
+      };
       rating?: number;
     };
   };
@@ -33,7 +35,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           <div className="flex-1">
             <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
             <CardDescription className="mt-1 text-sm">
-              by @{service.creator.handle}
+              by @{service.creator.users.handle}
             </CardDescription>
           </div>
           {service.creator.rating && (

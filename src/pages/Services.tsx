@@ -87,9 +87,14 @@ export default function Services() {
         return servicesData.map(service => ({
           ...service,
           creator: {
-            handle: 'Unknown',
-            avatar_url: '',
+            id: '',
+            user_id: service.creator_id || '',
             rating: 0,
+            review_count: 0,
+            users: {
+              handle: 'Unknown',
+              avatar_url: '',
+            }
           }
         }));
       }
@@ -123,7 +128,7 @@ export default function Services() {
         console.error('Users query error:', usersError);
       }
 
-      // Combine the data
+      // Combine the data with the correct structure
       const servicesWithCreators = servicesData.map(service => {
         const creator = creatorsData?.find(c => c.user_id === service.creator_id);
         const user = usersData?.find(u => u.id === service.creator_id);
@@ -131,9 +136,14 @@ export default function Services() {
         return {
           ...service,
           creator: {
-            handle: user?.handle || 'Unknown',
-            avatar_url: user?.avatar_url || '',
+            id: creator?.id || '',
+            user_id: creator?.user_id || service.creator_id || '',
             rating: creator?.rating || 0,
+            review_count: creator?.review_count || 0,
+            users: {
+              handle: user?.handle || 'Unknown',
+              avatar_url: user?.avatar_url || '',
+            }
           }
         };
       });
