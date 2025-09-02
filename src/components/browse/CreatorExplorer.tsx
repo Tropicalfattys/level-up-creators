@@ -59,6 +59,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
         console.error('Error fetching categories:', error);
         return [];
       }
+      console.log('Fetched categories from database:', data);
       return data;
     },
   });
@@ -208,15 +209,35 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
   // Create category icons with meaningful emojis and SHORT display names
   const getCategoryData = (categoryValue: string): { icon?: string; image?: string; displayName: string } => {
+    console.log('Getting category data for:', categoryValue);
     const categoryMap: Record<string, { icon?: string; image?: string; displayName: string }> = {
+      // Try both possible variations for AMA
       'ama': { image: '/lovable-uploads/ee03592b-f3eb-4c13-9a78-0ca967c6f502.png', displayName: 'AMA' },
+      'AMA': { image: '/lovable-uploads/ee03592b-f3eb-4c13-9a78-0ca967c6f502.png', displayName: 'AMA' },
+      // Twitter (working)
       'twitter': { image: '/lovable-uploads/6aed84a1-41ef-494b-874f-e8b1b82e2152.png', displayName: 'Twitter' },
+      'Twitter': { image: '/lovable-uploads/6aed84a1-41ef-494b-874f-e8b1b82e2152.png', displayName: 'Twitter' },
+      // Video variations
       'video': { image: '/lovable-uploads/9c470ddb-90ce-45af-85bc-d38ccba8daab.png', displayName: 'Videos' },
+      'videos': { image: '/lovable-uploads/9c470ddb-90ce-45af-85bc-d38ccba8daab.png', displayName: 'Videos' },
+      'Videos': { image: '/lovable-uploads/9c470ddb-90ce-45af-85bc-d38ccba8daab.png', displayName: 'Videos' },
+      // Tutorial variations
+      'tutorial': { image: '/lovable-uploads/5cc45c13-a443-4c00-b140-8bdd75aea9fe.png', displayName: 'Tutorials' },
       'tutorials': { image: '/lovable-uploads/5cc45c13-a443-4c00-b140-8bdd75aea9fe.png', displayName: 'Tutorials' },
+      'Tutorials': { image: '/lovable-uploads/5cc45c13-a443-4c00-b140-8bdd75aea9fe.png', displayName: 'Tutorials' },
+      // Reviews (emoji)
       'reviews': { icon: '⭐', displayName: 'Reviews' },
+      'Reviews': { icon: '⭐', displayName: 'Reviews' },
+      // Spaces (emoji)
       'spaces': { icon: '🎙️', displayName: 'Spaces' },
+      'Spaces': { icon: '🎙️', displayName: 'Spaces' },
+      // Instagram (working)
       'instagram': { image: '/lovable-uploads/f8e8abb3-ce3f-46fa-bda6-3fb8e0057f01.png', displayName: 'Instagram' },
+      'Instagram': { image: '/lovable-uploads/f8e8abb3-ce3f-46fa-bda6-3fb8e0057f01.png', displayName: 'Instagram' },
+      // Facebook variations
       'facebook': { image: '/lovable-uploads/e9b48aec-1998-4751-8062-ba0e3e48abd0.png', displayName: 'Facebook' },
+      'Facebook': { image: '/lovable-uploads/e9b48aec-1998-4751-8062-ba0e3e48abd0.png', displayName: 'Facebook' },
+      // Other categories (emojis)
       'defi': { icon: '🏦', displayName: 'DeFi' },
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
@@ -230,7 +251,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'yield-farming': { icon: '🌾', displayName: 'Yield' },
       'analysis': { icon: '📊', displayName: 'Analysis' },
       'design': { icon: '🎨', displayName: 'Design' },
-      'videos': { icon: '🎥', displayName: 'Video' },
       'writing': { icon: '📝', displayName: 'Writing' },
       'community': { icon: '🤝', displayName: 'Community' },
       'memes': { icon: '😂', displayName: 'Memes' },
@@ -241,7 +261,9 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'tiktok': { icon: '🎵', displayName: 'TikTok' },
       'linkedin': { icon: '💼', displayName: 'LinkedIn' }
     };
-    return categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
+    const result = categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
+    console.log('Category mapping result:', { categoryValue, result });
+    return result;
   };
 
   const categoryIcons = categories?.slice(0, 8).map(category => {
