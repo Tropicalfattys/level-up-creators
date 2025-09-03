@@ -108,7 +108,7 @@ export const CreatorServices = () => {
             <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-white">{service.title}</CardTitle>
+                  <CardTitle className="text-xl text-black">{service.title}</CardTitle>
                   <Badge 
                     variant={service.active ? "default" : "secondary"}
                     className={service.active ? "bg-green-600 text-white" : "bg-zinc-700 text-zinc-300"}
@@ -116,23 +116,23 @@ export const CreatorServices = () => {
                     {service.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription className="text-zinc-400 line-clamp-2">
+                <CardDescription className="text-black line-clamp-2">
                   {service.description}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Price:</span>
-                    <span className="text-white font-semibold">${service.price_usdc}</span>
+                    <span className="text-black">Price:</span>
+                    <span className="text-black font-semibold">${service.price_usdc}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Delivery:</span>
-                    <span className="text-white">{service.delivery_days} days</span>
+                    <span className="text-black">Delivery:</span>
+                    <span className="text-black">{service.delivery_days} days</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Category:</span>
-                    <span className="text-white capitalize">{service.category}</span>
+                    <span className="text-black">Category:</span>
+                    <span className="text-black capitalize">{service.category}</span>
                   </div>
                 </div>
                 
@@ -173,8 +173,8 @@ export const CreatorServices = () => {
         <Card className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500">
           <CardContent className="p-8 text-center">
             <div className="space-y-4">
-              <div className="text-zinc-400 text-lg">No services created yet</div>
-              <p className="text-zinc-500 text-sm">
+              <div className="text-black text-lg">No services created yet</div>
+              <p className="text-black text-sm">
                 Create your first service to start offering your expertise to clients
               </p>
               <Button onClick={handleOpen} className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
