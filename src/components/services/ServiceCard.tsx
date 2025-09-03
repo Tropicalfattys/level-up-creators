@@ -68,6 +68,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
         <div className="flex items-center justify-between pt-2 border-t">
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
+              <span>Turn Around</span>
               <Clock className="h-3 w-3" />
               <span>{service.delivery_days}d</span>
             </div>
