@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NETWORK_CONFIG } from '@/lib/contracts';
@@ -32,26 +33,39 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
   return (
     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onSelect(service)}>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
-            <CardDescription className="mt-1 text-sm flex items-center justify-center gap-2">
-              <span>by </span>
-              <Link 
-                to={`/profile/${service.creator.users.handle}`}
-                className="text-primary hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                @{service.creator.users.handle}
-              </Link>
-              {service.creator.rating && (
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                  <span>{service.creator.rating}</span>
-                </div>
-              )}
-            </CardDescription>
+        <div className="text-center space-y-3">
+          <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
+          
+          <div className="flex justify-center">
+            <Link 
+              to={`/profile/${service.creator.users.handle}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={service.creator.users.avatar_url} alt={service.creator.users.handle} />
+                <AvatarFallback>
+                  {service.creator.users.handle.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
+          
+          <CardDescription className="text-sm flex items-center justify-center gap-2">
+            <span>by </span>
+            <Link 
+              to={`/profile/${service.creator.users.handle}`}
+              className="text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              @{service.creator.users.handle}
+            </Link>
+            {service.creator.rating && (
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span>{service.creator.rating}</span>
+              </div>
+            )}
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
