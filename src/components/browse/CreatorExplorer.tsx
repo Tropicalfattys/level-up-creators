@@ -394,22 +394,20 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                       
                       <div className="flex justify-center gap-2">
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={(e) => handleSendMessage(creator, e)}
-                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Message
                         </Button>
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewProfile(creator.handle);
                           }}
-                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                          className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                         >
                           <User className="h-4 w-4 mr-1" />
                           View Profile
