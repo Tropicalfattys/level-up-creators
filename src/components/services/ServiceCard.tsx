@@ -41,7 +41,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
               to={`/profile/${service.creator.users.handle}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-15 w-15">
                 <AvatarImage src={service.creator.users.avatar_url} alt={service.creator.users.handle} />
                 <AvatarFallback>
                   {service.creator.users.handle.charAt(0).toUpperCase()}
@@ -86,12 +86,12 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <span>Turn Around</span>
+          <div className="flex items-center gap-1 text-sm font-bold">
+            <span className="bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">Turn Around</span>
             <Clock className="h-3 w-3" />
             <span>{service.delivery_days}d</span>
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1 text-sm font-bold text-green-600">
             <DollarSign className="h-3 w-3" />
             <span>{service.price_usdc} USD</span>
           </div>
