@@ -47,15 +47,27 @@ export const BookingManagement = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   const handleTabChange = (value: string) => {
+    // Lock scroll position during tab change
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    
     setActiveTab(value);
+    
+    // Restore scroll position after content loads
+    setTimeout(() => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, 0); // Always scroll to top for tabs
+    }, 100);
   };
 
   const { data: bookings, isLoading, error: bookingsError } = useQuery({
     queryKey: ['creator-bookings', user?.id],
     queryFn: async (): Promise<BookingWithDetails[]> => {
       if (!user?.id) return [];
-
-      console.log('Fetching bookings for creator:', user.id);
 
       const { data, error } = await supabase
         .from('bookings')
@@ -72,8 +84,6 @@ export const BookingManagement = () => {
         throw error;
       }
       
-      console.log('Fetched bookings data:', data);
-      
       return (data || []).map(booking => ({
         ...booking,
         proof_links: Array.isArray(booking.proof_links) 
@@ -85,8 +95,11 @@ export const BookingManagement = () => {
       })) as BookingWithDetails[];
     },
     enabled: !!user?.id,
-    retry: 3,
-    retryDelay: 1000
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent excessive refetching
+    gcTime: 10 * 60 * 1000, // 10 minutes (React Query v5 uses gcTime instead of cacheTime)
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    refetchOnReconnect: false, // Disable refetch on reconnect
+    retry: 1 // Reduce retries to 1 instead of 3
   });
 
   const updateBookingStatus = useMutation({
@@ -300,33 +313,50 @@ export const BookingManagement = () => {
   const getTabCounts = () => {
     if (!bookings) return { all: 0, new: 0, active: 0, completed: 0 };
     
+    const safeBookings = bookings as BookingWithDetails[];
+    
     return {
-      all: bookings.length,
-      new: bookings.filter(b => b.status === 'pending' || (b.status === 'paid' && !b.work_started_at)).length,
-      active: bookings.filter(b => (b.status === 'paid' && b.work_started_at) || b.status === 'delivered').length,
-      completed: bookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
+      all: safeBookings.length,
+      new: safeBookings.filter(b => b.status === 'pending' || (b.status === 'paid' && !b.work_started_at)).length,
+      active: safeBookings.filter(b => (b.status === 'paid' && b.work_started_at) || b.status === 'delivered').length,
+      completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
     };
   };
 
   const filterBookings = (status: string) => {
     if (!bookings) return [];
-    if (status === 'all') return bookings;
+    
+    const safeBookings = bookings as BookingWithDetails[];
+    if (status === 'all') return safeBookings;
     
     if (status === 'new') {
-      return bookings.filter(booking => booking.status === 'pending' || (booking.status === 'paid' && !booking.work_started_at));
+      return safeBookings.filter(booking => booking.status === 'pending' || (booking.status === 'paid' && !booking.work_started_at));
     }
     if (status === 'active') {
-      return bookings.filter(booking => (booking.status === 'paid' && booking.work_started_at) || booking.status === 'delivered');
+      return safeBookings.filter(booking => (booking.status === 'paid' && booking.work_started_at) || booking.status === 'delivered');
     }
     if (status === 'completed') {
-      return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
+      return safeBookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
     
-    return bookings.filter(booking => booking.status === status);
+    return safeBookings.filter(booking => booking.status === status);
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading bookings...</div>;
+    return (
+      <div className="space-y-6" style={{ minHeight: '500px' }}>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Booking Management</h3>
+          <p className="text-muted-foreground">
+            Manage your active bookings and deliverables
+          </p>
+        </div>
+        <div className="flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3">Loading bookings...</span>
+        </div>
+      </div>
+    );
   }
 
   if (bookingsError) {
@@ -352,7 +382,7 @@ export const BookingManagement = () => {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-6" style={{ scrollBehavior: 'auto' }}>
         <div>
           <h3 className="text-lg font-semibold mb-2">Booking Management</h3>
           <p className="text-muted-foreground">
@@ -369,7 +399,7 @@ export const BookingManagement = () => {
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" style={{ scrollBehavior: 'auto' }}>
           <TabsList>
             <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
             <TabsTrigger value="new">New ({tabCounts.new})</TabsTrigger>

@@ -44,7 +44,21 @@ export const ClientBookings = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   const handleTabChange = (value: string) => {
+    // Lock scroll position during tab change
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    
     setActiveTab(value);
+    
+    // Restore scroll position after content loads
+    setTimeout(() => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, 0); // Always scroll to top for tabs
+    }, 100);
   };
 
   const { data: bookings, isLoading } = useQuery({
@@ -78,35 +92,44 @@ export const ClientBookings = () => {
           : []
       })) as BookingWithDetails[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent excessive refetching
+    gcTime: 10 * 60 * 1000, // 10 minutes (React Query v5 uses gcTime instead of cacheTime)
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    refetchOnReconnect: false, // Disable refetch on reconnect
+    retry: 1 // Reduce retries
   });
 
   const getTabCounts = () => {
     if (!bookings) return { all: 0, active: 0, delivered: 0, completed: 0 };
     
+    const safeBookings = bookings as BookingWithDetails[];
+    
     return {
-      all: bookings.length,
-      active: bookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
-      delivered: bookings.filter(b => b.status === 'delivered').length,
-      completed: bookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
+      all: safeBookings.length,
+      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
+      delivered: safeBookings.filter(b => b.status === 'delivered').length,
+      completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
     };
   };
 
   const filterBookings = (status: string) => {
     if (!bookings) return [];
-    if (status === 'all') return bookings;
+    
+    const safeBookings = bookings as BookingWithDetails[];
+    if (status === 'all') return safeBookings;
     
     if (status === 'active') {
-      return bookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
     }
     if (status === 'delivered') {
-      return bookings.filter(booking => booking.status === 'delivered');
+      return safeBookings.filter(booking => booking.status === 'delivered');
     }
     if (status === 'completed') {
-      return bookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
+      return safeBookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
     
-    return bookings.filter(booking => booking.status === status);
+    return safeBookings.filter(booking => booking.status === status);
   };
 
   const getStatusColor = (status: string) => {
@@ -126,14 +149,27 @@ export const ClientBookings = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading bookings...</div>;
+    return (
+      <div className="space-y-6" style={{ minHeight: '500px' }}>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
+          <p className="text-muted-foreground">
+            Track your service bookings and communicate with creators
+          </p>
+        </div>
+        <div className="flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3">Loading bookings...</span>
+        </div>
+      </div>
+    );
   }
 
   const tabCounts = getTabCounts();
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-6" style={{ scrollBehavior: 'auto' }}>
         <div>
           <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
           <p className="text-muted-foreground">
@@ -141,7 +177,7 @@ export const ClientBookings = () => {
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" style={{ scrollBehavior: 'auto' }}>
           <TabsList>
             <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
             <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
