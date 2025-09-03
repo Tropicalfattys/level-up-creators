@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +42,19 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Update form data when service prop changes (for edit/copy functionality)
+  useEffect(() => {
+    setFormData({
+      title: service?.title || '',
+      description: service?.description || '',
+      price_usdc: service?.price_usdc || 10,
+      delivery_days: service?.delivery_days || 3,
+      category: service?.category || 'ama',
+      payment_method: service?.payment_method || 'ethereum_usdc',
+      active: service?.active ?? true,
+    });
+  }, [service]);
 
   // Fetch categories from database
   const { data: categories } = useQuery({
