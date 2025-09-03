@@ -43,15 +43,8 @@ export const ClientBookings = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
 
-  // Prevent auto-scroll when tab changes
   const handleTabChange = (value: string) => {
-    // Store current scroll position
-    const currentScrollY = window.scrollY;
     setActiveTab(value);
-    // Restore scroll position after state update
-    setTimeout(() => {
-      window.scrollTo(0, currentScrollY);
-    }, 0);
   };
 
   const { data: bookings, isLoading } = useQuery({
