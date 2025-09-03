@@ -56,60 +56,13 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const createBooking = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-
-      // Get the correct creator_id - prioritize service.creator_id, then nested creator structure, then fallback to creator prop
-      const creatorId = service.creator_id || service.creator?.user_id || creator.user_id;
-      
-      if (!creatorId) {
-        throw new Error('Creator ID not found');
-      }
-      
-      console.log('Creating booking with data:', {
-        client_id: user.id,
-        creator_id: creatorId,
-        service_id: service.id,
-        usdc_amount: service.price_usdc,
-        status: 'pending'
-      });
-
-      // Create booking with pending status
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .insert({
-          client_id: user.id,
-          creator_id: creatorId,
-          service_id: service.id,
-          usdc_amount: service.price_usdc,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Booking creation error details:', error);
-        throw error;
-      }
-      return booking;
-    },
-    onSuccess: (booking) => {
-      console.log('Booking created successfully:', booking);
-      setBookingId(booking.id);
-      setStep('payment');
-    },
-    onError: (error: any) => {
-      console.error('Booking creation error:', error);
-      toast.error('Failed to create booking: ' + (error.message || 'Unknown error'));
-    }
-  });
-
   const handleProceedToPayment = () => {
-    createBooking.mutate();
+    // Go directly to payment step without creating booking yet
+    setStep('payment');
   };
 
-  const handlePaymentSubmitted = (paymentId: string) => {
+  const handlePaymentSubmitted = (paymentId: string, bookingId: string) => {
+    setBookingId(bookingId);
     setStep('submitted');
     queryClient.invalidateQueries({ queryKey: ['user-bookings'] });
     queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
@@ -155,7 +108,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
     );
   }
 
-  if (step === 'payment' && bookingId) {
+  if (step === 'payment') {
     // Get the correct creator_id for payment instructions
     const creatorId = service.creator_id || service.creator?.user_id || creator.user_id;
     
@@ -173,7 +126,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
             amount={service.price_usdc}
             serviceId={service.id}
             creatorId={creatorId}
-            bookingId={bookingId}
+            bookingId={undefined} // Don't pass bookingId - it will be created during payment submission
             paymentType="service_booking"
             onPaymentSubmitted={handlePaymentSubmitted}
             onCancel={handleClose}
@@ -264,11 +217,10 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
               Cancel
             </Button>
             <Button 
-              onClick={handleProceedToPayment} 
-              disabled={createBooking.isPending}
+              onClick={handleProceedToPayment}
               className="flex-1"
             >
-              {createBooking.isPending ? 'Creating Booking...' : 'Proceed to Payment'}
+              Proceed to Payment
             </Button>
           </div>
 

@@ -21,7 +21,7 @@ interface PaymentInstructionsProps {
   creatorId: string;
   bookingId?: string;
   paymentType: 'service_booking' | 'creator_tier';
-  onPaymentSubmitted: (paymentId: string) => void;
+  onPaymentSubmitted: (paymentId: string, bookingId?: string) => void;
   onCancel: () => void;
 }
 
@@ -48,32 +48,89 @@ export const PaymentInstructions = ({
     mutationFn: async (transactionHash: string) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('payments')
-        .insert({
-          user_id: user.id,
-          creator_id: creatorId,
-          service_id: serviceId || null,
-          booking_id: bookingId || null,
-          payment_type: paymentType,
-          network: paymentConfig.network,
-          amount: amount,
-          currency: paymentConfig.currency,
-          tx_hash: transactionHash,
-          admin_wallet_address: adminWallet,
-          status: 'pending'
-        })
-        .select()
-        .single();
+      // If this is a service booking and no bookingId exists, create both booking and payment atomically
+      if (paymentType === 'service_booking' && !bookingId && serviceId) {
+        // Create booking first
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .insert({
+            client_id: user.id,
+            creator_id: creatorId,
+            service_id: serviceId,
+            usdc_amount: amount,
+            status: 'pending',
+            tx_hash: transactionHash,
+            chain: paymentConfig.network,
+            payment_address: adminWallet
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (bookingError) {
+          console.error('Booking creation error:', bookingError);
+          throw bookingError;
+        }
+
+        // Then create payment record with the booking ID
+        const { data: payment, error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            user_id: user.id,
+            creator_id: creatorId,
+            service_id: serviceId,
+            booking_id: booking.id,
+            payment_type: paymentType,
+            network: paymentConfig.network,
+            amount: amount,
+            currency: paymentConfig.currency,
+            tx_hash: transactionHash,
+            admin_wallet_address: adminWallet,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (paymentError) {
+          console.error('Payment creation error:', paymentError);
+          throw paymentError;
+        }
+
+        return { payment, booking };
+      } else {
+        // For creator tier payments or existing bookings, just create payment
+        const { data, error } = await supabase
+          .from('payments')
+          .insert({
+            user_id: user.id,
+            creator_id: creatorId,
+            service_id: serviceId || null,
+            booking_id: bookingId || null,
+            payment_type: paymentType,
+            network: paymentConfig.network,
+            amount: amount,
+            currency: paymentConfig.currency,
+            tx_hash: transactionHash,
+            admin_wallet_address: adminWallet,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { payment: data, booking: null };
+      }
     },
     onSuccess: (data) => {
       toast.success('Payment submitted successfully!', {
         description: 'Your payment is now pending admin verification.'
       });
-      onPaymentSubmitted(data.id);
+      
+      // Pass both payment ID and booking ID (if created) back to parent
+      if (data.booking) {
+        onPaymentSubmitted(data.payment.id, data.booking.id);
+      } else {
+        onPaymentSubmitted(data.payment.id);
+      }
     },
     onError: (error: any) => {
       console.error('Payment submission error:', error);
