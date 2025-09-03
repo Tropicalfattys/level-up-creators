@@ -31,7 +31,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
   const networkConfig = NETWORK_CONFIG[service.payment_method.split('_')[0] as keyof typeof NETWORK_CONFIG];
 
   return (
-    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onSelect(service)}>
+    <Card className="h-full hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
         <div className="text-center space-y-3">
           <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
@@ -39,7 +39,6 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           <div className="flex justify-center">
             <Link 
               to={`/profile/${service.creator.users.handle}`}
-              onClick={(e) => e.stopPropagation()}
             >
               <Avatar className="h-15 w-15">
                 <AvatarImage src={service.creator.users.avatar_url} alt={service.creator.users.handle} />
@@ -55,7 +54,6 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
             <Link 
               to={`/profile/${service.creator.users.handle}`}
               className="text-primary hover:underline"
-              onClick={(e) => e.stopPropagation()}
             >
               @{service.creator.users.handle}
             </Link>
@@ -68,7 +66,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex flex-col h-full">
         <p className="text-sm text-muted-foreground line-clamp-3">
           {service.description}
         </p>
@@ -95,6 +93,16 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
             <DollarSign className="h-3 w-3" />
             <span>{service.price_usdc} USD</span>
           </div>
+        </div>
+
+        <div className="mt-auto pt-4">
+          <Button 
+            onClick={() => onSelect(service)}
+            className="w-full"
+            size="sm"
+          >
+            Book Now
+          </Button>
         </div>
       </CardContent>
     </Card>
