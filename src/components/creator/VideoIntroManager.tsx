@@ -224,7 +224,8 @@ export const VideoIntroManager = () => {
             <div>
               <h3 className="text-lg font-semibold mb-2">Upgrade to Pro Creator</h3>
               <p className="text-muted-foreground mb-4">
-                Upload a video introduction to showcase your personality and build trust with potential clients. 
+                Upload a video introduction to showcase your personality and build trust with potential clients.
+                <br />
                 This feature is exclusive to Pro Creator members.
               </p>
               <p className="text-sm text-muted-foreground mb-4">
@@ -298,7 +299,8 @@ export const VideoIntroManager = () => {
               <Video className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Upload Your Video Intro</h3>
               <p className="text-muted-foreground mb-4">
-                Share a personal video introduction to help clients get to know you better. 
+                Share a personal video introduction to help clients get to know you better.
+                <br />
                 Your video will appear on your profile page.
               </p>
               <Button
