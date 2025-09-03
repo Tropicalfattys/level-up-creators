@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, Clock, DollarSign } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 
 interface ServiceCardProps {
@@ -35,7 +36,14 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           <div className="flex-1">
             <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
             <CardDescription className="mt-1 text-sm flex items-center justify-center gap-2">
-              <span>by @{service.creator.users.handle}</span>
+              <span>by </span>
+              <Link 
+                to={`/profile/${service.creator.users.handle}`}
+                className="text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                @{service.creator.users.handle}
+              </Link>
               {service.creator.rating && (
                 <div className="flex items-center gap-1">
                   <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
