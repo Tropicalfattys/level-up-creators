@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Star, MapPin, Calendar, Users, Award, ExternalLink, Globe, Youtube, Twitter, Facebook, Instagram, MessageCircle, BookOpen, Linkedin, Briefcase, Heart, Play, Crown } from 'lucide-react';
 import { BookingModal } from '@/components/services/BookingModal';
 import { useUserFollows } from '@/hooks/useUserFollows';
@@ -33,6 +35,7 @@ export const CreatorProfile = () => {
   const { user: currentUser } = useAuth();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
 
   // Helper function to get tier display name
@@ -460,9 +463,14 @@ export const CreatorProfile = () => {
                     </div>
                   ))}
                   {reviews.length > 3 && (
-                    <p className="text-sm text-muted-foreground text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAllReviewsModalOpen(true)}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground"
+                    >
                       +{reviews.length - 3} more reviews
-                    </p>
+                    </Button>
                   )}
                 </div>
               </CardContent>
@@ -609,6 +617,62 @@ export const CreatorProfile = () => {
           }}
         />
       )}
+
+      {/* All Reviews Modal */}
+      <Dialog open={isAllReviewsModalOpen} onOpenChange={setIsAllReviewsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>All Reviews ({reviews?.length || 0})</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-4">
+              {reviews?.map((review) => (
+                <div key={review.id} className="space-y-2 pb-4 border-b border-border last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={review.reviewer?.avatar_url} />
+                      <AvatarFallback>
+                        {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Link 
+                          to={`/profile/${review.reviewer?.handle}`}
+                          className="font-medium text-sm hover:text-primary transition-colors"
+                          onClick={() => setIsAllReviewsModalOpen(false)}
+                        >
+                          @{review.reviewer?.handle}
+                        </Link>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${
+                                star <= review.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {review.comment}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(review.created_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
