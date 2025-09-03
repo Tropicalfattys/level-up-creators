@@ -333,85 +333,79 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             {isLoading ? (
               <div className="text-center py-8">Loading creators...</div>
             ) : creators && creators.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {creators.map((creator) => (
-                  <Card key={creator.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16">
+                  <Card key={creator.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer" onClick={() => handleViewProfile(creator.handle)}>
+                    <div className="p-6 text-center">
+                      <div className="flex flex-col items-center mb-4">
+                        <Avatar className="h-15 w-15 mb-3">
                           <AvatarImage src={creator.avatar_url} alt={creator.handle} />
                           <AvatarFallback className="bg-zinc-800 text-white text-lg">
                             {creator.handle[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">@{creator.handle}</h3>
-                            <Badge variant="outline" className="border-blue-500 text-blue-400">
-                              {getTierDisplayName(creator.tier)}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center gap-6 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
-                              <span className="text-zinc-400">({creator.review_count})</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-1 text-zinc-400">
-                              <Clock className="h-4 w-4" />
-                              <span>{creator.avg_delivery_days} day delivery</span>
-                            </div>
-                            
-                            {creator.min_price > 0 && (
-                              <div className="flex items-center gap-1 text-zinc-400">
-                                <DollarSign className="h-4 w-4" />
-                                <span>From ${creator.min_price} USDC</span>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center gap-1 text-zinc-400">
-                              <Package className="h-4 w-4" />
-                              <span>{creator.service_count} services</span>
-                            </div>
-                          </div>
-                        </div>
+                        <h3 className="font-semibold text-lg mb-1">@{creator.handle}</h3>
+                        <Badge variant="outline" className="border-blue-500 text-blue-400 mb-2">
+                          {getTierDisplayName(creator.tier)}
+                        </Badge>
                         
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleFollowToggle(creator, e)}
-                            className="p-2 hover:bg-red-50"
-                          >
-                            <Heart
-                              className={`h-5 w-5 transition-colors ${
-                                isFollowing(creator.id)
-                                  ? 'fill-red-500 text-red-500'
-                                  : 'text-gray-400 hover:text-red-500'
-                              }`}
-                            />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => handleSendMessage(creator, e)}
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                          >
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            Message
-                          </Button>
-                          <Button 
-                            onClick={() => handleViewProfile(creator.handle)}
-                            className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
-                          >
-                            View Profile
-                          </Button>
+                        <div className="flex items-center gap-1 mb-2">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
+                          <span className="text-zinc-400">({creator.review_count})</span>
                         </div>
                       </div>
-                    </CardContent>
+
+                      {creator.headline && (
+                        <p className="text-zinc-300 text-sm mb-4 line-clamp-2">{creator.headline}</p>
+                      )}
+
+                      <div className="flex flex-wrap justify-center gap-2 mb-4">
+                        <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                          <Clock className="h-3 w-3" />
+                          <span>{creator.avg_delivery_days}d delivery</span>
+                        </div>
+                        
+                        {creator.min_price > 0 && (
+                          <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                            <DollarSign className="h-3 w-3" />
+                            <span>From ${creator.min_price}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                          <Package className="h-3 w-3" />
+                          <span>{creator.service_count} services</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleFollowToggle(creator, e)}
+                          className="p-2 hover:bg-red-50"
+                        >
+                          <Heart
+                            className={`h-4 w-4 transition-colors ${
+                              isFollowing(creator.id)
+                                ? 'fill-red-500 text-red-500'
+                                : 'text-gray-400 hover:text-red-500'
+                            }`}
+                          />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => handleSendMessage(creator, e)}
+                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Message
+                        </Button>
+                      </div>
+                    </div>
                   </Card>
                 ))}
               </div>
