@@ -13,6 +13,7 @@ import { BookingModal } from '@/components/services/BookingModal';
 import { useUserFollows } from '@/hooks/useUserFollows';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { NETWORK_CONFIG } from '@/lib/contracts';
 
 interface Review {
   id: string;
@@ -507,7 +508,23 @@ export const CreatorProfile = () => {
                         <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="font-semibold">{service.title}</h3>
-                            <Badge variant="outline">${service.price_usdc}</Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                ${service.price_usdc}
+                              </Badge>
+                              {(() => {
+                                // Extract network from payment_method (e.g., 'ethereum_usdc' -> 'ethereum')
+                                const network = service.payment_method?.split('_')[0];
+                                const networkConfig = network ? NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG] : null;
+                                
+                                return networkConfig ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    <img src={networkConfig.icon} alt={networkConfig.name} className="h-3 w-3 mr-1" />
+                                    {networkConfig.name}
+                                  </Badge>
+                                ) : null;
+                              })()}
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">
                             {service.description}
