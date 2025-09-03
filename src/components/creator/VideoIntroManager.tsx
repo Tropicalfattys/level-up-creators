@@ -95,6 +95,33 @@ export const VideoIntroManager = () => {
       return;
     }
 
+    // Validate video duration (2 minutes max)
+    const validateVideoDuration = (file: File): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        
+        video.onloadedmetadata = () => {
+          window.URL.revokeObjectURL(video.src);
+          const duration = video.duration;
+          resolve(duration <= 120); // 2 minutes = 120 seconds
+        };
+        
+        video.onerror = () => {
+          window.URL.revokeObjectURL(video.src);
+          resolve(false);
+        };
+        
+        video.src = URL.createObjectURL(file);
+      });
+    };
+
+    const isValidDuration = await validateVideoDuration(file);
+    if (!isValidDuration) {
+      toast.error('Video must be 2 minutes or less');
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -203,11 +230,16 @@ export const VideoIntroManager = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Pro Creator benefits include:
               </p>
-              <ul className="text-sm text-muted-foreground text-left max-w-md mx-auto space-y-1">
+              <ul className="text-sm text-muted-foreground text-center max-w-md mx-auto space-y-1">
                 <li>• Upload video introductions</li>
                 <li>• Priority search placement</li>
                 <li>• Featured listing on homepage</li>
               </ul>
+              <div className="text-xs text-muted-foreground mt-4 space-y-1">
+                <p>Max file size 50 MB</p>
+                <p>Max Video Length 2 minutes</p>
+                <p>Optimal video resolution 720p</p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -277,9 +309,10 @@ export const VideoIntroManager = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 Choose Video File
               </Button>
-              <p className="text-sm text-muted-foreground mt-3">
-                Supported formats: MP4, MOV, WebM • Max size: 50MB
-              </p>
+              <div className="text-xs text-muted-foreground mt-3 space-y-1">
+                <p>Max file size 50 MB • Max Video Length 2 minutes • Optimal video resolution 720p</p>
+                <p>Supported formats: MP4, MOV, WebM</p>
+              </div>
             </div>
           </div>
         )}
