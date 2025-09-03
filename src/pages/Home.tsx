@@ -212,7 +212,7 @@ export default function Home() {
             
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
-                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow_Security.png" alt="Escrow & Security" className="h-12 w-12 mx-auto mb-4" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-12 w-12 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
                 <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
               </CardContent>
@@ -220,7 +220,7 @@ export default function Home() {
             
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
-                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach.png" alt="Cross-Platform Reach" className="h-12 w-12 mx-auto mb-4" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach-removebg-preview.png" alt="Cross-Platform Reach" className="h-12 w-12 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Cross-Platform Reach</h3>
                 <p className="text-muted-foreground">From Twitter to Telegram, work with creators where the crypto community actually lives.</p>
               </CardContent>
