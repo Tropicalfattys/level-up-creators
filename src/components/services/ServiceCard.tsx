@@ -74,7 +74,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
         </p>
         
         <div className="flex items-center justify-center gap-2">
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white">
             {service.category}
           </Badge>
           {networkConfig && (
