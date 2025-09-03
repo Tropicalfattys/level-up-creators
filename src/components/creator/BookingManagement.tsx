@@ -12,9 +12,9 @@ import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLi
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { BookingChat } from '@/components/messaging/BookingChat';
+import { LazyBookingChat } from '@/components/messaging/LazyBookingChat';
 import { ProofSubmission } from './ProofSubmission';
-import { ReviewSystem } from '@/components/reviews/ReviewSystem';
+import { LazyReviewSystem } from '@/components/reviews/LazyReviewSystem';
 import { PaymentBreakdown } from '@/components/payments/PaymentBreakdown';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -764,7 +764,7 @@ export const BookingManagement = () => {
                     {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.client && (
                       <div className="border rounded-lg p-4 bg-muted/20">
                         <h4 className="font-medium mb-3">Rate your client experience</h4>
-                        <ReviewSystem
+                        <LazyReviewSystem
                           bookingId={booking.id}
                           revieweeId={booking.client.id}
                           canReview={true}
@@ -792,7 +792,7 @@ export const BookingManagement = () => {
                           </h4>
                           <span className="text-sm text-muted-foreground">Discuss project details and deliverables</span>
                         </div>
-                        <BookingChat
+                        <LazyBookingChat
                           bookingId={booking.id}
                           otherUserId={booking.client.id}
                           otherUserHandle={booking.client.handle}

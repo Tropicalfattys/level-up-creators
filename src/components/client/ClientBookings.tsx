@@ -12,9 +12,9 @@ import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, Check
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { BookingChat } from '@/components/messaging/BookingChat';
+import { LazyBookingChat } from '@/components/messaging/LazyBookingChat';
 import { EscrowManager } from '@/components/escrow/EscrowManager';
-import { ReviewSystem } from '@/components/reviews/ReviewSystem';
+import { LazyReviewSystem } from '@/components/reviews/LazyReviewSystem';
 
 interface BookingWithDetails {
   id: string;
@@ -398,7 +398,7 @@ export const ClientBookings = () => {
                     {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.creator && (
                       <div className="border rounded-lg p-4 bg-muted/20">
                         <h4 className="font-medium mb-3">Review this service</h4>
-                        <ReviewSystem
+                        <LazyReviewSystem
                           bookingId={booking.id}
                           revieweeId={booking.creator.id}
                           canReview={true}
@@ -425,7 +425,7 @@ export const ClientBookings = () => {
                             )}
                           </h4>
                         </div>
-                        <BookingChat
+                        <LazyBookingChat
                           bookingId={booking.id}
                           otherUserId={booking.creator.id}
                           otherUserHandle={booking.creator.handle}
