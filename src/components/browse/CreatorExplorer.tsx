@@ -374,18 +374,18 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                       </div>
 
                       <div className="flex flex-wrap justify-center gap-2 mb-4">
-                        <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1 text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2 py-1 rounded">
                           <Clock className="h-3 w-3" />
                           <span>{creator.avg_delivery_days}d delivery</span>
                         </div>
                         
                         {creator.min_price > 0 && (
-                          <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                          <div className="flex items-center gap-1 text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2 py-1 rounded">
                             <span>Starting At ${creator.min_price}</span>
                           </div>
                         )}
                         
-                        <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1 text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2 py-1 rounded">
                           <Package className="h-3 w-3" />
                           <span>{creator.service_count} services</span>
                         </div>
