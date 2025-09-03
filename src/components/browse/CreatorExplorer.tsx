@@ -350,16 +350,28 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           {getTierDisplayName(creator.tier)}
                         </Badge>
                         
-                        <div className="flex items-center gap-1 mb-2">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
-                          <span className="text-zinc-400">({creator.review_count})</span>
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
+                            <span className="text-zinc-400">({creator.review_count})</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleFollowToggle(creator, e)}
+                            className="p-2 hover:bg-red-50"
+                          >
+                            <Heart
+                              className={`h-4 w-4 transition-colors ${
+                                isFollowing(creator.id)
+                                  ? 'fill-red-500 text-red-500'
+                                  : 'text-gray-400 hover:text-red-500'
+                              }`}
+                            />
+                          </Button>
                         </div>
                       </div>
-
-                      {creator.headline && (
-                        <p className="text-zinc-300 text-sm mb-4 line-clamp-2">{creator.headline}</p>
-                      )}
 
                       <div className="flex flex-wrap justify-center gap-2 mb-4">
                         <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
@@ -380,21 +392,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => handleFollowToggle(creator, e)}
-                          className="p-2 hover:bg-red-50"
-                        >
-                          <Heart
-                            className={`h-4 w-4 transition-colors ${
-                              isFollowing(creator.id)
-                                ? 'fill-red-500 text-red-500'
-                                : 'text-gray-400 hover:text-red-500'
-                            }`}
-                          />
-                        </Button>
+                      <div className="flex justify-center">
                         <Button
                           variant="outline"
                           size="sm"
