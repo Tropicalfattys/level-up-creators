@@ -201,12 +201,13 @@ export const PaymentInstructions = ({
                   </span>
                 </HoverCardTrigger>
                 <HoverCardContent 
-                  className="w-96 max-h-80 p-6 bg-background border shadow-lg"
+                  className="w-96 p-0 bg-background border shadow-lg"
                   align="center" 
                   side="top"
                 >
-                  <ScrollArea className="h-full max-h-64">
-                    <div className="space-y-4">
+                  <div className="p-4">
+                    <ScrollArea className="h-96">
+                      <div className="space-y-4 pr-4">
                       <h3 className="font-semibold text-lg">💡 How to Find Your Transaction Hash (Tx Hash)</h3>
                       
                       <p className="text-sm text-muted-foreground">
@@ -240,10 +241,11 @@ export const PaymentInstructions = ({
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                         <p className="text-sm text-amber-800 font-medium">
                           ⚠️ Do not send a screenshot. We must have the actual transaction hash to confirm your payment.
-                        </p>
-                      </div>
-                    </div>
-                  </ScrollArea>
+                         </p>
+                       </div>
+                     </div>
+                   </ScrollArea>
+                  </div>
                 </HoverCardContent>
               </HoverCard>
             </h4>
