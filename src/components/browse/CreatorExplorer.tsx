@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Clock, DollarSign, Package, Filter, Search, Heart, MessageCircle } from 'lucide-react';
+import { Star, Clock, DollarSign, Package, Filter, Search, Heart, MessageCircle, User } from 'lucide-react';
 import { useUserFollows } from '@/hooks/useUserFollows';
 
 interface CreatorData {
@@ -392,7 +392,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         </div>
                       </div>
                       
-                      <div className="flex justify-center">
+                      <div className="flex justify-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -401,6 +401,18 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Message
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewProfile(creator.handle);
+                          }}
+                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        >
+                          <User className="h-4 w-4 mr-1" />
+                          View Profile
                         </Button>
                       </div>
                     </div>
