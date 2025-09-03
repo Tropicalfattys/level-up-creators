@@ -137,12 +137,12 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
                 Close
               </Button>
               {user ? (
-                <Button 
-                  onClick={handleBookNow}
-                  className="flex-1"
-                >
-                  Book Now
-                </Button>
+              <Button 
+                onClick={handleBookNow}
+                className="flex-1"
+              >
+                Continue Booking Service
+              </Button>
               ) : (
                 <Button asChild className="flex-1">
                   <a href="/auth">Sign In to Book</a>
