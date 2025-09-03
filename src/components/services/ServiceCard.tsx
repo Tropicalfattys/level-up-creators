@@ -57,7 +57,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           </Badge>
           {networkConfig && (
             <Badge variant="outline" className="text-xs">
-              <span className="mr-1">{networkConfig.icon}</span>
+              <img src={networkConfig.icon} alt={networkConfig.name} className="h-4 w-4 mr-1" />
               {networkConfig.name}
             </Badge>
           )}

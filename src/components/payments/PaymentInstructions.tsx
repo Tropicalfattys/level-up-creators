@@ -121,7 +121,7 @@ export const PaymentInstructions = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">{networkConfig.icon}</span>
+            <img src={networkConfig.icon} alt={networkConfig.name} className="h-6 w-6" />
             Payment Instructions
           </CardTitle>
           <CardDescription>

@@ -16,14 +16,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 
-// Local configuration for payment network icons in Settings
-const PAYMENT_NETWORK_ICONS = {
-  ethereum: '/lovable-uploads/4a83282f-962f-4d5b-90c8-644562013a0b.png',
-  solana: '/lovable-uploads/21051bcc-4a6d-46d4-b718-0e86d7888b55.png',
-  bsc: '/lovable-uploads/bb73044a-0c88-445e-95e7-e1dd2e6c25e9.png',
-  sui: '/lovable-uploads/84dadd9f-46f1-44eb-9c27-c17aa2835b0e.png',
-  cardano: '/lovable-uploads/02d69c40-f596-4546-afc2-47271da0fa43.png'
-} as const;
 
 export default function Settings() {
   const { userProfile, refreshProfile } = useAuth();
@@ -610,14 +602,14 @@ export default function Settings() {
             <CardContent className="space-y-6">
               {/* Ethereum Wallet */}
               <div className="space-y-2">
-                <Label htmlFor="eth-wallet" className="flex items-center gap-2">
-                  <img 
-                    src={PAYMENT_NETWORK_ICONS.ethereum} 
-                    alt="Ethereum" 
-                    className="w-6 h-6"
-                  />
-                  Ethereum Wallet Address
-                </Label>
+                 <Label htmlFor="eth-wallet" className="flex items-center gap-2">
+                   <img 
+                     src={NETWORK_CONFIG.ethereum.icon} 
+                     alt="Ethereum" 
+                     className="w-6 h-6"
+                   />
+                   Ethereum Wallet Address
+                 </Label>
                 <Input
                   id="eth-wallet"
                   placeholder="0x..."
@@ -634,14 +626,14 @@ export default function Settings() {
 
               {/* Solana Wallet */}
               <div className="space-y-2">
-                <Label htmlFor="sol-wallet" className="flex items-center gap-2">
-                  <img 
-                    src={PAYMENT_NETWORK_ICONS.solana} 
-                    alt="Solana" 
-                    className="w-6 h-6"
-                  />
-                  Solana Wallet Address
-                </Label>
+                 <Label htmlFor="sol-wallet" className="flex items-center gap-2">
+                   <img 
+                     src={NETWORK_CONFIG.solana.icon} 
+                     alt="Solana" 
+                     className="w-6 h-6"
+                   />
+                   Solana Wallet Address
+                 </Label>
                 <Input
                   id="sol-wallet"
                   placeholder="Enter Solana address..."
@@ -658,14 +650,14 @@ export default function Settings() {
 
               {/* BSC Wallet */}
               <div className="space-y-2">
-                <Label htmlFor="bsc-wallet" className="flex items-center gap-2">
-                  <img 
-                    src={PAYMENT_NETWORK_ICONS.bsc} 
-                    alt="BSC" 
-                    className="w-6 h-6"
-                  />
-                  BSC Wallet Address
-                </Label>
+                 <Label htmlFor="bsc-wallet" className="flex items-center gap-2">
+                   <img 
+                     src={NETWORK_CONFIG.bsc.icon} 
+                     alt="BSC" 
+                     className="w-6 h-6"
+                   />
+                   BSC Wallet Address
+                 </Label>
                 <Input
                   id="bsc-wallet"
                   placeholder="0x..."
@@ -682,14 +674,14 @@ export default function Settings() {
 
               {/* Sui Wallet */}
               <div className="space-y-2">
-                <Label htmlFor="sui-wallet" className="flex items-center gap-2">
-                  <img 
-                    src={PAYMENT_NETWORK_ICONS.sui} 
-                    alt="Sui" 
-                    className="w-6 h-6"
-                  />
-                  Sui Wallet Address
-                </Label>
+                 <Label htmlFor="sui-wallet" className="flex items-center gap-2">
+                   <img 
+                     src={NETWORK_CONFIG.sui.icon} 
+                     alt="Sui" 
+                     className="w-6 h-6"
+                   />
+                   Sui Wallet Address
+                 </Label>
                 <Input
                   id="sui-wallet"
                   placeholder="0x..."
@@ -706,14 +698,14 @@ export default function Settings() {
 
               {/* Cardano Wallet */}
               <div className="space-y-2">
-                <Label htmlFor="cardano-wallet" className="flex items-center gap-2">
-                  <img 
-                    src={PAYMENT_NETWORK_ICONS.cardano} 
-                    alt="Cardano" 
-                    className="w-6 h-6"
-                  />
-                  Cardano Wallet Address
-                </Label>
+                 <Label htmlFor="cardano-wallet" className="flex items-center gap-2">
+                   <img 
+                     src={NETWORK_CONFIG.cardano.icon} 
+                     alt="Cardano" 
+                     className="w-6 h-6"
+                   />
+                   Cardano Wallet Address
+                 </Label>
                 <Input
                   id="cardano-wallet"
                   placeholder="addr1..."

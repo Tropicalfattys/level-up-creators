@@ -74,31 +74,31 @@ export const USDC_ABI = [
 export const NETWORK_CONFIG = {
   ethereum: {
     name: 'Ethereum',
-    icon: '🦊',
+    icon: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/eth_logo.png',
     explorerUrl: 'https://etherscan.io/tx/',
     color: 'bg-blue-500'
   },
   solana: {
     name: 'Solana',
-    icon: '👻',
+    icon: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/solana_logo.png',
     explorerUrl: 'https://solscan.io/tx/',
     color: 'bg-purple-600'
   },
   bsc: {
     name: 'BSC',
-    icon: '🟡',
+    icon: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/BSC_logo.png',
     explorerUrl: 'https://bscscan.com/tx/',
     color: 'bg-yellow-500'
   },
   sui: {
     name: 'Sui',
-    icon: '🌊',
+    icon: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/SUI_LOGO.png',
     explorerUrl: 'https://suiexplorer.com/txblock/',
     color: 'bg-cyan-500'
   },
   cardano: {
     name: 'Cardano',
-    icon: '🔵',
+    icon: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/cardano_logo.png',
     explorerUrl: 'https://cardanoscan.io/transaction/',
     color: 'bg-indigo-600'
   }
