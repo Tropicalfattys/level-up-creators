@@ -34,16 +34,16 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
-            <CardDescription className="mt-1 text-sm">
-              by @{service.creator.users.handle}
+            <CardDescription className="mt-1 text-sm flex items-center gap-2">
+              <span>by @{service.creator.users.handle}</span>
+              {service.creator.rating && (
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span>{service.creator.rating}</span>
+                </div>
+              )}
             </CardDescription>
           </div>
-          {service.creator.rating && (
-            <div className="flex items-center gap-1 text-sm">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span>{service.creator.rating}</span>
-            </div>
-          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
