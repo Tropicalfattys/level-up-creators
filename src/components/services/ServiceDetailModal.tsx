@@ -117,7 +117,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
               <div className="text-center p-4 border rounded-lg">
                 <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600" />
                 <div className="font-semibold">${service.price_usdc}</div>
-                <div className="text-sm text-muted-foreground">USDC</div>
+                <div className="text-sm text-muted-foreground">USD</div>
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <Clock className="h-6 w-6 mx-auto mb-2 text-blue-600" />

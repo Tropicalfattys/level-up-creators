@@ -73,7 +73,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
             </div>
             <div className="flex items-center gap-1">
               <DollarSign className="h-3 w-3" />
-              <span>{service.price_usdc} USDC</span>
+              <span>{service.price_usdc} USD</span>
             </div>
           </div>
         </div>
