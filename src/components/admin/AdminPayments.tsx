@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ExternalLink, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ExternalLink, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminPayouts } from './AdminPayouts';
 
@@ -17,6 +18,7 @@ export const AdminPayments = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [networkFilter, setNetworkFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data: payments, isLoading } = useQuery({
@@ -53,6 +55,9 @@ export const AdminPayments = () => {
   });
 
   const updatePaymentStatus = async (paymentId: string, status: string) => {
+    // Add payment to processing set
+    setProcessingPayments(prev => new Set(prev).add(paymentId));
+    
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       
@@ -136,6 +141,13 @@ export const AdminPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['bookings-referrals-test'] });
     } catch (error: any) {
       toast.error('Failed to update payment status: ' + error.message);
+    } finally {
+      // Remove payment from processing set
+      setProcessingPayments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(paymentId);
+        return newSet;
+      });
     }
   };
 
@@ -341,22 +353,60 @@ export const AdminPayments = () => {
                           <Button
                             size="sm"
                             onClick={() => updatePaymentStatus(payment.id, 'verified')}
+                            disabled={processingPayments.has(payment.id)}
                           >
+                            {processingPayments.has(payment.id) && (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            )}
                             Verify
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => updatePaymentStatus(payment.id, 'rejected')}
-                          >
-                            Reject
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={processingPayments.has(payment.id)}
+                              >
+                                {processingPayments.has(payment.id) && (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                )}
+                                Reject
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Reject Payment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to reject this payment? This action cannot be undone.
+                                  <br /><br />
+                                  <strong>Transaction:</strong> {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
+                                  <br />
+                                  <strong>Amount:</strong> ${payment.amount} {payment.currency}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Reject Payment
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       )}
                       {payment.status === 'verified' && payment.booking?.status === 'paid' && (
                         <div className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="h-4 w-4" />
                           <span className="text-xs">Synced</span>
+                        </div>
+                      )}
+                      {payment.status === 'rejected' && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-xs">Rejected</span>
                         </div>
                       )}
                     </TableCell>
