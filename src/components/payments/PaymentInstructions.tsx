@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Copy, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -333,17 +333,6 @@ export const PaymentInstructions = ({
             </form>
           </div>
 
-          {/* Explorer Link */}
-          <div className="text-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(networkConfig.explorerUrl, '_blank')}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View {networkConfig.name} Explorer
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
