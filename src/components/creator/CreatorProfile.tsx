@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,8 @@ interface Review {
 
 export const CreatorProfile = () => {
   const { handle } = useParams();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
@@ -185,6 +188,10 @@ export const CreatorProfile = () => {
   };
 
   const handleBookService = (service: any) => {
+    if (!currentUser) {
+      navigate('/auth');
+      return;
+    }
     setSelectedService(service);
     setIsBookingModalOpen(true);
   };
@@ -534,7 +541,7 @@ export const CreatorProfile = () => {
                               Delivery: {service.delivery_days} days
                             </span>
                             <Button size="sm" onClick={() => handleBookService(service)}>
-                              Book Now
+                              {currentUser ? 'Book Now' : 'Sign In to Book'}
                             </Button>
                           </div>
                         </div>
