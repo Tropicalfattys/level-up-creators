@@ -34,7 +34,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>
-            <CardDescription className="mt-1 text-sm flex items-center gap-2">
+            <CardDescription className="mt-1 text-sm flex items-center justify-center gap-2">
               <span>by @{service.creator.users.handle}</span>
               {service.creator.rating && (
                 <div className="flex items-center gap-1">
@@ -51,31 +51,27 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           {service.description}
         </p>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {service.category}
+        <div className="flex items-center justify-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {service.category}
+          </Badge>
+          {networkConfig && (
+            <Badge variant="outline" className="text-xs">
+              <span className="mr-1">{networkConfig.icon}</span>
+              {networkConfig.name}
             </Badge>
-            {networkConfig && (
-              <Badge variant="outline" className="text-xs">
-                <span className="mr-1">{networkConfig.icon}</span>
-                {networkConfig.name}
-              </Badge>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <span>Turn Around</span>
-              <Clock className="h-3 w-3" />
-              <span>{service.delivery_days}d</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3" />
-              <span>{service.price_usdc} USD</span>
-            </div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <span>Turn Around</span>
+            <Clock className="h-3 w-3" />
+            <span>{service.delivery_days}d</span>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <DollarSign className="h-3 w-3" />
+            <span>{service.price_usdc} USD</span>
           </div>
         </div>
       </CardContent>
