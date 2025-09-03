@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Copy, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { PLATFORM_WALLETS, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
 
 interface PaymentInstructionsProps {
@@ -192,6 +194,58 @@ export const PaymentInstructions = ({
             <h4 className="font-semibold flex items-center gap-2">
               <Badge variant="outline">2</Badge>
               Submit Transaction Hash
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <span className="text-orange-500 hover:underline cursor-help text-sm font-normal">
+                    Find your TX hash
+                  </span>
+                </HoverCardTrigger>
+                <HoverCardContent 
+                  className="w-96 p-6 bg-background border shadow-lg"
+                  align="center" 
+                  side="top"
+                >
+                  <ScrollArea className="max-h-96">
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg">💡 How to Find Your Transaction Hash (Tx Hash)</h3>
+                      
+                      <p className="text-sm text-muted-foreground">
+                        After sending your payment, you'll need to give us the transaction hash so we can verify it.
+                      </p>
+                      
+                      <div className="space-y-3">
+                        <p className="font-medium text-sm">Here's how to find it in any wallet:</p>
+                        <ol className="text-sm space-y-2 list-decimal ml-4">
+                          <li>Open your wallet app (the one you used to send payment).</li>
+                          <li>Go to your activity/history tab – this shows your recent transactions.</li>
+                          <li>Tap or click the payment you just made.</li>
+                          <li>Look for a long string of numbers and letters called "Transaction Hash," "TxID," or "Signature."</li>
+                        </ol>
+                        
+                        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium">Wallet-specific names:</p>
+                          <ul className="text-sm space-y-1 ml-4">
+                            <li>• In MetaMask → it appears as "Transaction Hash".</li>
+                            <li>• In Phantom (Solana) → it shows as "Signature."</li>
+                            <li>• On other wallets it may be called "TxID" or "Hash."</li>
+                          </ul>
+                        </div>
+                        
+                        <ol className="text-sm space-y-2 list-decimal ml-4" start={5}>
+                          <li>Copy the transaction hash (use the copy button if available).</li>
+                          <li>Paste it into the box on our payment screen to complete verification.</li>
+                        </ol>
+                      </div>
+                      
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-sm text-amber-800 font-medium">
+                          ⚠️ Do not send a screenshot. We must have the actual transaction hash to confirm your payment.
+                        </p>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </HoverCardContent>
+              </HoverCard>
             </h4>
             
             <form onSubmit={handleSubmit} className="space-y-3">
