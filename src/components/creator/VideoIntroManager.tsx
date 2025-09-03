@@ -207,7 +207,6 @@ export const VideoIntroManager = () => {
                 <li>• Upload video introductions</li>
                 <li>• Priority search placement</li>
                 <li>• Featured listing on homepage</li>
-                <li>• Advanced analytics</li>
               </ul>
             </div>
           </div>
