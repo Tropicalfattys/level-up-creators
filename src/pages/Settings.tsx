@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin, Wallet } from 'lucide-react';
@@ -747,19 +748,16 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Change Password</Label>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Update your password to keep your account secure
-                </p>
-                <Button variant="outline">Change Password</Button>
-              </div>
-
-              <div>
                 <Label>Two-Factor Authentication</Label>
                 <p className="text-sm text-muted-foreground mb-2">
                   Add an extra layer of security to your account
                 </p>
                 <Button variant="outline">Enable 2FA</Button>
+                <div className="mt-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Coming Soon
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
