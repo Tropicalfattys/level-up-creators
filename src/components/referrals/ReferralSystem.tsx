@@ -157,8 +157,8 @@ export const ReferralSystem = () => {
                 1
               </div>
               <div>
-                <h4 className="font-medium">Share your code or link</h4>
-                <p className="text-sm text-muted-foreground">Send your referral code or link to friends</p>
+                <h4 className="font-medium text-left">Share your code or link</h4>
+                <p className="text-sm text-muted-foreground text-left">Send your referral code or link to friends</p>
               </div>
             </div>
             
@@ -167,8 +167,8 @@ export const ReferralSystem = () => {
                 2
               </div>
               <div>
-                <h4 className="font-medium">They sign up</h4>
-                <p className="text-sm text-muted-foreground">Your friend creates an account using your referral</p>
+                <h4 className="font-medium text-left">They sign up</h4>
+                <p className="text-sm text-muted-foreground text-left">Your friend creates an account using your referral</p>
               </div>
             </div>
             
@@ -177,8 +177,8 @@ export const ReferralSystem = () => {
                 3
               </div>
               <div>
-                <h4 className="font-medium">Earn $1 credit</h4>
-                <p className="text-sm text-muted-foreground">Get $1 credit when they make their first purchase</p>
+                <h4 className="font-medium text-left">Earn $1 credit</h4>
+                <p className="text-sm text-muted-foreground text-left">Get $1 credit when they make their first purchase</p>
               </div>
             </div>
             
@@ -187,8 +187,8 @@ export const ReferralSystem = () => {
                 4
               </div>
               <div>
-                <h4 className="font-medium">Use your credits</h4>
-                <p className="text-sm text-muted-foreground">Apply credits to any service on the platform</p>
+                <h4 className="font-medium text-left">Use your credits</h4>
+                <p className="text-sm text-muted-foreground text-left">Apply credits to any service on the platform</p>
               </div>
             </div>
           </div>
