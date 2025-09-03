@@ -172,8 +172,8 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const handleFollowToggle = (creator: CreatorData, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     
-    if (isFollowing(creator.id)) {
-      removeFollow(creator.id);
+    if (isFollowing(creator.user_id)) {
+      removeFollow(creator.user_id);
     } else {
       const creatorToFollow = {
         id: creator.id,
@@ -364,7 +364,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           >
                             <Heart
                               className={`h-4 w-4 transition-colors ${
-                                isFollowing(creator.id)
+                                isFollowing(creator.user_id)
                                   ? 'fill-red-500 text-red-500'
                                   : 'text-gray-400 hover:text-red-500'
                               }`}

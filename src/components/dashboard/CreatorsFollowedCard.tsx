@@ -22,8 +22,8 @@ export const CreatorsFollowedCard = () => {
       </CardHeader>
       <CardContent>
         {followedCreators.length > 0 ? (
-          <div className="space-y-3">
-            {followedCreators.slice(0, 3).map((creator) => (
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {followedCreators.map((creator) => (
               <div key={creator.user_id} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
@@ -48,11 +48,6 @@ export const CreatorsFollowedCard = () => {
                 </Button>
               </div>
             ))}
-            {followedCreators.length > 3 && (
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                +{followedCreators.length - 3} more
-              </p>
-            )}
           </div>
         ) : (
           <p className="text-muted-foreground text-sm text-center py-4">
