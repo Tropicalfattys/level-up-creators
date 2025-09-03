@@ -42,7 +42,7 @@ const FAQ = () => {
     },
     {
       question: "Who can join Leveled Up?",
-      answer: "• Creators: Crypto influencers, experts, and personalities offering shoutouts, AMAs, consultations, or other services.\n• Clients: Anyone looking to book a creator using cryptocurrency."
+      answer: "Creators: Crypto influencers, experts, and personalities offering shoutouts, AMAs, consultations, or other services.\nClients: Anyone looking to book a creator using cryptocurrency."
     }
   ];
 
