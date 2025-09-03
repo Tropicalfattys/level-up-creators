@@ -624,8 +624,8 @@ export const CreatorProfile = () => {
           <DialogHeader>
             <DialogTitle>All Reviews ({reviews?.length || 0})</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[70vh] pr-4">
-            <div className="space-y-4">
+          <ScrollArea className="h-96">
+            <div className="space-y-4 pr-4">
               {reviews?.map((review) => (
                 <div key={review.id} className="space-y-2 pb-4 border-b border-border last:border-b-0">
                   <div className="flex items-start gap-3">
