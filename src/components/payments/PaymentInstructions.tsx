@@ -201,11 +201,11 @@ export const PaymentInstructions = ({
                   </span>
                 </HoverCardTrigger>
                 <HoverCardContent 
-                  className="w-96 p-6 bg-background border shadow-lg"
+                  className="w-96 max-h-80 p-6 bg-background border shadow-lg"
                   align="center" 
                   side="top"
                 >
-                  <ScrollArea className="max-h-96">
+                  <ScrollArea className="h-full max-h-64">
                     <div className="space-y-4">
                       <h3 className="font-semibold text-lg">💡 How to Find Your Transaction Hash (Tx Hash)</h3>
                       
