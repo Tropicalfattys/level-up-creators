@@ -381,7 +381,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         
                         {creator.min_price > 0 && (
                           <div className="flex items-center gap-1 text-xs bg-zinc-800 px-2 py-1 rounded">
-                            <DollarSign className="h-3 w-3" />
                             <span>Starting At ${creator.min_price}</span>
                           </div>
                         )}
