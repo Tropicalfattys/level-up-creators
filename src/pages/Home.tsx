@@ -90,39 +90,84 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch recent 5-star reviews for testimonials
+  // Fetch recent 5-star reviews for testimonials using separate queries approach
   const { data: testimonials = [], isLoading: testimonialsLoading, error: testimonialsError } = useQuery({
     queryKey: ['testimonials'],
     queryFn: async () => {
       console.log('Fetching 5-star reviews for testimonials...');
       
-      const { data, error } = await supabase
-        .from('reviews')  
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          reviewer_id,
-          booking_id,
-          bookings!inner(
-            services!inner(title)
-          ),
-          users!reviewer_id(handle)
-        `)
-        .eq('rating', 5)
-        .order('created_at', { ascending: false })
-        .limit(3);
+      try {
+        // Step 1: Fetch 5-star reviews with basic data
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('id, rating, comment, created_at, reviewer_id, booking_id')
+          .eq('rating', 5)
+          .order('created_at', { ascending: false })
+          .limit(3);
 
-      if (error) {
-        console.error('Testimonials query error:', error);
-        throw error;
+        if (reviewsError) {
+          console.error('Reviews query error:', reviewsError);
+          throw reviewsError;
+        }
+
+        if (!reviewsData?.length) {
+          console.log('No 5-star reviews found');
+          return [];
+        }
+
+        console.log('Found 5-star reviews:', reviewsData.length);
+
+        // Extract IDs for additional queries
+        const reviewerIds = reviewsData.map(r => r.reviewer_id);
+        const bookingIds = reviewsData.map(r => r.booking_id);
+
+        // Step 2: Fetch reviewer handles
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, handle')
+          .in('id', reviewerIds);
+
+        if (usersError) {
+          console.error('Users query error:', usersError);
+          throw usersError;
+        }
+
+        // Step 3: Fetch service titles via bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('id, services(title)')
+          .in('id', bookingIds);
+
+        if (bookingsError) {
+          console.error('Bookings query error:', bookingsError);
+          throw bookingsError;
+        }
+
+        // Step 4: Combine data client-side to match expected structure
+        const combinedTestimonials = reviewsData.map(review => {
+          const user = usersData?.find(u => u.id === review.reviewer_id);
+          const booking = bookingsData?.find(b => b.id === review.booking_id);
+          
+          return {
+            ...review,
+            users: user ? { handle: user.handle } : { handle: 'Unknown' },
+            bookings: booking?.services ? { 
+              services: { title: booking.services.title } 
+            } : { 
+              services: { title: 'Service' } 
+            }
+          };
+        });
+
+        console.log('Combined testimonials data:', combinedTestimonials);
+        console.log('Successfully processed', combinedTestimonials.length, '5-star reviews');
+        
+        return combinedTestimonials;
+      } catch (error) {
+        console.error('Testimonials fetch error:', error);
+        // Return empty array to fall back to static testimonials
+        return [];
       }
-
-      console.log('Raw testimonials data:', data);
-      console.log('Number of 5-star reviews found:', data?.length || 0);
-      
-      return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
