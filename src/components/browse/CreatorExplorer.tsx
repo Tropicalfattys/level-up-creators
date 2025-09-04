@@ -272,7 +272,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'research': { icon: '🔬', displayName: 'Research' },
       'youtube': { icon: '📺', displayName: 'YouTube' },
       'telegram': { icon: '📱', displayName: 'Telegram' },
-      'discord': { icon: '💬', displayName: 'Discord' },
+      'discord': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Discord-removebg-preview.png', displayName: 'Discord' },
       'tiktok': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Tiktok-removebg-preview.png', displayName: 'TikTok' },
       'linkedin': { icon: '💼', displayName: 'LinkedIn' },
       'reels': { icon: '🎬', displayName: 'Reels' },
