@@ -280,19 +280,44 @@ export default function Home() {
             className="w-full max-w-7xl mx-auto"
           >
             <CarouselContent className="-ml-2 md:-ml-4 [&_.overflow-hidden]:overflow-visible">
-              {services.map((service, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
-                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
-                    <div className="hover:scale-105 transition-transform duration-300">
-                      <CardContent className="p-4 text-center">
-                        <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                        <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
-                        <p className="text-xs text-muted-foreground">{service.description}</p>
-                      </CardContent>
-                    </div>
-                  </Card>
-                </CarouselItem>
-              ))}
+              {services.map((service, index) => {
+                // Map service names to category values for navigation
+                const getCategoryFromService = (serviceName: string) => {
+                  const serviceMapping: Record<string, string> = {
+                    'Host an AMA': 'ama',
+                    'Tweet & Threads': 'twitter',
+                    'Promo Videos': 'video',
+                    'Product Tutorials': 'tutorials',
+                    'Product Reviews': 'reviews',
+                    'Host Twitter Spaces': 'twitter-spaces',
+                    'Instagram Posts': 'instagram',
+                    'Facebook Posts': 'facebook',
+                    'General Marketing': 'marketing',
+                    'Project Branding': 'branding',
+                    'Discord Contests': 'discord',
+                    'Blogs & Articles': 'blogs',
+                    'Reddit Posts': 'reddit',
+                    'Meme Creation': 'memes'
+                  };
+                  return serviceMapping[serviceName] || 'all';
+                };
+
+                return (
+                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
+                    <Link to={`/browse?category=${getCategoryFromService(service.name)}`}>
+                      <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
+                        <div className="hover:scale-105 transition-transform duration-300">
+                          <CardContent className="p-4 text-center">
+                            <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
+                            <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
+                            <p className="text-xs text-muted-foreground">{service.description}</p>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    </Link>
+                  </CarouselItem>
+                );
+              })}
             </CarouselContent>
             <CarouselPrevious className="hidden md:flex" />
             <CarouselNext className="hidden md:flex" />
