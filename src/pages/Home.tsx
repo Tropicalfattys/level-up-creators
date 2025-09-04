@@ -163,7 +163,7 @@ export default function Home() {
             <div className="text-center">
               <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Book___Pay_in_USDC-removebg-preview.png" alt="Book & Pay in USDC" className="mx-auto mb-6 h-18 w-18" />
               <h3 className="text-xl font-semibold mb-4">2. Book & Pay in USDC</h3>
-              <p className="text-muted-foreground">Simple checkout via ANY crypto wallet, no middlemen.</p>
+              <p className="text-muted-foreground">Simple checkout via ANY crypto wallet that you hold USDC or USDM on Ethereum, Solana, BSC, SUI, or Cardano.</p>
             </div>
             
             <div className="text-center">
