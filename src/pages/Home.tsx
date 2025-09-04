@@ -135,7 +135,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mt-12">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <img src="/lovable-uploads/04047796-9779-415d-b716-1f409c2c9da5.png" alt="Find Your Creator" className="h-8 w-8" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Find_Your_Creator-removebg-preview.png" alt="Find Your Creator" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">1. Find Your Creator</h3>
               <p className="text-muted-foreground">Choose from vetted crypto influencers across multiple platforms.</p>
@@ -143,7 +143,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <img src="/lovable-uploads/3ecc7f42-e7fb-4c1a-84b5-3ade77cffa8a.png" alt="Book & Pay in USDC" className="h-8 w-8" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Book___Pay_in_USDC-removebg-preview.png" alt="Book & Pay in USDC" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">2. Book & Pay in USDC</h3>
               <p className="text-muted-foreground">Simple checkout via ANY crypto wallet, no middlemen.</p>
@@ -151,7 +151,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <img src="/lovable-uploads/316da1b0-3ffc-45e0-b7b2-2d4b64bd630e.png" alt="Get Your Content or Service" className="h-8 w-8" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Get_Your_Content_or_Service-removebg-preview.png" alt="Get Your Content or Service" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">3. Get Your Content or Service</h3>
               <p className="text-muted-foreground">From AMAs to full marketing campaigns, creators deliver exactly what you need at the price that fits your budget.</p>
