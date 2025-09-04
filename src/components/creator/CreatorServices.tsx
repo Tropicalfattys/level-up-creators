@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Edit, Trash2 } from 'lucide-react';
+import { Copy, Edit, Trash2, Pause, Play } from 'lucide-react';
 import { ServiceForm } from './ServiceForm';
 
 interface Service {
@@ -44,6 +44,29 @@ export const CreatorServices = () => {
     },
   });
 
+  const snoozeMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { data, error } = await supabase
+        .from('services')
+        .update({ active: !active })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error toggling service status:', error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: (_, { active }) => {
+      toast.success(active ? 'Service paused successfully!' : 'Service reactivated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['creator-services'] });
+    },
+    onError: (error) => {
+      console.error('Service toggle error:', error);
+      toast.error('Failed to update service status. Please try again.');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
@@ -76,6 +99,10 @@ export const CreatorServices = () => {
   const handleEdit = (service: Service) => {
     setSelectedService(service);
     setOpen(true);
+  };
+
+  const handleSnooze = (service: Service) => {
+    snoozeMutation.mutate({ id: service.id, active: service.active });
   };
 
   const handleDelete = (id: string) => {
@@ -111,9 +138,9 @@ export const CreatorServices = () => {
                   <CardTitle className="text-xl text-black">{service.title}</CardTitle>
                   <Badge 
                     variant={service.active ? "default" : "secondary"}
-                    className={service.active ? "bg-green-600 text-white" : "bg-zinc-700 text-zinc-300"}
+                    className={service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}
                   >
-                    {service.active ? "Active" : "Inactive"}
+                    {service.active ? "Active" : "Paused"}
                   </Badge>
                 </div>
                 <CardDescription className="text-black line-clamp-2">
@@ -136,32 +163,40 @@ export const CreatorServices = () => {
                   </div>
                 </div>
                 
-                <div className="flex gap-2 pt-2">
+                <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopy(service)}
-                    className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className="h-4 w-4 mr-1" />
                     Copy
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(service)}
-                    className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                   >
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="h-4 w-4 mr-1" />
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSnooze(service)}
+                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    {service.active ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                    {service.active ? "Snooze" : "Reactivate"}
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(service.id)}
-                    className="flex-1"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-4 w-4 mr-1" />
                     Delete
                   </Button>
                 </div>
