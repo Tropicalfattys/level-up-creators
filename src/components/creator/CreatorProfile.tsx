@@ -562,7 +562,7 @@ export const CreatorProfile = () => {
                               })()}
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-3">
+                          <p className="text-sm text-muted-foreground mb-3 break-words line-clamp-3">
                             {service.description}
                           </p>
                           <div className="flex justify-between items-center">
