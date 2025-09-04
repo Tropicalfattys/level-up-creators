@@ -380,7 +380,7 @@ export default function Home() {
                            <div className="hover:scale-105 transition-transform duration-300">
                              <CardContent className="p-6 text-center">
                                 <div className="mb-4">
-                                  <Avatar className="w-28 h-28 mx-auto">
+                                  <Avatar className="w-48 h-48 mx-auto">
                                     <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
                                     <AvatarFallback className="text-lg font-semibold">
                                       {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
