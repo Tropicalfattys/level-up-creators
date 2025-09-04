@@ -313,6 +313,9 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             />
           </div>
 
+          {/* Browse Popular Categories Title */}
+          <h2 className="text-xl font-semibold mb-4 text-white">Browse Popular Categories</h2>
+
           {/* Category Icons */}
           <div className="flex gap-4 overflow-x-auto pb-4">
             {categoryIcons.map((cat) => (
