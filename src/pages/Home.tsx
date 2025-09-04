@@ -191,7 +191,7 @@ export default function Home() {
       </section>
 
       {/* Why LeveledUP Section */}
-      <section className="py-16 px-4 bg-muted/30">
+      <section className="py-16 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">The First Creator Marketplace Built for Web3</h2>
           
