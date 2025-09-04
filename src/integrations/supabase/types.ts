@@ -678,6 +678,48 @@ export type Database = {
           },
         ]
       }
+      platform_wallets: {
+        Row: {
+          active: boolean
+          color_class: string | null
+          created_at: string
+          explorer_url: string | null
+          icon_url: string | null
+          id: string
+          name: string
+          network: string
+          updated_at: string
+          updated_by: string | null
+          wallet_address: string
+        }
+        Insert: {
+          active?: boolean
+          color_class?: string | null
+          created_at?: string
+          explorer_url?: string | null
+          icon_url?: string | null
+          id?: string
+          name: string
+          network: string
+          updated_at?: string
+          updated_by?: string | null
+          wallet_address: string
+        }
+        Update: {
+          active?: boolean
+          color_class?: string | null
+          created_at?: string
+          explorer_url?: string | null
+          icon_url?: string | null
+          id?: string
+          name?: string
+          network?: string
+          updated_at?: string
+          updated_by?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       pricing_tiers: {
         Row: {
           active: boolean

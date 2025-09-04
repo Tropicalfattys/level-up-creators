@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 // USDC Contract Addresses and Platform Configuration
 export const USDC_CONTRACTS = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -9,7 +11,7 @@ export const USDC_CONTRACTS = {
   cardano: 'USDM' // USDM on Cardano
 } as const;
 
-// Platform Escrow Wallet Addresses (updated with user's specifications)
+// Platform Escrow Wallet Addresses (kept as fallback)
 export const PLATFORM_WALLETS = {
   ethereum: '0x4DEe7D9fa0E3e232AF7EfDF809E1fA5AdF4af61B',
   base: '0x4DEe7D9fa0E3e232AF7EfDF809E1fA5AdF4af61B',
@@ -18,6 +20,51 @@ export const PLATFORM_WALLETS = {
   sui: '0x7895d5b72e5df22e707149f31051e993ab304334191b84acbb14503134e4c95e',
   cardano: 'addr1q98rwvzkmzjw20zh6uzw4yvkzhhsnl9rtdf9xzdy6xn58ddphkx64axgy5x8argzpv6hzyker4g7nlxdll4fq8q3ajvsn24vy3'
 } as const;
+
+// Dynamic platform wallet fetcher
+let cachedWallets: { [key: string]: string } | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export const getPlatformWallets = async (): Promise<{ [key: string]: string }> => {
+  const now = Date.now();
+  
+  // Return cached wallets if cache is still valid
+  if (cachedWallets && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedWallets;
+  }
+  
+  try {
+    const { data: wallets, error } = await supabase
+      .from('platform_wallets')
+      .select('network, wallet_address')
+      .eq('active', true);
+    
+    if (error) throw error;
+    
+    // Convert to object format
+    const walletsObject: { [key: string]: string } = {};
+    wallets?.forEach(wallet => {
+      walletsObject[wallet.network] = wallet.wallet_address;
+    });
+    
+    // Update cache
+    cachedWallets = walletsObject;
+    cacheTimestamp = now;
+    
+    return walletsObject;
+  } catch (error) {
+    console.error('Failed to fetch platform wallets, using fallback:', error);
+    // Return hardcoded fallback on error
+    return { ...PLATFORM_WALLETS };
+  }
+};
+
+// Helper function to get a specific wallet address
+export const getPlatformWallet = async (network: string): Promise<string> => {
+  const wallets = await getPlatformWallets();
+  return wallets[network] || PLATFORM_WALLETS[network as keyof typeof PLATFORM_WALLETS] || '';
+};
 
 // Payment Method Options
 export const PAYMENT_METHODS = {

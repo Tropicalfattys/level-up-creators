@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ExternalLink, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { AdminPayouts } from './AdminPayouts';
+import { AdminPayouts } from "./AdminPayouts";
+import { AdminEscrow } from "./AdminEscrow";
 
 export const AdminPayments = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -443,19 +444,7 @@ export const AdminPayments = () => {
       </TabsContent>
 
       <TabsContent value="escrow">
-        <Card>
-          <CardHeader>
-            <CardTitle>Escrow Management</CardTitle>
-            <CardDescription>
-              Manage escrow holdings and release funds for completed bookings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center text-muted-foreground py-8">
-              Escrow management functionality will be implemented here.
-            </div>
-          </CardContent>
-        </Card>
+        <AdminEscrow />
       </TabsContent>
     </Tabs>
   );

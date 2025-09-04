@@ -1,7 +1,7 @@
 
 import { z } from 'zod';
 import { validateInput, sanitizeString } from './validation';
-import { PLATFORM_WALLETS } from './contracts';
+import { getPlatformWallet } from './contracts';
 
 // Enhanced wallet address schemas with stricter validation
 export const walletAddressSchemas = {
@@ -76,9 +76,9 @@ export const validateWalletAddress = (
   }
 };
 
-// Use hardcoded platform wallet addresses
-export const getEscrowAddress = (chain: string): string => {
-  return PLATFORM_WALLETS[chain as keyof typeof PLATFORM_WALLETS] || '';
+// Use dynamic platform wallet addresses
+export const getEscrowAddress = async (chain: string): Promise<string> => {
+  return await getPlatformWallet(chain);
 };
 
 // Security utility for transaction hash validation
