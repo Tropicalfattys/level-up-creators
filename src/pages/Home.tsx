@@ -171,7 +171,7 @@ export default function Home() {
             ]}
             className="w-full max-w-7xl mx-auto"
           >
-            <CarouselContent className="-ml-2 md:-ml-4">
+            <CarouselContent className="-ml-2 md:-ml-4 [&>div:first-child]:overflow-visible">
               {services.map((service, index) => (
                 <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
                   <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border">
