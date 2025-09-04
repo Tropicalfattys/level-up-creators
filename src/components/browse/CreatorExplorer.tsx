@@ -286,7 +286,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     return result;
   };
 
-  const categoryIcons = categories?.slice(0, 11).map(category => {
+  const categoryIcons = categories?.slice(0, 18).map(category => {
     const categoryData = getCategoryData(category.value);
     return {
       name: categoryData.displayName,
