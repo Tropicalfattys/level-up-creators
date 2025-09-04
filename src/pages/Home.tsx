@@ -198,7 +198,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
-                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Crypto-Native_Payments.png" alt="Crypto-Native Payments" className="h-18 w-18 mx-auto mb-4" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Crypto-Native_Payments.png" alt="Crypto-Native Payments" className="h-16 w-16 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Crypto-Native Payments</h3>
                 <p className="text-muted-foreground">Pay in USDC & USDM (ETH, Solana, Sui, BSC, & Cardano).</p>
               </CardContent>
@@ -206,7 +206,7 @@ export default function Home() {
             
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
-                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-18 w-18 mx-auto mb-4" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-16 w-16 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
                 <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
               </CardContent>
@@ -214,7 +214,7 @@ export default function Home() {
             
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
-                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach-removebg-preview.png" alt="Cross-Platform Reach" className="h-18 w-18 mx-auto mb-4" />
+                <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach-removebg-preview.png" alt="Cross-Platform Reach" className="h-16 w-16 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Cross-Platform Reach</h3>
                 <p className="text-muted-foreground">From Twitter to Telegram, work with creators where the crypto community actually lives.</p>
               </CardContent>
