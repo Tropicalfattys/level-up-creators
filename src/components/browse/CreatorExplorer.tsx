@@ -286,7 +286,9 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     return result;
   };
 
-  const categoryIcons = categories?.slice(0, 18).map(category => {
+  const categoryIcons = categories?.slice(0, 18).filter(category => 
+    !['blogs', 'memes', 'reddit', 'other', 'linkedin'].includes(category.value)
+  ).map(category => {
     const categoryData = getCategoryData(category.value);
     return {
       name: categoryData.displayName,
