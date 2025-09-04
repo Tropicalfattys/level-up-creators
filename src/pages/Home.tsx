@@ -174,12 +174,14 @@ export default function Home() {
             <CarouselContent className="-ml-2 md:-ml-4 [&_.overflow-hidden]:overflow-visible">
               {services.map((service, index) => (
                 <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
-                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-card border-border">
-                    <CardContent className="p-4 text-center">
-                      <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                      <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
-                      <p className="text-xs text-muted-foreground">{service.description}</p>
-                    </CardContent>
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
+                    <div className="hover:scale-105 transition-transform duration-300">
+                      <CardContent className="p-4 text-center">
+                        <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
+                        <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
+                        <p className="text-xs text-muted-foreground">{service.description}</p>
+                      </CardContent>
+                    </div>
                   </Card>
                 </CarouselItem>
               ))}
