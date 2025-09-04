@@ -90,6 +90,43 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch recent 5-star reviews for testimonials
+  const { data: testimonials = [], isLoading: testimonialsLoading, error: testimonialsError } = useQuery({
+    queryKey: ['testimonials'],
+    queryFn: async () => {
+      console.log('Fetching 5-star reviews for testimonials...');
+      
+      const { data, error } = await supabase
+        .from('reviews')  
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          reviewer_id,
+          booking_id,
+          bookings!inner(
+            service_id,
+            services!inner(title)
+          ),
+          users!reviewer_id(handle)
+        `)
+        .eq('rating', 5)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error('Testimonials query error:', error);
+        throw error;
+      }
+
+      console.log('5-star reviews found:', data?.length || 0);
+      
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const services = [
     { name: 'Host an AMA', icon: MessageSquare, description: 'Telegram, Twitter, Discord' },
     { name: 'Tweet & Threads', icon: Hash, description: 'Engaging Twitter content' },
@@ -355,38 +392,79 @@ export default function Home() {
         <div className="container mx-auto">
           <h2 className="text-4xl font-bold text-center mb-12">What People Are Saying</h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                project: "DeFi Protocol Launch",
-                review: "LeveledUP connected us with amazing creators who helped launch our protocol. The AMA host was professional and the Twitter campaign drove real engagement.",
-                rating: 5
-              },
-              {
-                project: "NFT Collection Marketing",
-                review: "The video content created for our NFT drop was incredible. Sales increased 300% after working with creators from this platform.",
-                rating: 5
-              },
-              {
-                project: "Web3 Gaming Startup",
-                review: "Found the perfect creators for our Discord community building. The engagement and growth has been phenomenal since launch.",
-                rating: 5
-              }
-            ].map((testimonial, index) => (
-              <Card key={index} className="bg-card border-border">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <h3 className="font-semibold mb-2">{testimonial.project}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">"{testimonial.review}"</p>
-                  <div className="text-xs text-muted-foreground">Verified Project Review</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {testimonialsError ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-2">Error loading testimonials</p>
+              <p className="text-sm text-muted-foreground">{testimonialsError.message}</p>
+            </div>
+          ) : testimonialsLoading ? (
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="bg-card border-border animate-pulse h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-center gap-1 mb-4">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <div key={star} className="h-4 w-4 bg-muted rounded"></div>
+                      ))}
+                    </div>
+                    <div className="h-4 bg-muted rounded mb-2"></div>
+                    <div className="h-16 bg-muted rounded mb-4"></div>
+                    <div className="h-3 bg-muted rounded w-24"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : testimonials.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
+              {testimonials.map((testimonial) => (
+                <Card key={testimonial.id} className="bg-card border-border h-full">
+                  <CardContent className="p-6 flex flex-col h-full">
+                    <div className="flex items-center justify-center gap-1 mb-4">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <h3 className="font-semibold mb-2">{testimonial.bookings.services.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.comment}"</p>
+                    <div className="text-xs text-muted-foreground">@{testimonial.users.handle}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
+              {[
+                {
+                  project: "DeFi Protocol Launch",
+                  review: "LeveledUP connected us with amazing creators who helped launch our protocol. The AMA host was professional and the Twitter campaign drove real engagement.",
+                  rating: 5
+                },
+                {
+                  project: "NFT Collection Marketing", 
+                  review: "The video content created for our NFT drop was incredible. Sales increased 300% after working with creators from this platform.",
+                  rating: 5
+                },
+                {
+                  project: "Web3 Gaming Startup",
+                  review: "Found the perfect creators for our Discord community building. The engagement and growth has been phenomenal since launch.",
+                  rating: 5
+                }
+              ].map((testimonial, index) => (
+                <Card key={index} className="bg-card border-border h-full">
+                  <CardContent className="p-6 flex flex-col h-full">
+                    <div className="flex items-center justify-center gap-1 mb-4">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <h3 className="font-semibold mb-2">{testimonial.project}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.review}"</p>
+                    <div className="text-xs text-muted-foreground">Verified Project Review</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
