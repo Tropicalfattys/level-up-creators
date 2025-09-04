@@ -157,7 +157,7 @@ export default function Home() {
             <div className="text-center">
               <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Find_Your_Creator-removebg-preview.png" alt="Find Your Creator" className="mx-auto mb-6 h-18 w-18" />
               <h3 className="text-xl font-semibold mb-4">1. Find Your Creator</h3>
-              <p className="text-muted-foreground">Choose from vetted crypto influencers across multiple platforms.</p>
+              <p className="text-muted-foreground">Find the right creator or influencer for your needs—any platform, any expertise, any budget.</p>
             </div>
             
             <div className="text-center">
