@@ -71,6 +71,18 @@ export const AdvancedSearch = () => {
   const { data: services, isLoading } = useQuery({
     queryKey: ['advanced-search', filters],
     queryFn: async (): Promise<SearchService[]> => {
+      // Get current user's handle for availability filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let userHandle = null;
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('handle')
+          .eq('id', user.id)
+          .single();
+        userHandle = userData?.handle;
+      }
+
       let query = supabase
         .from('services')
         .select(`
@@ -80,9 +92,18 @@ export const AdvancedSearch = () => {
           category,
           price_usdc,
           delivery_days,
-          creator_id
+          creator_id,
+          availability_type,
+          target_username
         `)
         .eq('active', true);
+
+      // Apply availability filter
+      if (userHandle) {
+        query = query.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
+      } else {
+        query = query.eq('availability_type', 'everyone');
+      }
 
       // Apply text search
       if (filters.query) {

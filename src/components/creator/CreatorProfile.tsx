@@ -96,11 +96,32 @@ export const CreatorProfile = () => {
       // Get services if user is a creator
       let services = [];
       if (creatorData && creatorData.approved) {
-        const { data: servicesData, error: servicesError } = await supabase
+        // Get current user's handle for availability filtering
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        let currentUserHandle = null;
+        if (currentUser) {
+          const { data: currentUserData } = await supabase
+            .from('users')
+            .select('handle')
+            .eq('id', currentUser.id)
+            .single();
+          currentUserHandle = currentUserData?.handle;
+        }
+
+        let servicesQuery = supabase
           .from('services')
           .select('*')
           .eq('creator_id', user.id)
           .eq('active', true);
+
+        // Apply availability filter for public view
+        if (currentUserHandle) {
+          servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${currentUserHandle})`);
+        } else {
+          servicesQuery = servicesQuery.eq('availability_type', 'everyone');
+        }
+
+        const { data: servicesData, error: servicesError } = await servicesQuery;
 
         if (servicesError) {
           console.error('Error fetching services:', servicesError);

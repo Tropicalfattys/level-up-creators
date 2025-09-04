@@ -102,11 +102,32 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       // For each creator, get their services data
       const creatorsWithServices = await Promise.all(
         creatorsData.map(async (creator) => {
-          const { data: services, error: servicesError } = await supabase
+          // Get current user's handle for availability filtering
+          const { data: { user } } = await supabase.auth.getUser();
+          let userHandle = null;
+          if (user) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('handle')
+              .eq('id', user.id)
+              .single();
+            userHandle = userData?.handle;
+          }
+
+          let servicesQuery = supabase
             .from('services')
             .select('price_usdc, delivery_days, title, description, category')
             .eq('creator_id', creator.user_id)
             .eq('active', true);
+
+          // Apply availability filter
+          if (userHandle) {
+            servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
+          } else {
+            servicesQuery = servicesQuery.eq('availability_type', 'everyone');
+          }
+
+          const { data: services, error: servicesError } = await servicesQuery;
 
           if (servicesError) {
             console.error('Error fetching services for creator:', creator.user_id, servicesError);

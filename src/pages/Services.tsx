@@ -24,6 +24,18 @@ export default function Services() {
     queryFn: async () => {
       console.log('Fetching services with filters:', { selectedCategory, sortBy, searchQuery, priceRange });
       
+      // Get current user's handle for availability filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let userHandle = null;
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('handle')
+          .eq('id', user.id)
+          .single();
+        userHandle = userData?.handle;
+      }
+      
       // First get services with basic filtering
       let servicesQuery = supabase
         .from('services')
@@ -37,9 +49,21 @@ export default function Services() {
           payment_method,
           active,
           created_at,
-          creator_id
+          creator_id,
+          availability_type,
+          target_username
         `)
         .eq('active', true);
+
+      // Apply availability filter - show services that are either:
+      // 1. Available to everyone, OR
+      // 2. Available to select user AND current user matches target username
+      if (userHandle) {
+        servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
+      } else {
+        // If user not logged in, only show services available to everyone
+        servicesQuery = servicesQuery.eq('availability_type', 'everyone');
+      }
 
       // Apply category filter
       if (selectedCategory) {

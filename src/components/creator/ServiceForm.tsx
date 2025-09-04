@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,8 @@ interface Service {
   category: string;
   payment_method: string;
   active: boolean;
+  availability_type: string;
+  target_username?: string;
 }
 
 interface ServiceFormProps {
@@ -38,6 +41,8 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
     category: service?.category || 'ama',
     payment_method: service?.payment_method || 'ethereum_usdc',
     active: service?.active ?? true,
+    availability_type: service?.availability_type || 'everyone',
+    target_username: service?.target_username || '',
   });
 
   const { user } = useAuth();
@@ -53,6 +58,8 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
       category: service?.category || 'ama',
       payment_method: service?.payment_method || 'ethereum_usdc',
       active: service?.active ?? true,
+      availability_type: service?.availability_type || 'everyone',
+      target_username: service?.target_username || '',
     });
   }, [service]);
 
@@ -175,6 +182,12 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
       return;
     }
 
+    // Validate target username when select_user is chosen
+    if (formData.availability_type === 'select_user' && !formData.target_username?.trim()) {
+      toast.error('Please specify a username when creating a service for a specific user');
+      return;
+    }
+
     // Additional check for service limits on new services
     if (!service?.id && serviceLimitCheck && !serviceLimitCheck.canCreate) {
       toast.error(`Service limit reached. Your ${serviceLimitCheck.tier} tier allows up to ${serviceLimitCheck.limit} services.`);
@@ -210,120 +223,156 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Service Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="e.g., Trading Strategy Review"
-              className="mt-1"
-              disabled={showLimitWarning}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Describe what you'll deliver to clients..."
-              rows={3}
-              className="mt-1"
-              disabled={showLimitWarning}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="price">Price (USDC) *</Label>
+              <Label htmlFor="title">Service Title *</Label>
               <Input
-                id="price"
-                type="number"
-                min="10"
-                step="0.01"
-                value={formData.price_usdc}
-                onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 10)}
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleChange('title', e.target.value)}
+                placeholder="e.g., Trading Strategy Review"
                 className="mt-1"
                 disabled={showLimitWarning}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="Describe what you'll deliver to clients..."
+                rows={3}
+                className="mt-1"
+                disabled={showLimitWarning}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="availability">Availability *</Label>
+              <Select 
+                value={formData.availability_type} 
+                onValueChange={(value) => handleChange('availability_type', value)}
+                disabled={showLimitWarning}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="everyone">Everyone</SelectItem>
+                  <SelectItem value="select_user">Select User</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.availability_type === 'select_user' && (
+              <div>
+                <Label htmlFor="target-username">Target Username *</Label>
+                <Input
+                  id="target-username"
+                  value={formData.target_username}
+                  onChange={(e) => handleChange('target_username', e.target.value)}
+                  placeholder="Enter username of specific client"
+                  className="mt-1"
+                  disabled={showLimitWarning}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only this user will be able to see and book this service
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">Price (USDC) *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="10"
+                  step="0.01"
+                  value={formData.price_usdc}
+                  onChange={(e) => handleChange('price_usdc', parseFloat(e.target.value) || 10)}
+                  className="mt-1"
+                  disabled={showLimitWarning}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Minimum $10 USDC
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="delivery">Delivery (Days)</Label>
+                <Input
+                  id="delivery"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={formData.delivery_days}
+                  onChange={(e) => handleChange('delivery_days', parseInt(e.target.value) || 3)}
+                  className="mt-1"
+                  disabled={showLimitWarning}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category *</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => handleChange('category', value)}
+                disabled={showLimitWarning}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="payment-method">Payment Method *</Label>
+              <Select 
+                value={formData.payment_method} 
+                onValueChange={(value) => handleChange('payment_method', value)}
+                disabled={showLimitWarning}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
+                    <SelectItem key={key} value={key}>
+                      {method.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Minimum $10 USDC
+                Choose which network/token you want to receive for this service
               </p>
             </div>
-            <div>
-              <Label htmlFor="delivery">Delivery (Days)</Label>
-              <Input
-                id="delivery"
-                type="number"
-                min="1"
-                max="30"
-                value={formData.delivery_days}
-                onChange={(e) => handleChange('delivery_days', parseInt(e.target.value) || 3)}
-                className="mt-1"
-                disabled={showLimitWarning}
-              />
+
+            <div className="flex gap-3">
+              <Button variant="outline" type="button" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={mutation.isPending || showLimitWarning}
+              >
+                {mutation.isPending ? 'Saving...' : (service?.id ? 'Update' : 'Create')}
+              </Button>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="category">Category *</Label>
-            <Select 
-              value={formData.category} 
-              onValueChange={(value) => handleChange('category', value)}
-              disabled={showLimitWarning}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="payment-method">Payment Method *</Label>
-            <Select 
-              value={formData.payment_method} 
-              onValueChange={(value) => handleChange('payment_method', value)}
-              disabled={showLimitWarning}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
-                  <SelectItem key={key} value={key}>
-                    {method.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Choose which network/token you want to receive for this service
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button variant="outline" type="button" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1" 
-              disabled={mutation.isPending || showLimitWarning}
-            >
-              {mutation.isPending ? 'Saving...' : (service?.id ? 'Update' : 'Create')}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

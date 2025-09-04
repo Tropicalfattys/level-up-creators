@@ -49,11 +49,32 @@ export default function Home() {
       // Step 2: Get service counts for each creator
       const creatorsWithServiceCount = await Promise.all(
         (creatorsData || []).map(async (creator) => {
-          const { count } = await supabase
+          // Get current user's handle for availability filtering
+          const { data: { user } } = await supabase.auth.getUser();
+          let userHandle = null;
+          if (user) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('handle')
+              .eq('id', user.id)
+              .single();
+            userHandle = userData?.handle;
+          }
+
+          let countQuery = supabase
             .from('services')
             .select('*', { count: 'exact', head: true })
             .eq('creator_id', creator.user_id)
             .eq('active', true);
+
+          // Apply availability filter
+          if (userHandle) {
+            countQuery = countQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
+          } else {
+            countQuery = countQuery.eq('availability_type', 'everyone');
+          }
+
+          const { count } = await countQuery;
 
           return {
             ...creator,

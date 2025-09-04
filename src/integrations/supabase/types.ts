@@ -814,6 +814,7 @@ export type Database = {
       services: {
         Row: {
           active: boolean | null
+          availability_type: string
           category: string | null
           created_at: string | null
           creator_id: string | null
@@ -822,11 +823,13 @@ export type Database = {
           id: string
           payment_method: string | null
           price_usdc: number | null
+          target_username: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
           active?: boolean | null
+          availability_type?: string
           category?: string | null
           created_at?: string | null
           creator_id?: string | null
@@ -835,11 +838,13 @@ export type Database = {
           id?: string
           payment_method?: string | null
           price_usdc?: number | null
+          target_username?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
           active?: boolean | null
+          availability_type?: string
           category?: string | null
           created_at?: string | null
           creator_id?: string | null
@@ -848,6 +853,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           price_usdc?: number | null
+          target_username?: string | null
           title?: string
           updated_at?: string | null
         }

@@ -19,6 +19,8 @@ interface Service {
   category: string;
   payment_method: string;
   active: boolean;
+  availability_type: string;
+  target_username?: string;
 }
 
 export const CreatorServices = () => {
