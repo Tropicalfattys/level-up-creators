@@ -255,7 +255,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'nft': { icon: '🎨', displayName: 'NFT' },
       'trading': { icon: '📈', displayName: 'Trading' },
       'development': { icon: '💻', displayName: 'Dev' },
-      'marketing': { icon: '📢', displayName: 'Marketing' },
+      'marketing': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Marketing-removebg-preview.png', displayName: 'Marketing' },
       'content': { icon: '✍️', displayName: 'Content' },
       'education': { icon: '🎓', displayName: 'Education' },
       'consulting': { icon: '💼', displayName: 'Consulting' },
