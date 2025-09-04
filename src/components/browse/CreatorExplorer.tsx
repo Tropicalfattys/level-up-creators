@@ -256,6 +256,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'trading': { icon: '📈', displayName: 'Trading' },
       'development': { icon: '💻', displayName: 'Dev' },
       'marketing': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Marketing-removebg-preview.png', displayName: 'Marketing' },
+      'branding': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Branding-removebg-preview.png', displayName: 'Branding' },
       'content': { icon: '✍️', displayName: 'Content' },
       'education': { icon: '🎓', displayName: 'Education' },
       'consulting': { icon: '💼', displayName: 'Consulting' },
