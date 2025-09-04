@@ -273,6 +273,8 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'discord': { icon: '💬', displayName: 'Discord' },
       'tiktok': { icon: '🎵', displayName: 'TikTok' },
       'linkedin': { icon: '💼', displayName: 'LinkedIn' },
+      'reels': { icon: '🎬', displayName: 'Reels' },
+      'contest': { icon: '🏆', displayName: 'Contest' },
       // Missing categories that exist in database
       'other': { icon: '📁', displayName: 'Other Services' },
       'music': { icon: '🎵', displayName: 'Music Production' }

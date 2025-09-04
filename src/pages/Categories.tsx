@@ -26,6 +26,10 @@ const iconMap: Record<string, any> = {
   reddit: Hash,
   memes: Zap,
   music: Music,
+  tiktok: Music,
+  linkedin: Target,
+  reels: Video,
+  contest: Trophy,
   other: MoreHorizontal
 };
 
