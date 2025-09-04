@@ -267,24 +267,25 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'writing': { icon: '📝', displayName: 'Writing' },
       'community': { icon: '🤝', displayName: 'Community' },
       'memes': { icon: '😂', displayName: 'Memes' },
+      'reddit': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Reddit-removebg-preview.png', displayName: 'Reddit' },
       'research': { icon: '🔬', displayName: 'Research' },
       'youtube': { icon: '📺', displayName: 'YouTube' },
       'telegram': { icon: '📱', displayName: 'Telegram' },
       'discord': { icon: '💬', displayName: 'Discord' },
-      'tiktok': { icon: '🎵', displayName: 'TikTok' },
+      'tiktok': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Tiktok-removebg-preview.png', displayName: 'TikTok' },
       'linkedin': { icon: '💼', displayName: 'LinkedIn' },
       'reels': { icon: '🎬', displayName: 'Reels' },
       'contest': { icon: '🏆', displayName: 'Contest' },
       // Missing categories that exist in database
       'other': { icon: '📁', displayName: 'Other Services' },
-      'music': { icon: '🎵', displayName: 'Music Production' }
+      'music': { image: 'https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Music-removebg-preview.png', displayName: 'Music' }
     };
     const result = categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
     console.log('Category mapping result:', { categoryValue, result });
     return result;
   };
 
-  const categoryIcons = categories?.slice(0, 8).map(category => {
+  const categoryIcons = categories?.slice(0, 11).map(category => {
     const categoryData = getCategoryData(category.value);
     return {
       name: categoryData.displayName,
