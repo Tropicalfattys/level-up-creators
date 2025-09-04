@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { createTransferInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { USDC_CONTRACTS, PLATFORM_WALLETS, USDC_ABI } from './contracts';
+import { USDC_CONTRACTS, getPlatformWallet, USDC_ABI } from './contracts';
 import { detectMetaMask, detectPhantom, requestWalletConnection } from './walletDetection';
 
 export interface PaymentResult {
@@ -77,12 +77,15 @@ export const processEthereumPayment = async (
       throw new Error(`Insufficient USDC balance. You have ${balanceFormatted} USDC but need ${amount} USDC.`);
     }
 
+    // Get dynamic platform wallet address
+    const platformWallet = await getPlatformWallet(chain);
+    console.log('Transferring', amount, 'USDC to', platformWallet);
+
     // Convert amount to USDC format (6 decimals)
     const amountWei = ethers.utils.parseUnits(amount.toString(), 6);
-    console.log('Transferring', amount, 'USDC to', PLATFORM_WALLETS[chain]);
     
     // Execute USDC transfer to platform wallet
-    const tx = await usdcContract.transfer(PLATFORM_WALLETS[chain], amountWei);
+    const tx = await usdcContract.transfer(platformWallet, amountWei);
     console.log('Transaction sent:', tx.hash);
     
     const receipt = await tx.wait();
@@ -132,7 +135,8 @@ export const processSolanaPayment = async (amount: number): Promise<PaymentResul
     
     // USDC mint and platform wallet public keys
     const usdcMint = new PublicKey(USDC_CONTRACTS.solana);
-    const toPubkey = new PublicKey(PLATFORM_WALLETS.solana);
+    const platformWallet = await getPlatformWallet('solana');
+    const toPubkey = new PublicKey(platformWallet);
 
     // Get associated token accounts
     const fromTokenAccount = await getAssociatedTokenAddress(usdcMint, fromPubkey);
@@ -166,7 +170,7 @@ export const processSolanaPayment = async (amount: number): Promise<PaymentResul
 
     // Convert amount to USDC format (6 decimals)
     const amountLamports = amount * 1_000_000;
-    console.log('Transferring', amount, 'USDC to', PLATFORM_WALLETS.solana);
+    console.log('Transferring', amount, 'USDC to', platformWallet);
 
     // Create transfer instruction
     const transferInstruction = createTransferInstruction(

@@ -1,18 +1,18 @@
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PLATFORM_WALLETS, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
+import { getPlatformWallet, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
 
 interface PaymentInstructionsProps {
   paymentMethod: string;
@@ -42,7 +42,14 @@ export const PaymentInstructions = ({
 
   const paymentConfig = PAYMENT_METHODS[paymentMethod as keyof typeof PAYMENT_METHODS];
   const networkConfig = NETWORK_CONFIG[paymentConfig.network as keyof typeof NETWORK_CONFIG];
-  const adminWallet = PLATFORM_WALLETS[paymentConfig.network as keyof typeof PLATFORM_WALLETS];
+  
+  // Fetch dynamic platform wallet address
+  const { data: adminWallet, isLoading: walletLoading, error: walletError } = useQuery({
+    queryKey: ['platform-wallet', paymentConfig.network],
+    queryFn: () => getPlatformWallet(paymentConfig.network),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 1
+  });
 
   const submitPayment = useMutation({
     mutationFn: async (transactionHash: string) => {
@@ -174,6 +181,34 @@ export const PaymentInstructions = ({
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard!`);
   };
+
+  // Show loading state while fetching wallet address
+  if (walletLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6 flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading payment details...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error if wallet address fetch failed
+  if (walletError || !adminWallet) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <span>Unable to load payment address. Please try again.</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
