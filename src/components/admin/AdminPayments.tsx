@@ -428,9 +428,10 @@ export const AdminPayments = () => {
 
   return (
     <Tabs defaultValue="payment-management" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="payment-management">Payment Management</TabsTrigger>
         <TabsTrigger value="payouts">Payouts</TabsTrigger>
+        <TabsTrigger value="escrow">Escrow</TabsTrigger>
       </TabsList>
 
       <TabsContent value="payment-management">
@@ -439,6 +440,22 @@ export const AdminPayments = () => {
 
       <TabsContent value="payouts">
         <AdminPayouts />
+      </TabsContent>
+
+      <TabsContent value="escrow">
+        <Card>
+          <CardHeader>
+            <CardTitle>Escrow Management</CardTitle>
+            <CardDescription>
+              Manage escrow holdings and release funds for completed bookings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center text-muted-foreground py-8">
+              Escrow management functionality will be implemented here.
+            </div>
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );
