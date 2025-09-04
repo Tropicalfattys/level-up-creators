@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Users, CreditCard, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
+import { Search, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Carousel,
@@ -135,7 +135,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mt-12">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="h-8 w-8 text-white" />
+                <img src="/lovable-uploads/72ebac55-1c1c-4eea-bb11-d2d24fbde35d.png" alt="Find Your Creator" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">1. Find Your Creator</h3>
               <p className="text-muted-foreground">Choose from vetted crypto influencers across multiple platforms.</p>
@@ -143,7 +143,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <CreditCard className="h-8 w-8 text-white" />
+                <img src="/lovable-uploads/6cc84c25-659f-4fcf-8569-7bd7c0e9f4b6.png" alt="Book & Pay in USDC" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">2. Book & Pay in USDC</h3>
               <p className="text-muted-foreground">Simple checkout via ANY crypto wallet, no middlemen.</p>
@@ -151,7 +151,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="h-8 w-8 text-white" />
+                <img src="/lovable-uploads/c4671443-f5f8-46d9-af4b-5f87b025b0f9.png" alt="Get Your Content or Service" className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-4">3. Get Your Content or Service</h3>
               <p className="text-muted-foreground">From AMAs to full marketing campaigns, creators deliver exactly what you need at the price that fits your budget.</p>
