@@ -249,6 +249,9 @@ export const AdminCreators = () => {
                     <div><strong>Headline:</strong> {selectedCreator.headline}</div>
                     <div><strong>Bio:</strong> {selectedCreator.users?.bio}</div>
                     <div><strong>Tier:</strong> {selectedCreator.tier}</div>
+                    {selectedCreator.approved && selectedCreator.approved_at && (
+                      <div><strong>Active Subscription Date:</strong> {new Date(selectedCreator.approved_at).toLocaleDateString()}</div>
+                    )}
                     <div><strong>Category:</strong> {selectedCreator.category}</div>
                   </div>
                 </div>
