@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReferralStats } from './ReferralStats';
@@ -148,7 +150,33 @@ export const ReferralSystem = () => {
       {/* Right Column - How It Works */}
       <Card>
         <CardHeader>
-          <CardTitle>How It Works</CardTitle>
+          <CardTitle className="flex flex-col gap-2">
+            How It Works
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <span className="text-xs bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent cursor-pointer hover:underline">
+                  Important Information
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-96 p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+                <ScrollArea className="h-96">
+                  <div className="p-6">
+                    <h4 className="text-lg font-semibold mb-4">Referral Program Disclaimer</h4>
+                    <div className="space-y-4 text-sm text-muted-foreground">
+                      <p>By participating in the Leveled Up Referral Program, users agree to the following terms:</p>
+                      <ul className="space-y-2 list-disc pl-4">
+                        <li><strong>Eligibility:</strong> Referral credits are earned when a new user signs up through your referral link, successfully books, and pays for their first service.</li>
+                        <li><strong>Credit Value:</strong> Each successful referral earns you $1 in referral credits. Credits have no cash value and may only be used within the Leveled Up platform.</li>
+                        <li><strong>Credit Availability:</strong> While credits can be earned during the beta phase, they will not be available for use until November 1, 2025, following the conclusion of the beta phase on October 31, 2025.</li>
+                        <li><strong>Usage:</strong> Starting November 1, 2025, referral credits may be applied toward eligible services on the Leveled Up platform.</li>
+                        <li><strong>Limitations:</strong> Referral credits are non-transferable, non-refundable, and may not be redeemed for cash or cryptocurrency. Leveled Up reserves the right to adjust or modify the referral program at any time.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </HoverCardContent>
+            </HoverCard>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
