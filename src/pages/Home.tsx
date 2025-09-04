@@ -379,14 +379,14 @@ export default function Home() {
                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden">
                            <div className="hover:scale-105 transition-transform duration-300">
                              <CardContent className="p-6 text-center">
-                               <div className="mb-4">
-                                 <Avatar className="w-16 h-16 mx-auto">
-                                   <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
-                                   <AvatarFallback className="text-lg font-semibold">
-                                     {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
-                                   </AvatarFallback>
-                                 </Avatar>
-                               </div>
+                                <div className="mb-4">
+                                  <Avatar className="w-28 h-28 mx-auto">
+                                    <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
+                                    <AvatarFallback className="text-lg font-semibold">
+                                      {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
                                <div className="flex items-center justify-center gap-2 mb-2">
                                  <h3 className="text-lg font-semibold">@{creator.users.handle}</h3>
                                  <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
