@@ -210,7 +210,7 @@ export default function Home() {
           </h1>
           
           <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto">
-            Connect directly with trusted & influential creators across Twitter (X), Facebook, Instagram, LinkedIn, TikTok, YouTube, Discord, & Telegram. Book everything from AMA's, Twitter, spaces, full marketing campaigns, project reviews, product tutorials, & more. All services paid in crypto stable coins on all major blockchains & safeguarded by escrow.
+            Connect directly with trusted & influential creators across Twitter (X), Facebook, Instagram, LinkedIn, TikTok, YouTube, Discord, & Telegram. Book everything from AMA's, Twitter spaces, full marketing campaigns, project reviews, product tutorials, & more. All services paid in crypto stable coins on all major blockchains & safeguarded by escrow.
           </p>
 
           {/* CTA Buttons */}
