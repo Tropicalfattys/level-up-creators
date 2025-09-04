@@ -272,7 +272,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       'telegram': { icon: '📱', displayName: 'Telegram' },
       'discord': { icon: '💬', displayName: 'Discord' },
       'tiktok': { icon: '🎵', displayName: 'TikTok' },
-      'linkedin': { icon: '💼', displayName: 'LinkedIn' }
+      'linkedin': { icon: '💼', displayName: 'LinkedIn' },
+      // Missing categories that exist in database
+      'other': { icon: '📁', displayName: 'Other Services' },
+      'music': { icon: '🎵', displayName: 'Music Production' }
     };
     const result = categoryMap[categoryValue] || { icon: '📁', displayName: categoryValue };
     console.log('Category mapping result:', { categoryValue, result });
