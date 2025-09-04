@@ -130,7 +130,7 @@ export default function Home() {
       {/* How It Works Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Level Up Your Marketing in 3 Easy Steps</h2>
+          <h2 className="text-4xl font-bold text-center mb-4">Level Up Your Marketing in 3 Easy Steps</h2>
           
           <div className="grid md:grid-cols-3 gap-8 mt-12">
             <div className="text-center">
