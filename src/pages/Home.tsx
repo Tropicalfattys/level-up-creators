@@ -237,25 +237,25 @@ export default function Home() {
           
           <div className="grid md:grid-cols-4 gap-8 mt-12">
             <div className="text-center">
-              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Find_Your_Creator-removebg-preview.png" alt="Find Your Creator" className="mx-auto mb-6 h-20 w-20" />
+              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Find_Your_Creator-removebg-preview.png" alt="Find Your Creator" className="mx-auto mb-6 h-24 w-24" />
               <h3 className="text-xl font-semibold mb-4">1. Find Your Creator</h3>
               <p className="text-muted-foreground">Find the right creator or influencer for your needs—any platform, any expertise, any budget.</p>
             </div>
             
             <div className="text-center">
-              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/chat_image.png" alt="Instant Chat" className="mx-auto mb-6 h-20 w-20" />
+              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/chat_image.png" alt="Instant Chat" className="mx-auto mb-6 h-24 w-24" />
               <h3 className="text-xl font-semibold mb-4">2. Instant Chat</h3>
               <p className="text-muted-foreground">Instantly chat with influencers and stay in touch throughout the whole transaction, ensuring your ideas and goals are carried out.</p>
             </div>
             
             <div className="text-center">
-              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Book___Pay_in_USDC-removebg-preview.png" alt="Book & Pay in USDC" className="mx-auto mb-6 h-20 w-20" />
+              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Book___Pay_in_USDC-removebg-preview.png" alt="Book & Pay in USDC" className="mx-auto mb-6 h-24 w-24" />
               <h3 className="text-xl font-semibold mb-4">3. Book & Pay in USDC</h3>
               <p className="text-muted-foreground">Simple checkout via ANY crypto wallet that you hold USDC or USDM on Ethereum, Solana, BSC, SUI, or Cardano.</p>
             </div>
             
             <div className="text-center">
-              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Get_Your_Content_or_Service-removebg-preview.png" alt="Get Your Content or Service" className="mx-auto mb-6 h-20 w-20" />
+              <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Get_Your_Content_or_Service-removebg-preview.png" alt="Get Your Content or Service" className="mx-auto mb-6 h-24 w-24" />
               <h3 className="text-xl font-semibold mb-4">4. Get Your Content or Service</h3>
               <p className="text-muted-foreground">From AMAs to full marketing campaigns, creators deliver exactly what you need at the price that fits your budget.</p>
             </div>
