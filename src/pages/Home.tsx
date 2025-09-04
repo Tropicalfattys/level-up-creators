@@ -106,7 +106,6 @@ export default function Home() {
           reviewer_id,
           booking_id,
           bookings!inner(
-            service_id,
             services!inner(title)
           ),
           users!reviewer_id(handle)
@@ -120,7 +119,8 @@ export default function Home() {
         throw error;
       }
 
-      console.log('5-star reviews found:', data?.length || 0);
+      console.log('Raw testimonials data:', data);
+      console.log('Number of 5-star reviews found:', data?.length || 0);
       
       return data || [];
     },
@@ -424,9 +424,9 @@ export default function Home() {
                         <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
-                    <h3 className="font-semibold mb-2">{testimonial.bookings.services.title}</h3>
+                    <h3 className="font-semibold mb-2">{testimonial.bookings?.services?.title}</h3>
                     <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.comment}"</p>
-                    <div className="text-xs text-muted-foreground">@{testimonial.users.handle}</div>
+                    <div className="text-xs text-muted-foreground">@{testimonial.users?.handle}</div>
                   </CardContent>
                 </Card>
               ))}
