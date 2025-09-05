@@ -76,8 +76,12 @@ export default function HowItWorks() {
                   </div>
                 </CardHeader>
                 <CardContent className="lg:py-12">
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
-                    <Search className="h-16 w-16 text-primary" />
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <img 
+                      src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Browse%20&%20Select.jpg" 
+                      alt="Browse and Select creators interface"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </CardContent>
               </div>
