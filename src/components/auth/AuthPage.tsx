@@ -9,6 +9,7 @@ import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn, signUp, signInWithProvider, resetPassword } from '@/lib/auth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -22,6 +23,10 @@ export const AuthPage = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -32,6 +37,63 @@ export const AuthPage = () => {
       setReferralCode(refParam);
     }
   }, [searchParams]);
+
+  // Check for password reset tokens in URL
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
+    
+    if (accessToken && refreshToken && type === 'recovery') {
+      setIsPasswordReset(true);
+      // Set the session with the tokens from URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+    }
+  }, [searchParams]);
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordUpdateLoading) return;
+
+    if (!newPassword || !confirmPassword) {
+      setError('Please fill in both password fields.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    setPasswordUpdateLoading(true);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        toast.success('Password updated successfully!');
+        // Clear URL parameters and redirect to home
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setPasswordUpdateLoading(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +216,71 @@ export const AuthPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {showResetPassword ? (
+          {isPasswordReset ? (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Set New Password</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Please enter your new password below.
+                </p>
+              </div>
+              
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={passwordUpdateLoading}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={passwordUpdateLoading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={passwordUpdateLoading}
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <Alert className="py-2">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button type="submit" className="w-full" disabled={passwordUpdateLoading}>
+                  {passwordUpdateLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Update Password
+                </Button>
+              </form>
+            </div>
+          ) : showResetPassword ? (
             <div className="space-y-4">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Reset Password</h3>
