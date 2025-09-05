@@ -304,7 +304,7 @@ export default function Home() {
                 };
 
                 return (
-                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/3 md:basis-1/3 lg:basis-1/5">
+                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-3/4 md:basis-1/3 lg:basis-1/5">
                     <Link to={`/browse?category=${getCategoryFromService(service.name)}`}>
                       <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
                         <div className="hover:scale-105 transition-transform duration-300">
