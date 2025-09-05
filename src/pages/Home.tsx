@@ -333,8 +333,8 @@ export default function Home() {
             The First Creator <span className="md:inline block">Market<br className="md:hidden" />place</span> Built for Web3
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2 md:px-0">
-            <Card className="bg-card border-border w-full md:max-w-none">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mx-8 px-8 md:mx-0 md:px-0">
+            <Card className="bg-card border-border mx-auto w-[200%] max-w-none md:w-auto md:max-w-none">
               <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Crypto-Native_Payments.png" alt="Crypto-Native Payments" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Crypto-Native Payments</h3>
@@ -342,7 +342,7 @@ export default function Home() {
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border w-full md:max-w-none">
+            <Card className="bg-card border-border mx-auto w-[200%] max-w-none md:w-auto md:max-w-none">
               <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
@@ -350,7 +350,7 @@ export default function Home() {
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border w-full md:max-w-none">
+            <Card className="bg-card border-border mx-auto w-[200%] max-w-none md:w-auto md:max-w-none">
               <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach-removebg-preview.png" alt="Cross-Platform Reach" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Cross-Platform Reach</h3>
