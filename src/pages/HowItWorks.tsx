@@ -56,7 +56,7 @@ export default function HowItWorks() {
                     Find the right creator for your project.
                     Scroll through a wide range of verified crypto creators across categories like trading, DeFi, SocialFi, NFTs, gaming, music, memes, and more.
                   </CardDescription>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Search className="h-5 w-5 text-primary" />
                       <span>Search & filter by category, price, delivery time, or blockchain preference</span>
@@ -109,7 +109,7 @@ export default function HowItWorks() {
                   <CardDescription className="text-lg mb-6">
                     Easily complete your order with secure crypto payments.
                   </CardDescription>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-green-600" />
                       <span>Escrow protection — funds are only released when you approve the work</span>
@@ -149,7 +149,7 @@ export default function HowItWorks() {
                     Connect with your creator right away and share project details.
                     Share details, requirements, and track progress in real-time.
                   </CardDescription>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-5 w-5 text-blue-600" />
                       <span>Real-time messaging to stay aligned from start to finish</span>
@@ -203,7 +203,7 @@ export default function HowItWorks() {
                     Get your custom content delivered & celebrate the results.
                     When your creator delivers, you'll have 3 days to review before escrow releases payment.
                   </CardDescription>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Upload className="h-5 w-5 text-purple-600" />
                       <span>Exciting delivery experience — videos, files, or links all delivered securely in-platform</span>
