@@ -385,64 +385,68 @@ export default function Home() {
               ))}
             </div>
             ) : proCreators.length > 0 ? (
-             <div className="relative px-16">
-               <Carousel
-                 opts={{
-                   align: "start",
-                   loop: true,
-                 }}
-                 plugins={[
-                   Autoplay({
-                     delay: 4000,
-                     stopOnInteraction: false,
-                   }),
-                 ]}
-                 className="w-full max-w-6xl mx-auto"
-               >
-                 <CarouselContent className="-ml-2 md:-ml-4">
-                    {proCreators.map((creator) => (
-                      <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
-                       <Link to={`/profile/${creator.users.handle}`}>
-                         <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden">
-                           <div className="hover:scale-105 transition-transform duration-300">
-                             <CardContent className="p-6 text-center">
-                                <div className="mb-4">
-                                  <Avatar className="w-48 h-48 mx-auto">
-                                    <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
-                                    <AvatarFallback className="text-lg font-semibold">
-                                      {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
-                                    </AvatarFallback>
-                                  </Avatar>
+             <div className="relative px-2 md:px-16">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  plugins={[
+                    Autoplay({
+                      delay: 4000,
+                      stopOnInteraction: false,
+                    }),
+                  ]}
+                  className="w-full max-w-6xl mx-auto"
+                >
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                     {proCreators.map((creator) => (
+                       <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                        <Link to={`/profile/${creator.users.handle}`}>
+                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden w-[200%] -mx-[50%] md:w-auto md:mx-0">
+                            <div className="hover:scale-105 transition-transform duration-300">
+                              <CardContent className="p-6 text-center">
+                                 <div className="mb-4">
+                                   <Avatar className="w-48 h-48 mx-auto">
+                                     <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
+                                     <AvatarFallback className="text-lg font-semibold">
+                                       {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
+                                     </AvatarFallback>
+                                   </Avatar>
+                                 </div>
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                  <h3 className="text-lg font-semibold">@{creator.users.handle}</h3>
+                                  <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
+                                    Pro
+                                  </Badge>
                                 </div>
-                               <div className="flex items-center justify-center gap-2 mb-2">
-                                 <h3 className="text-lg font-semibold">@{creator.users.handle}</h3>
-                                 <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
-                                   Pro
-                                 </Badge>
-                               </div>
-                               <div className="flex items-center justify-center gap-1 mb-3">
-                                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                 <span className="text-sm font-medium">
-                                   {creator.rating ? Number(creator.rating).toFixed(1) : '5.0'}
-                                 </span>
-                                 <span className="text-xs text-muted-foreground">
-                                   ({creator.review_count || 0} reviews)
-                                 </span>
-                               </div>
-                               <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                                 {creator.serviceCount} {creator.serviceCount === 1 ? 'service' : 'services'} available
-                               </Badge>
-                             </CardContent>
-                           </div>
-                         </Card>
-                       </Link>
-                     </CarouselItem>
-                   ))}
-                 </CarouselContent>
-                  <CarouselPrevious className="flex" />
-                  <CarouselNext className="flex" />
-               </Carousel>
-             </div>
+                                <div className="flex items-center justify-center gap-1 mb-3">
+                                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                  <span className="text-sm font-medium">
+                                    {creator.rating ? Number(creator.rating).toFixed(1) : '5.0'}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({creator.review_count || 0} reviews)
+                                  </span>
+                                </div>
+                                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                  {creator.serviceCount} {creator.serviceCount === 1 ? 'service' : 'services'} available
+                                </Badge>
+                              </CardContent>
+                            </div>
+                          </Card>
+                        </Link>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                   <CarouselPrevious className="hidden md:flex" />
+                   <CarouselNext className="hidden md:flex" />
+                   
+                   {/* Mobile arrows */}
+                   <CarouselPrevious className="flex md:hidden -left-2 bg-background/90 hover:bg-background border-2 border-border shadow-lg" />
+                   <CarouselNext className="flex md:hidden -right-2 bg-background/90 hover:bg-background border-2 border-border shadow-lg" />
+                </Carousel>
+              </div>
            ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {[
