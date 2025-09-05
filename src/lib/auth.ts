@@ -88,7 +88,7 @@ export const signInWithProvider = async (provider: 'google' | 'twitter') => {
 
 export const resetPassword = async (email: string) => {
   try {
-    const redirectUrl = `${window.location.origin}/auth`;
+    const redirectUrl = `${window.location.origin}/auth?type=password-reset`;
     
     console.log('Password reset attempt for:', email);
     

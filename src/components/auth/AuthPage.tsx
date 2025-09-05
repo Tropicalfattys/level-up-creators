@@ -30,28 +30,47 @@ export const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Set referral code from URL params
+  // Set referral code from URL params and detect password reset flow
   useEffect(() => {
     const refParam = searchParams.get('ref');
+    const typeParam = searchParams.get('type');
+    
     if (refParam) {
       setReferralCode(refParam);
     }
+    
+    // Check if this is a password reset flow
+    if (typeParam === 'password-reset') {
+      setIsPasswordReset(true);
+    }
   }, [searchParams]);
 
-  // Check for password reset tokens in URL
+  // Monitor auth state changes for password reset sessions
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
-    
-    if (accessToken && refreshToken && type === 'recovery') {
-      setIsPasswordReset(true);
-      // Set the session with the tokens from URL
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // If we detect a session during password reset flow, keep the reset form visible
+        const typeParam = searchParams.get('type');
+        if (session && typeParam === 'password-reset' && event === 'TOKEN_REFRESHED') {
+          setIsPasswordReset(true);
+        }
+      }
+    );
+
+    // Also check for existing session on mount during password reset
+    const checkSession = async () => {
+      const typeParam = searchParams.get('type');
+      if (typeParam === 'password-reset') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsPasswordReset(true);
+        }
+      }
+    };
+
+    checkSession();
+
+    return () => subscription.unsubscribe();
   }, [searchParams]);
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -277,6 +296,22 @@ export const AuthPage = () => {
                 <Button type="submit" className="w-full" disabled={passwordUpdateLoading}>
                   {passwordUpdateLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Update Password
+                </Button>
+
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsPasswordReset(false);
+                    setError('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    // Clear URL parameters by navigating to clean auth page
+                    navigate('/auth', { replace: true });
+                  }}
+                >
+                  Back to Sign In
                 </Button>
               </form>
             </div>
