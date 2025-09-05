@@ -303,25 +303,29 @@ export default function Home() {
                   return serviceMapping[serviceName] || 'all';
                 };
 
-                return (
-                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-3/4 md:basis-1/3 lg:basis-1/5">
-                    <Link to={`/browse?category=${getCategoryFromService(service.name)}`}>
-                      <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
-                        <div className="hover:scale-105 transition-transform duration-300">
-                          <CardContent className="p-4 text-center">
-                            <service.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                            <h3 className="font-semibold text-sm mb-2">{service.name}</h3>
-                            <p className="text-xs text-muted-foreground">{service.description}</p>
-                          </CardContent>
-                        </div>
-                      </Card>
-                    </Link>
-                  </CarouselItem>
-                );
+                 return (
+                   <CarouselItem key={index} className="pl-2 md:pl-4 basis-full md:basis-1/3 lg:basis-1/5">
+                     <Link to={`/browse?category=${getCategoryFromService(service.name)}`}>
+                       <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border w-[125%] h-[125%] -mx-[12.5%] md:w-auto md:h-auto md:mx-0">
+                         <div className="hover:scale-105 transition-transform duration-300">
+                           <CardContent className="p-6 md:p-4 text-center">
+                             <service.icon className="h-10 w-10 md:h-8 md:w-8 mx-auto mb-4 md:mb-3 text-primary" />
+                             <h3 className="font-semibold text-base md:text-sm mb-3 md:mb-2">{service.name}</h3>
+                             <p className="text-sm md:text-xs text-muted-foreground">{service.description}</p>
+                           </CardContent>
+                         </div>
+                       </Card>
+                     </Link>
+                   </CarouselItem>
+                 );
               })}
             </CarouselContent>
-            <CarouselPrevious className="flex" />
-            <CarouselNext className="flex" />
+             <CarouselPrevious className="hidden md:flex" />
+             <CarouselNext className="hidden md:flex" />
+             
+             {/* Mobile arrows */}
+             <CarouselPrevious className="flex md:hidden -left-4 bg-background/90 hover:bg-background border-2 border-border shadow-lg" />
+             <CarouselNext className="flex md:hidden -right-4 bg-background/90 hover:bg-background border-2 border-border shadow-lg" />
           </Carousel>
         </div>
       </section>
