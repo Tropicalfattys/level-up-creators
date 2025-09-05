@@ -254,9 +254,28 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Complete your profile, choose your membership tier, and wait for approval. 
-                  Pro creators can upload intro videos for better visibility.
+                  Create your profile and join the marketplace.
+                  Sign up, add your socials, and tell us what you offer. Once approved, your profile is live and ready to attract clients.
                 </CardDescription>
+                
+                <div className="space-y-6 mt-6">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Free plan includes up to 5 active services</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Fast approvals so you can start selling quickly</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Verified profile builds client trust</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Upgrade to Creator Plus or Pro for more services, higher rankings, and homepage features</div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
