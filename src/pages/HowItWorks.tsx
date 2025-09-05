@@ -12,7 +12,9 @@ import {
   Shield, 
   Star,
   Wallet,
-  Clock
+  Clock,
+  Wrench,
+  BadgeDollarSign
 } from 'lucide-react';
 
 export default function HowItWorks() {
@@ -285,7 +287,7 @@ export default function HowItWorks() {
               <Card className="bg-card border-0 h-full">
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CreditCard className="h-8 w-8 text-primary" />
+                    <Wrench className="h-8 w-8 text-primary" />
                   </div>
                   <CardTitle>Set Your Services</CardTitle>
                 </CardHeader>
@@ -321,7 +323,7 @@ export default function HowItWorks() {
               <Card className="bg-card border-0 h-full">
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-8 w-8 text-primary" />
+                    <BadgeDollarSign className="h-8 w-8 text-primary" />
                   </div>
                   <CardTitle>Deliver & Earn</CardTitle>
                 </CardHeader>
