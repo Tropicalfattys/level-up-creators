@@ -206,15 +206,23 @@ export default function HowItWorks() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Upload className="h-5 w-5 text-purple-600" />
-                      <span>Secure content delivery</span>
+                      <span>Exciting delivery experience — videos, files, or links all delivered securely in-platform</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-purple-600" />
-                      <span>3-day review period</span>
+                      <span>3-day review period to approve or request adjustments</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Star className="h-5 w-5 text-purple-600" />
-                      <span>Rate and review experience</span>
+                      <span>Leave a rating & review to help creators grow and guide future clients</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="h-5 w-5 text-purple-600" />
+                      <span>Fair dispute resolution — our team can step in if there are issues</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-purple-600" />
+                      <span>Satisfaction guaranteed — creators only get paid when you're happy</span>
                     </div>
                   </div>
                 </CardHeader>
