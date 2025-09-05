@@ -21,9 +21,6 @@ export default function HowItWorks() {
       {/* Hero Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
         <div className="container mx-auto text-center">
-          <Badge variant="secondary" className="mb-4">
-            📚 Learn How It Works
-          </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Simple, Secure, <span className="text-primary">Fast</span>
           </h1>
