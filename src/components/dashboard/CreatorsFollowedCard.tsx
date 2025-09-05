@@ -13,11 +13,11 @@ export const CreatorsFollowedCard = () => {
     <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
       <Card className="bg-card border-0 h-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center justify-center gap-2">
             <Heart className="h-5 w-5 text-red-500" />
             Creators Followed
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-center">
             Creators you're following
           </CardDescription>
         </CardHeader>
