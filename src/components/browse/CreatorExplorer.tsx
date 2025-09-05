@@ -449,7 +449,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             <div className="text-center py-8">Loading creators...</div>
           ) : creators && creators.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {creators.map((creator) => (
+              {creators.map((creator) => (
                   <Card key={creator.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer" onClick={() => handleViewProfile(creator.handle)}>
                     <div className="p-6 text-center">
                       <div className="flex flex-col items-center mb-4">
@@ -544,7 +544,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                 </CardContent>
               </Card>
             )}
-          </div>
         </div>
       </div>
     </div>
