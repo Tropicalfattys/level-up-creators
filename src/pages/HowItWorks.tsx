@@ -410,7 +410,7 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Transparent reviews help you make informed decisions
+                  Real reviews from real clients. Transparent ratings build accountability and help you pick the right creator with confidence.
                 </CardDescription>
               </CardContent>
             </Card>
