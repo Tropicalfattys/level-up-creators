@@ -288,8 +288,8 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Create multiple service offerings with different prices and delivery times. 
-                  From trading advice to custom videos - you decide what to offer.
+                  Showcase what you do best.
+                  List your services with flexible pricing, delivery times, and details so clients know exactly what they're booking.
                 </CardDescription>
               </CardContent>
             </Card>
