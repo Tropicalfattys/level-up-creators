@@ -121,7 +121,7 @@ export default function HowItWorks() {
                     </div>
                     <div className="flex items-start gap-2">
                       <CreditCard className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <div className="flex-1 text-left">Cheaper fees — only 15% compared to the industry's 25%+</div>
+                      <div className="flex-1 text-left">NO booking or platform fees for clients booking services</div>
                     </div>
                     <div className="flex items-start gap-2">
                       <Wallet className="h-5 w-5 text-green-600 flex-shrink-0" />
