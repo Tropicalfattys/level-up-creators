@@ -157,8 +157,12 @@ export default function HowItWorks() {
                   </div>
                 </CardHeader>
                 <CardContent className="lg:py-12">
-                  <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
-                    <MessageCircle className="h-16 w-16 text-blue-600" />
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <img 
+                      src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Chat%20&%20Collaborate.jpg" 
+                      alt="Chat and collaborate interface"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </CardContent>
               </div>
