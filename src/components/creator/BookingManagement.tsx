@@ -684,16 +684,20 @@ export const BookingManagement = () => {
                                   )}
                                   
                                   {booking.proof_file_url && (
-                                    <div className="flex items-center gap-2">
-                                      <Upload className="h-3 w-3 text-blue-600" />
-                                      <a 
-                                        href={booking.proof_file_url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="text-blue-600 hover:underline text-sm"
-                                      >
-                                        View Uploaded File
-                                      </a>
+                                    <div className="space-y-2">
+                                      {booking.proof_file_url.split(',').map((fileUrl, index) => (
+                                        <div key={index} className="flex items-center gap-2">
+                                          <Upload className="h-3 w-3 text-blue-600" />
+                                          <a 
+                                            href={fileUrl.trim()} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-600 hover:underline text-sm"
+                                          >
+                                            View File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
+                                          </a>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
