@@ -91,8 +91,12 @@ export default function HowItWorks() {
             <Card className="overflow-hidden">
               <div className="grid lg:grid-cols-2 gap-8">
                 <CardContent className="lg:py-12 order-2 lg:order-1">
-                  <div className="aspect-video bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-lg flex items-center justify-center">
-                    <Wallet className="h-16 w-16 text-green-600" />
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <img 
+                      src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Pay%20with%20Crypto.jpg" 
+                      alt="Pay with crypto secure payment interface"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </CardContent>
                 <CardHeader className="lg:py-12 order-1 lg:order-2">
