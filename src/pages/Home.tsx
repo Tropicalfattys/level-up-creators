@@ -486,35 +486,39 @@ export default function Home() {
           ) : testimonialsLoading ? (
             <div className="grid md:grid-cols-3 gap-6 items-stretch">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="bg-card border-border animate-pulse h-full">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-center gap-1 mb-4">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <div key={star} className="h-4 w-4 bg-muted rounded"></div>
-                      ))}
-                    </div>
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-16 bg-muted rounded mb-4"></div>
-                    <div className="h-3 bg-muted rounded w-24"></div>
-                  </CardContent>
-                </Card>
+                <div key={i} className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 animate-pulse h-full">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-center gap-1 mb-4">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div key={star} className="h-4 w-4 bg-muted rounded"></div>
+                        ))}
+                      </div>
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-16 bg-muted rounded mb-4"></div>
+                      <div className="h-3 bg-muted rounded w-24"></div>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           ) : testimonials.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-6 items-stretch">
               {testimonials.map((testimonial) => (
-                <Card key={testimonial.id} className="bg-card border-border h-full">
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <div className="flex items-center justify-center gap-1 mb-4">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <h3 className="font-semibold mb-2">{testimonial.bookings?.services?.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.comment}"</p>
-                    <div className="text-xs text-muted-foreground">@{testimonial.users?.handle}</div>
-                  </CardContent>
-                </Card>
+                <div key={testimonial.id} className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 h-full">
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <div className="flex items-center justify-center gap-1 mb-4">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                      <h3 className="font-semibold mb-2">{testimonial.bookings?.services?.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.comment}"</p>
+                      <div className="text-xs text-muted-foreground">@{testimonial.users?.handle}</div>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           ) : (
@@ -536,18 +540,20 @@ export default function Home() {
                   rating: 5
                 }
               ].map((testimonial, index) => (
-                <Card key={index} className="bg-card border-border h-full">
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <div className="flex items-center justify-center gap-1 mb-4">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <h3 className="font-semibold mb-2">{testimonial.project}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.review}"</p>
-                    <div className="text-xs text-muted-foreground">Verified Project Review</div>
-                  </CardContent>
-                </Card>
+                <div key={index} className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 h-full">
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <div className="flex items-center justify-center gap-1 mb-4">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                      <h3 className="font-semibold mb-2">{testimonial.project}</h3>
+                      <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.review}"</p>
+                      <div className="text-xs text-muted-foreground">Verified Project Review</div>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           )}
