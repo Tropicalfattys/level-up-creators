@@ -267,85 +267,95 @@ export default function Index() {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Profile</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{userRole || 'Client'}</div>
-                <p className="text-xs text-muted-foreground">Your current role</p>
-              </CardContent>
-            </Card>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Profile</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{userRole || 'Client'}</div>
+                  <p className="text-xs text-muted-foreground">Your current role</p>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Referrals</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{referralCount || 0}</div>
-                <p className="text-xs text-muted-foreground">People you've referred</p>
-              </CardContent>
-            </Card>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Referrals</CardTitle>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{referralCount || 0}</div>
+                  <p className="text-xs text-muted-foreground">People you've referred</p>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Credits</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
-                <p className="text-xs text-muted-foreground">Referral credits</p>
-              </CardContent>
-            </Card>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Credits</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">${userProfile?.referral_credits || 0}</div>
+                  <p className="text-xs text-muted-foreground">Referral credits</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/browse">
-                    <Star className="h-4 w-4 mr-2" />
-                    Browse Services
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Profile Settings
-                  </Link>
-                </Button>
-                {!hasCreatorProfile && (
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
                   <Button variant="outline" className="w-full justify-start" asChild>
-                    <Link to="/become-creator">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Become a Creator
+                    <Link to="/browse">
+                      <Star className="h-4 w-4 mr-2" />
+                      Browse Services
                     </Link>
                   </Button>
-                )}
-                {canAccessCreatorTools && (
-                  <Button className="w-full justify-start" asChild>
-                    <Link to="/creator-dashboard">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Creator Dashboard
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link to="/settings">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Profile Settings
                     </Link>
                   </Button>
-                )}
-              </CardContent>
-            </Card>
+                  {!hasCreatorProfile && (
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <Link to="/become-creator">
+                        <Crown className="h-4 w-4 mr-2" />
+                        Become a Creator
+                      </Link>
+                    </Button>
+                  )}
+                  {canAccessCreatorTools && (
+                    <Button className="w-full justify-start" asChild>
+                      <Link to="/creator-dashboard">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Creator Dashboard
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RecentActivity />
-              </CardContent>
-            </Card>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RecentActivity />
+                </CardContent>
+              </Card>
+            </div>
 
             <CreatorsFollowedCard />
           </div>
@@ -369,41 +379,47 @@ export default function Index() {
               </div>
               
               <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Services</CardTitle>
-                    <CardDescription>Manage your service offerings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/services">Manage Services</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 h-full">
+                    <CardHeader>
+                      <CardTitle>Services</CardTitle>
+                      <CardDescription>Manage your service offerings</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild className="w-full">
+                        <Link to="/services">Manage Services</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
                 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Bookings</CardTitle>
-                    <CardDescription>Track active bookings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Bookings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 h-full">
+                    <CardHeader>
+                      <CardTitle>Bookings</CardTitle>
+                      <CardDescription>Track active bookings</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild className="w-full">
+                        <Link to="/creator-dashboard">View Bookings</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Earnings</CardTitle>
-                    <CardDescription>Track your earnings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <Link to="/creator-dashboard">View Earnings</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+                  <Card className="bg-card border-0 h-full">
+                    <CardHeader>
+                      <CardTitle>Earnings</CardTitle>
+                      <CardDescription>Track your earnings</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild className="w-full">
+                        <Link to="/creator-dashboard">View Earnings</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -423,16 +439,18 @@ export default function Index() {
 
         {userRole === 'admin' && (
           <TabsContent value="admin">
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Tools</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link to="/admin">Admin Panel</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader>
+                  <CardTitle>Admin Tools</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild className="w-full">
+                    <Link to="/admin">Admin Panel</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         )}
       </Tabs>
