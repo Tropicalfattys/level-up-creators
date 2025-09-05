@@ -291,6 +291,25 @@ export default function HowItWorks() {
                   Showcase what you do best.
                   List your services with flexible pricing, delivery times, and details so clients know exactly what they're booking.
                 </CardDescription>
+                
+                <div className="space-y-6 mt-6">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Add, edit, or swap services anytime</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Pro creators can upload a 2-minute intro video for maximum visibility</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Better visibility in search with higher-tier plans</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Offer anything from custom videos and AMAs to collabs, shoutouts, or design work</div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
