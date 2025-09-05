@@ -72,7 +72,26 @@ export default function Services() {
 
       // Apply search query
       if (searchQuery) {
-        servicesQuery = servicesQuery.or(`title.ilike.%${searchQuery}%, description.ilike.%${searchQuery}%`);
+        // Create comprehensive search conditions
+        const searchConditions = [
+          `title.ilike.%${searchQuery}%`,
+          `description.ilike.%${searchQuery}%`,
+          `category.ilike.%${searchQuery}%`,
+          `payment_method.ilike.%${searchQuery}%`
+        ];
+
+        // Check if search query matches blockchain terms and add specific payment method searches
+        const blockchainTerms = ['ethereum', 'cardano', 'bsc', 'sui', 'solana'];
+        const lowerSearchQuery = searchQuery.toLowerCase();
+        
+        blockchainTerms.forEach(blockchain => {
+          if (lowerSearchQuery.includes(blockchain)) {
+            // Add search for payment methods containing this blockchain
+            searchConditions.push(`payment_method.ilike.%${blockchain}_%`);
+          }
+        });
+
+        servicesQuery = servicesQuery.or(searchConditions.join(', '));
       }
 
       // Apply price range filter
