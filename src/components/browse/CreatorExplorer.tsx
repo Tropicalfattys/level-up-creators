@@ -357,37 +357,78 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
       <div className="container mx-auto px-6 pb-6">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Search Bar */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Search Creators</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                  <Input
-                    placeholder="Search by name, skills, or services..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-400"
+            <div className="space-y-6">
+              {/* First Row: Search Bar and Price Range */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Search Bar */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Search Creators</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                    <Input
+                      placeholder="Search by name, skills, or services..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    Price Range: ${priceRange[0]} - ${priceRange[1]} USDC
+                  </Label>
+                  <Slider
+                    value={priceRange}
+                    onValueChange={setPriceRange}
+                    max={1000}
+                    min={0}
+                    step={25}
+                    className="w-full"
                   />
+                  <div className="flex justify-between text-xs text-zinc-400 mt-1">
+                    <span>$0</span>
+                    <span>$1000</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Price Range */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">
-                  Price Range: ${priceRange[0]} - ${priceRange[1]} USDC
-                </Label>
-                <Slider
-                  value={priceRange}
-                  onValueChange={setPriceRange}
-                  max={1000}
-                  min={0}
-                  step={25}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-zinc-400 mt-1">
-                  <span>$0</span>
-                  <span>$1000</span>
+              {/* Second Row: Category Filter and Clear Button */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Category Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Filter by Category</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700 z-50">
+                      <SelectItem value="all" className="text-white">All Categories</SelectItem>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.value} className="text-white">
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear All Filters Button */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block opacity-0">Clear Filters</Label>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setCategoryFilter('all');
+                      setPriceRange([0, 1000]);
+                      setSearchQuery('');
+                    }}
+                    className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Clear All Filters
+                  </Button>
                 </div>
               </div>
             </div>
@@ -397,54 +438,17 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6">
-        <div className="flex gap-6">
-          {/* Category Filter - Left Side */}
-          <div className="w-64">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-4">
-                <Label className="text-sm font-medium mb-2 block">Filter by Category</Label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700 z-50">
-                    <SelectItem value="all" className="text-white">All Categories</SelectItem>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={category.value} className="text-white">
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {/* Clear Filters */}
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setCategoryFilter('all');
-                    setPriceRange([0, 1000]);
-                    setSearchQuery('');
-                  }}
-                  className="w-full mt-4 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                  size="sm"
-                >
-                  Clear All Filters
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Creators Section - Full Width */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6">
+            {categoryFilter !== 'all' ? `${categoryFilter.toUpperCase()} Creators` : 'All Creators'}
+            {creators && <span className="text-zinc-400 text-lg ml-2">({creators.length})</span>}
+          </h2>
 
-          {/* Creators List - Right Side */}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-6">
-              {categoryFilter !== 'all' ? `${categoryFilter.toUpperCase()} Creators` : 'All Creators'}
-              {creators && <span className="text-zinc-400 text-lg ml-2">({creators.length})</span>}
-            </h2>
-
-            {isLoading ? (
-              <div className="text-center py-8">Loading creators...</div>
-            ) : creators && creators.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            <div className="text-center py-8">Loading creators...</div>
+          ) : creators && creators.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {creators.map((creator) => (
                   <Card key={creator.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer" onClick={() => handleViewProfile(creator.handle)}>
                     <div className="p-6 text-center">
