@@ -245,107 +245,113 @@ export default function HowItWorks() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Upload className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle>Apply & Get Approved</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Create your profile and join the marketplace.
-                  Sign up, add your socials, and tell us what you offer. Once approved, your profile is live and ready to attract clients.
-                </CardDescription>
-                
-                <div className="space-y-6 mt-6">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Free plan includes up to 5 active services</div>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Upload className="h-8 w-8 text-primary" />
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Fast approvals so you can start selling quickly</div>
+                  <CardTitle>Apply & Get Approved</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Create your profile and join the marketplace.
+                    Sign up, add your socials, and tell us what you offer. Once approved, your profile is live and ready to attract clients.
+                  </CardDescription>
+                  
+                  <div className="space-y-6 mt-6">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Free plan includes up to 5 active services</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Fast approvals so you can start selling quickly</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Verified profile builds client trust</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Upgrade to Creator Plus or Pro for more services, higher rankings, and homepage features</div>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Verified profile builds client trust</div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Upgrade to Creator Plus or Pro for more services, higher rankings, and homepage features</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CreditCard className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle>Set Your Services</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Showcase what you do best.
-                  List your services with flexible pricing, delivery times, and details so clients know exactly what they're booking.
-                </CardDescription>
-                
-                <div className="space-y-6 mt-6">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Add, edit, or swap services anytime</div>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CreditCard className="h-8 w-8 text-primary" />
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Pro creators can upload a 2-minute intro video for maximum visibility</div>
+                  <CardTitle>Set Your Services</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Showcase what you do best.
+                    List your services with flexible pricing, delivery times, and details so clients know exactly what they're booking.
+                  </CardDescription>
+                  
+                  <div className="space-y-6 mt-6">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Add, edit, or swap services anytime</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Pro creators can upload a 2-minute intro video for maximum visibility</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Better visibility in search with higher-tier plans</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Offer anything from custom videos and AMAs to collabs, shoutouts, or design work</div>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Better visibility in search with higher-tier plans</div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Offer anything from custom videos and AMAs to collabs, shoutouts, or design work</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle>Deliver & Earn</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Get paid fast with secure escrow.
-                  Chat directly with clients in your dedicated project chat, deliver files and links, and once the client approves, funds are released instantly.
-                </CardDescription>
-                
-                <div className="space-y-6 mt-6">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Dedicated chat with secure file transfers</div>
+            <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
+              <Card className="bg-card border-0 h-full">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="h-8 w-8 text-primary" />
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Keep 85% of every booking (lowest fees in the industry)</div>
+                  <CardTitle>Deliver & Earn</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Get paid fast with secure escrow.
+                    Chat directly with clients in your dedicated project chat, deliver files and links, and once the client approves, funds are released instantly.
+                  </CardDescription>
+                  
+                  <div className="space-y-6 mt-6">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Dedicated chat with secure file transfers</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Keep 85% of every booking (lowest fees in the industry)</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Instant stablecoin payouts on Ethereum, Solana, BSC, Cardano, or SUI</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">Protected by fair dispute resolution so everyone gets a fair deal</div>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Instant stablecoin payouts on Ethereum, Solana, BSC, Cardano, or SUI</div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 text-left">Protected by fair dispute resolution so everyone gets a fair deal</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="text-center mt-12">
