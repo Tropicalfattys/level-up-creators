@@ -59,19 +59,19 @@ export default function HowItWorks() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Search className="h-5 w-5 text-primary" />
-                      <span>Search by category or creator name</span>
+                      <span>Search & filter by category, price, delivery time, or blockchain preference</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Star className="h-5 w-5 text-primary" />
-                      <span>Check ratings and reviews</span>
+                      <span>View full creator profiles with past work, reviews, and ratings</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">ETH</Badge>
-                      <Badge variant="outline">SUI</Badge>
-                      <Badge variant="outline">SOL</Badge>
-                      <Badge variant="outline">BSC</Badge>
-                      <Badge variant="outline">Cardano</Badge>
-                      <span>Choose your preferred blockchain</span>
+                      <MessageCircle className="h-5 w-5 text-primary" />
+                      <span>Message creators before booking to ask questions or request custom offers</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                      <span>Request exclusive services tailored just for you</span>
                     </div>
                   </div>
                 </CardHeader>
