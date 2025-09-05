@@ -386,7 +386,7 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  All creators go through our approval process before going live
+                  No fakes. No guesswork. Every creator is reviewed before going live, and Pro Creators must verify their socials through referral links for added authenticity.
                 </CardDescription>
               </CardContent>
             </Card>
