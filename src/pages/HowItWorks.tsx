@@ -398,7 +398,7 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Fair resolution process with dedicated support team
+                  If something goes wrong, we step in. Our team provides fair dispute resolution, protecting both clients and creators so no one gets left behind.
                 </CardDescription>
               </CardContent>
             </Card>
