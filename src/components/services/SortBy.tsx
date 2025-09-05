@@ -17,7 +17,7 @@ export const SortBy = ({ value, onChange }: SortByProps) => {
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-48">
+      <SelectTrigger className="w-full">
         <SelectValue placeholder="Sort by" />
       </SelectTrigger>
       <SelectContent>
