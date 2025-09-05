@@ -200,7 +200,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-2xl md:text-6xl font-bold mb-6">
+          <h1 className="text-lg md:text-6xl font-bold mb-6">
             <div className="mb-2">
               Hire the right Content Creator for your budget & Amplify Your Project.
             </div>
