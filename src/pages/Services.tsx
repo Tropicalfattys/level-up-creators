@@ -225,47 +225,54 @@ export default function Services() {
         </p>
         
         <div className="bg-card rounded-lg border p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search Services</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search services..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Search Services</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search services..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price Range: ${priceRange[0]} - ${priceRange[1]}</label>
+                <Slider
+                  value={priceRange}
+                  onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                  max={1000}
+                  min={0}
+                  step={10}
+                  className="w-full"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Price Range: ${priceRange[0]} - ${priceRange[1]}</label>
-              <Slider
-                value={priceRange}
-                onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                max={1000}
-                min={0}
-                step={10}
-                className="w-full"
-              />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filter by Category</label>
+                <CategoryFilter
+                  value={selectedCategory}
+                  onChange={setSelectedCategory}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sort by</label>
+                <SortBy
+                  value={sortBy}
+                  onChange={setSortBy}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-64 space-y-4">
-          <CategoryFilter
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-          />
-          <SortBy
-            value={sortBy}
-            onChange={setSortBy}
-          />
-        </div>
-
-        <div className="flex-1 w-full">
+      <div className="w-full">
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center md:justify-items-stretch">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -297,7 +304,6 @@ export default function Services() {
               </CardContent>
             </Card>
           )}
-        </div>
       </div>
 
       {selectedService && (
