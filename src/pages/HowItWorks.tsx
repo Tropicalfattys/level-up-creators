@@ -56,22 +56,22 @@ export default function HowItWorks() {
                     Find the right creator for your project.
                     Scroll through a wide range of verified crypto creators across categories like trading, DeFi, SocialFi, NFTs, gaming, music, memes, and more.
                   </CardDescription>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-2">
-                      <Search className="h-5 w-5 text-primary" />
-                      <span>Search & filter by category, price, delivery time, or blockchain preference</span>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-3">
+                      <Search className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="flex-1">Search & filter by category, price, delivery time, or blockchain preference</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Star className="h-5 w-5 text-primary" />
-                      <span>View full creator profiles with past work, reviews, and ratings</span>
+                    <div className="flex items-start gap-3">
+                      <Star className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="flex-1">View full creator profiles with past work, reviews, and ratings</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <MessageCircle className="h-5 w-5 text-primary" />
-                      <span>Message creators before booking to ask questions or request custom offers</span>
+                    <div className="flex items-start gap-3">
+                      <MessageCircle className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="flex-1">Message creators before booking to ask questions or request custom offers</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                      <span>Request exclusive services tailored just for you</span>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="flex-1">Request exclusive services tailored just for you</div>
                     </div>
                   </div>
                 </CardHeader>
@@ -109,26 +109,26 @@ export default function HowItWorks() {
                   <CardDescription className="text-lg mb-6">
                     Easily complete your order with secure crypto payments.
                   </CardDescription>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-2">
-                      <Shield className="h-5 w-5 text-green-600" />
-                      <span>Escrow protection — funds are only released when you approve the work</span>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1">Escrow protection — funds are only released when you approve the work</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span>Instant booking confirmation once your payment is received</span>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1">Instant booking confirmation once your payment is received</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <CreditCard className="h-5 w-5 text-green-600" />
-                      <span>Cheaper fees — only 15% compared to the industry's 25%+</span>
+                    <div className="flex items-start gap-3">
+                      <CreditCard className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1">Cheaper fees — only 15% compared to the industry's 25%+</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Wallet className="h-5 w-5 text-green-600" />
-                      <span>Multi-chain support — pay with your preferred blockchain</span>
+                    <div className="flex items-start gap-3">
+                      <Wallet className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1">Multi-chain support — pay with your preferred blockchain</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Clock className="h-5 w-5 text-green-600" />
-                      <span>Seamless crypto checkout — no cards, no banks, just Web3 simplicity</span>
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1">Seamless crypto checkout — no cards, no banks, just Web3 simplicity</div>
                     </div>
                   </div>
                 </CardHeader>
@@ -149,22 +149,22 @@ export default function HowItWorks() {
                     Connect with your creator right away and share project details.
                     Share details, requirements, and track progress in real-time.
                   </CardDescription>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-2">
-                      <MessageCircle className="h-5 w-5 text-blue-600" />
-                      <span>Real-time messaging to stay aligned from start to finish</span>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-3">
+                      <MessageCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1">Real-time messaging to stay aligned from start to finish</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Upload className="h-5 w-5 text-blue-600" />
-                      <span>Secure file sharing — send and receive files, links, or video proofs</span>
+                    <div className="flex items-start gap-3">
+                      <Upload className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1">Secure file sharing — send and receive files, links, or video proofs</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                      <span>Track everything in one place — payments, files, milestones, and delivery are linked to your booking</span>
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1">Track everything in one place — payments, files, milestones, and delivery are linked to your booking</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-blue-600" />
-                      <span>Flexible adjustments — clarify requirements, share feedback, and keep the project on track</span>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1">Flexible adjustments — clarify requirements, share feedback, and keep the project on track</div>
                     </div>
                   </div>
                 </CardHeader>
@@ -203,26 +203,26 @@ export default function HowItWorks() {
                     Get your custom content delivered & celebrate the results.
                     When your creator delivers, you'll have 3 days to review before escrow releases payment.
                   </CardDescription>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-2">
-                      <Upload className="h-5 w-5 text-purple-600" />
-                      <span>Exciting delivery experience — videos, files, or links all delivered securely in-platform</span>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-3">
+                      <Upload className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <div className="flex-1">Exciting delivery experience — videos, files, or links all delivered securely in-platform</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Shield className="h-5 w-5 text-purple-600" />
-                      <span>3-day review period to approve or request adjustments</span>
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <div className="flex-1">3-day review period to approve or request adjustments</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Star className="h-5 w-5 text-purple-600" />
-                      <span>Leave a rating & review to help creators grow and guide future clients</span>
+                    <div className="flex items-start gap-3">
+                      <Star className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <div className="flex-1">Leave a rating & review to help creators grow and guide future clients</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <MessageCircle className="h-5 w-5 text-purple-600" />
-                      <span>Fair dispute resolution — our team can step in if there are issues</span>
+                    <div className="flex items-start gap-3">
+                      <MessageCircle className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <div className="flex-1">Fair dispute resolution — our team can step in if there are issues</div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-purple-600" />
-                      <span>Satisfaction guaranteed — creators only get paid when you're happy</span>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                      <div className="flex-1">Satisfaction guaranteed — creators only get paid when you're happy</div>
                     </div>
                   </div>
                 </CardHeader>
