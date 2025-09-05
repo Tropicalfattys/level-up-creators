@@ -542,9 +542,9 @@ export const CreatorProfile = () => {
                     <div className="grid gap-4">
                       {services.map((service: any) => (
                         <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
                             <h3 className="font-semibold">{service.title}</h3>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center gap-2">
                               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                                 ${service.price_usdc}
                               </Badge>
@@ -565,11 +565,11 @@ export const CreatorProfile = () => {
                           <p className="text-sm text-muted-foreground mb-3 text-left break-all line-clamp-3 overflow-hidden" dir="ltr">
                             {service.description}
                           </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+                            <span className="text-sm text-muted-foreground text-center md:text-left">
                               Delivery: {service.delivery_days} days
                             </span>
-                            <Button size="sm" onClick={() => handleBookService(service)}>
+                            <Button size="sm" onClick={() => handleBookService(service)} className="mx-auto md:mx-0">
                               {currentUser ? 'Book Now' : 'Sign In to Book'}
                             </Button>
                           </div>
