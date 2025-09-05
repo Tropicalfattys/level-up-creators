@@ -152,15 +152,19 @@ export default function HowItWorks() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-5 w-5 text-blue-600" />
-                      <span>Real-time messaging</span>
+                      <span>Real-time messaging to stay aligned from start to finish</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Upload className="h-5 w-5 text-blue-600" />
-                      <span>Share requirements and expectations</span>
+                      <span>Secure file sharing — send and receive files, links, or video proofs</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-blue-600" />
-                      <span>Track progress from start to finish</span>
+                      <span>Track everything in one place — payments, files, milestones, and delivery are linked to your booking</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                      <span>Flexible adjustments — clarify requirements, share feedback, and keep the project on track</span>
                     </div>
                   </div>
                 </CardHeader>
