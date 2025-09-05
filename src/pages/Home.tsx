@@ -403,11 +403,11 @@ export default function Home() {
                      {proCreators.map((creator) => (
                        <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
                         <Link to={`/profile/${creator.users.handle}`}>
-                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden w-[200%] -mx-[50%] md:w-auto md:mx-0">
+                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden w-[260%] -mx-[80%] min-h-[120%] md:w-auto md:mx-0 md:min-h-0">
                             <div className="hover:scale-105 transition-transform duration-300">
-                              <CardContent className="p-6 text-center">
+                              <CardContent className="p-6 md:p-6 text-center">
                                  <div className="mb-4">
-                                   <Avatar className="w-48 h-48 mx-auto">
+                                   <Avatar className="w-32 h-32 md:w-48 md:h-48 mx-auto">
                                      <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
                                      <AvatarFallback className="text-lg font-semibold">
                                        {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
@@ -415,7 +415,7 @@ export default function Home() {
                                    </Avatar>
                                  </div>
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                  <h3 className="text-lg font-semibold">@{creator.users.handle}</h3>
+                                  <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
                                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
                                     Pro
                                   </Badge>
@@ -429,7 +429,7 @@ export default function Home() {
                                     ({creator.review_count || 0} reviews)
                                   </span>
                                 </div>
-                                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
                                   {creator.serviceCount} {creator.serviceCount === 1 ? 'service' : 'services'} available
                                 </Badge>
                               </CardContent>
