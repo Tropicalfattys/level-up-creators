@@ -146,8 +146,8 @@ export default function HowItWorks() {
                     <CardTitle className="text-2xl">Chat & Collaborate</CardTitle>
                   </div>
                   <CardDescription className="text-lg mb-6">
-                    Connect with your creator right away and share project details.
-                    Share details, requirements, and track progress in real-time.
+                    Work directly with your creator in real time.
+                    Once booked, you'll unlock a dedicated chat window tied to your service. This is your project hub.
                   </CardDescription>
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
