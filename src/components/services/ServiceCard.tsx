@@ -71,7 +71,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           {service.description}
         </p>
         
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-2">
           <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white">
             {service.category}
           </Badge>
@@ -83,13 +83,13 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex items-center gap-1 text-sm font-bold">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between pt-2 border-t space-y-2 md:space-y-0">
+          <div className="flex items-center justify-center md:justify-start gap-1 text-sm font-bold">
             <span className="bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">Turn Around</span>
             <Clock className="h-3 w-3" />
             <span>{service.delivery_days}d</span>
           </div>
-          <div className="flex items-center gap-1 text-sm font-bold text-green-600">
+          <div className="flex items-center justify-center md:justify-end gap-1 text-sm font-bold text-green-600">
             <DollarSign className="h-3 w-3" />
             <span>{service.price_usdc} USD</span>
           </div>
