@@ -31,7 +31,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
   const networkConfig = NETWORK_CONFIG[service.payment_method.split('_')[0] as keyof typeof NETWORK_CONFIG];
 
   return (
-    <Card className="h-full hover:shadow-lg transition-shadow">
+    <Card className="h-full hover:shadow-lg transition-shadow w-full max-w-sm md:max-w-none mx-auto">
       <CardHeader className="pb-3">
         <div className="text-center space-y-3">
           <CardTitle className="text-lg line-clamp-2">{service.title}</CardTitle>

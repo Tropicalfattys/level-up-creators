@@ -246,11 +246,11 @@ export default function Services() {
           />
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center md:justify-items-stretch">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="w-full max-w-sm md:max-w-none">
                   <CardContent className="p-6">
                     <Skeleton className="h-48 w-full mb-4" />
                     <Skeleton className="h-4 w-3/4 mb-2" />
@@ -260,7 +260,7 @@ export default function Services() {
               ))}
             </div>
           ) : services && services.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center md:justify-items-stretch">
               {services.map((service) => (
                 <ServiceCard
                   key={service.id}
