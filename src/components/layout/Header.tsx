@@ -10,10 +10,12 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export const Header = () => {
   const { user, userRole, userProfile } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch categories from database
   const { data: categories, isLoading } = useQuery({
@@ -194,9 +196,70 @@ export const Header = () => {
             </div>
           )}
           
-          <Button variant="ghost" size="icon" className="md:hidden text-white/80 hover:text-white hover:bg-zinc-800">
-            <Menu className="h-5 w-5" />
-          </Button>
+          {/* Mobile Menu */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden text-white/80 hover:text-white hover:bg-zinc-800">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-zinc-900 border-zinc-800">
+              <div className="flex flex-col space-y-4 mt-6">
+                <Link 
+                  to="/browse" 
+                  className="text-white/80 hover:text-white transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Browse Creators
+                </Link>
+                <Link 
+                  to="/services" 
+                  className="text-white/80 hover:text-white transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Services
+                </Link>
+                <Link 
+                  to="/how-it-works" 
+                  className="text-white/80 hover:text-white transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How it works
+                </Link>
+                <Link 
+                  to="/become-creator" 
+                  className="text-white/80 hover:text-white transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Become a creator
+                </Link>
+                
+                {!user && (
+                  <div className="border-t border-zinc-800 pt-4 space-y-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        navigate('/auth');
+                        setMobileMenuOpen(false);
+                      }} 
+                      className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                    >
+                      Sign In
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        navigate('/auth?mode=signup');
+                        setMobileMenuOpen(false);
+                      }} 
+                      className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
+                    >
+                      Create Account
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

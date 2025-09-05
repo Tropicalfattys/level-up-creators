@@ -200,7 +200,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          <h1 className="text-2xl md:text-6xl font-bold mb-6">
             <div className="mb-2">
               Hire the right Content Creator for your budget & Amplify Your Project.
             </div>
@@ -304,7 +304,7 @@ export default function Home() {
                 };
 
                 return (
-                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
+                  <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/3 md:basis-1/3 lg:basis-1/5">
                     <Link to={`/browse?category=${getCategoryFromService(service.name)}`}>
                       <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-border">
                         <div className="hover:scale-105 transition-transform duration-300">
@@ -320,8 +320,8 @@ export default function Home() {
                 );
               })}
             </CarouselContent>
-            <CarouselPrevious className="hidden md:flex" />
-            <CarouselNext className="hidden md:flex" />
+            <CarouselPrevious className="flex" />
+            <CarouselNext className="flex" />
           </Carousel>
         </div>
       </section>
@@ -329,11 +329,13 @@ export default function Home() {
       {/* Why LeveledUP Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">The First Creator Marketplace Built for Web3</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">
+            The First Creator <span className="md:inline block">Market<br className="md:hidden" />place</span> Built for Web3
+          </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Crypto-Native_Payments.png" alt="Crypto-Native Payments" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Crypto-Native Payments</h3>
                 <p className="text-muted-foreground">Pay in USDC & USDM (ETH, Solana, Sui, BSC, & Cardano).</p>
@@ -341,7 +343,7 @@ export default function Home() {
             </Card>
             
             <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
                 <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
@@ -349,7 +351,7 @@ export default function Home() {
             </Card>
             
             <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Cross-Platform_Reach-removebg-preview.png" alt="Cross-Platform Reach" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Cross-Platform Reach</h3>
                 <p className="text-muted-foreground">From Twitter to Telegram, work with creators where the crypto community actually lives.</p>
@@ -398,8 +400,8 @@ export default function Home() {
                  className="w-full max-w-6xl mx-auto"
                >
                  <CarouselContent className="-ml-2 md:-ml-4">
-                   {proCreators.map((creator) => (
-                     <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                    {proCreators.map((creator) => (
+                      <CarouselItem key={creator.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
                        <Link to={`/profile/${creator.users.handle}`}>
                          <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden">
                            <div className="hover:scale-105 transition-transform duration-300">
@@ -437,8 +439,8 @@ export default function Home() {
                      </CarouselItem>
                    ))}
                  </CarouselContent>
-                 <CarouselPrevious className="hidden md:flex" />
-                 <CarouselNext className="hidden md:flex" />
+                  <CarouselPrevious className="flex" />
+                  <CarouselNext className="flex" />
                </Carousel>
              </div>
            ) : (
