@@ -111,16 +111,24 @@ export default function HowItWorks() {
                   </CardDescription>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-green-600" />
-                      <span>Send payment manually from your wallet to our escrow wallet</span>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-green-600" />
-                      <span>Funds held in secure escrow</span>
+                      <span>Escrow protection — funds are only released when you approve the work</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span>Instant booking confirmation</span>
+                      <span>Instant booking confirmation once your payment is received</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-green-600" />
+                      <span>Cheaper fees — only 15% compared to the industry's 25%+</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-green-600" />
+                      <span>Multi-chain support — pay with your preferred blockchain</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-green-600" />
+                      <span>Seamless crypto checkout — no cards, no banks, just Web3 simplicity</span>
                     </div>
                   </div>
                 </CardHeader>
