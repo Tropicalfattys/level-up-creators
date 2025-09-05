@@ -374,7 +374,7 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Funds are held safely until content is delivered and approved
+                  Every booking is backed by escrow. Payments are locked until you approve delivery, so creators only get paid when you're satisfied.
                 </CardDescription>
               </CardContent>
             </Card>
