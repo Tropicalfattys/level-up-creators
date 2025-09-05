@@ -53,8 +53,8 @@ export default function HowItWorks() {
                     <CardTitle className="text-2xl">Browse & Select</CardTitle>
                   </div>
                   <CardDescription className="text-lg mb-6">
-                    Discover crypto creators across different categories. Filter by price, 
-                    delivery time, ratings, and blockchain preference.
+                    Find the right creator for your project.
+                    Scroll through a wide range of verified crypto creators across categories like trading, DeFi, SocialFi, NFTs, gaming, music, memes, and more.
                   </CardDescription>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
