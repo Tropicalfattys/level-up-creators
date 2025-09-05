@@ -63,7 +63,7 @@ export default function HowItWorks() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Star className="h-5 w-5 text-primary flex-shrink-0" />
-                      <div className="flex-1 text-left">View full creator profiles with past work, reviews, and ratings</div>
+                      <div className="flex-1 text-left">View full creator profiles with their services, reviews, and ratings</div>
                     </div>
                     <div className="flex items-start gap-2">
                       <MessageCircle className="h-5 w-5 text-primary flex-shrink-0" />
