@@ -200,8 +200,8 @@ export default function HowItWorks() {
                     <CardTitle className="text-2xl">Receive & Review</CardTitle>
                   </div>
                   <CardDescription className="text-lg mb-6">
-                    Get your custom content delivered securely. You have 3 days to review 
-                    before funds are automatically released to the creator.
+                    Get your custom content delivered & celebrate the results.
+                    When your creator delivers, you'll have 3 days to review before escrow releases payment.
                   </CardDescription>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
