@@ -322,9 +322,28 @@ export default function HowItWorks() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Fulfill orders, chat with clients, and get paid automatically. 
-                  You keep 85% of every booking with fast USDC payouts.
+                  Get paid fast with secure escrow.
+                  Chat directly with clients in your dedicated project chat, deliver files and links, and once the client approves, funds are released instantly.
                 </CardDescription>
+                
+                <div className="space-y-6 mt-6">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Dedicated chat with secure file transfers</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Keep 85% of every booking (lowest fees in the industry)</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Instant stablecoin payouts on Ethereum, Solana, BSC, Cardano, or SUI</div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 text-left">Protected by fair dispute resolution so everyone gets a fair deal</div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
