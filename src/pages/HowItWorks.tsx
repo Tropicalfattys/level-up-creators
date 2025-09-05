@@ -172,8 +172,12 @@ export default function HowItWorks() {
             <Card className="overflow-hidden">
               <div className="grid lg:grid-cols-2 gap-8">
                 <CardContent className="lg:py-12 order-2 lg:order-1">
-                  <div className="aspect-video bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="h-16 w-16 text-purple-600" />
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <img 
+                      src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/Receive%20&%20Review.jpg" 
+                      alt="Receive and review content interface"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </CardContent>
                 <CardHeader className="lg:py-12 order-1 lg:order-2">
