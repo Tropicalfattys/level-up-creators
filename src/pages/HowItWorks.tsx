@@ -25,8 +25,8 @@ export default function HowItWorks() {
             Simple, Secure, <span className="text-primary">Fast</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Get personalized content from top crypto creators in just a few clicks. 
-            Our platform handles everything from payments to delivery.
+            Get personalized content from top crypto creators & influencers in just a few clicks.
+            Our platform handles everything from discovery to payments, delivery, and reviews.
           </p>
         </div>
       </section>
