@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import useEmblaCarousel from 'embla-carousel-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
+  
+  // Embla carousel for category icons
+  const [emblaRef] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: true,
+    skipSnaps: false
+  });
 
   // Handle URL parameter changes
   useEffect(() => {
@@ -317,38 +326,41 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           <h2 className="text-xl font-semibold mb-4 text-white">Browse Popular Categories</h2>
 
           {/* Category Icons */}
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {categoryIcons.map((cat) => (
-              <Button
-                key={cat.category}
-                variant="ghost"
-                onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
-                className={`flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
-                  categoryFilter === cat.category 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {cat.image ? (
-                  <img 
-                    src={cat.image} 
-                    alt={cat.name}
-                    className="w-8 h-8 mb-1 object-contain"
-                    onError={(e) => {
-                      console.log('Image failed to load:', cat.image);
-                      e.currentTarget.style.display = 'none';
-                      const span = document.createElement('span');
-                      span.className = 'text-2xl mb-1';
-                      span.textContent = '📁';
-                      e.currentTarget.parentNode?.appendChild(span);
-                    }}
-                  />
-                ) : (
-                  <span className="text-2xl mb-1">{cat.icon}</span>
-                )}
-                <span className="text-xs text-center font-medium leading-tight">{cat.name}</span>
-              </Button>
-            ))}
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-4 pb-4">
+              {categoryIcons.map((cat) => (
+                <div key={cat.category} className="flex-none">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
+                    className={`flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
+                      categoryFilter === cat.category 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {cat.image ? (
+                      <img 
+                        src={cat.image} 
+                        alt={cat.name}
+                        className="w-8 h-8 mb-1 object-contain"
+                        onError={(e) => {
+                          console.log('Image failed to load:', cat.image);
+                          e.currentTarget.style.display = 'none';
+                          const span = document.createElement('span');
+                          span.className = 'text-2xl mb-1';
+                          span.textContent = '📁';
+                          e.currentTarget.parentNode?.appendChild(span);
+                        }}
+                      />
+                    ) : (
+                      <span className="text-2xl mb-1">{cat.icon}</span>
+                    )}
+                    <span className="text-xs text-center font-medium leading-tight">{cat.name}</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
