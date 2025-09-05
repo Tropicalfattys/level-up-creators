@@ -20,7 +20,7 @@ interface ProofSubmissionProps {
     fileUrl?: string;
     links?: ProofLink[];
   };
-  onSubmitProof: (proofData: { links: ProofLink[]; file: File | null; notes: string }) => void;
+  onSubmitProof: (proofData: { links: ProofLink[]; files: File[]; notes: string }) => void;
   isSubmitting: boolean;
 }
 
@@ -34,26 +34,26 @@ export const ProofSubmission = ({
   const initialLinks = currentProof?.links || (currentProof?.link ? [{ url: currentProof.link, label: 'Social Proof' }] : [{ url: '', label: '' }]);
   
   const [proofLinks, setProofLinks] = useState<ProofLink[]>(initialLinks.length > 0 ? initialLinks : [{ url: '', label: '' }]);
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [proofNotes, setProofNotes] = useState('');
 
   const handleSubmit = () => {
     // Filter out empty links
     const validLinks = proofLinks.filter(link => link.url.trim() && link.label.trim());
     
-    if (validLinks.length === 0 && !proofFile && !proofNotes.trim()) {
+    if (validLinks.length === 0 && proofFiles.length === 0 && !proofNotes.trim()) {
       return;
     }
     
     onSubmitProof({
       links: validLinks,
-      file: proofFile,
+      files: proofFiles,
       notes: proofNotes.trim()
     });
     
     // Reset form after submission
     setProofLinks([{ url: '', label: '' }]);
-    setProofFile(null);
+    setProofFiles([]);
     setProofNotes('');
   };
 
@@ -82,8 +82,28 @@ export const ProofSubmission = ({
     }
   };
 
+  const addFileField = () => {
+    if (proofFiles.length < 3) {
+      setProofFiles([...proofFiles, null as any]);
+    }
+  };
+
+  const removeFileField = (index: number) => {
+    setProofFiles(proofFiles.filter((_, i) => i !== index));
+  };
+
+  const updateFile = (index: number, file: File | null) => {
+    const updated = [...proofFiles];
+    if (file) {
+      updated[index] = file;
+    } else {
+      updated.splice(index, 1);
+    }
+    setProofFiles(updated.filter(f => f !== null));
+  };
+
   const hasValidLinks = proofLinks.some(link => link.url.trim() && link.label.trim() && isValidUrl(link.url));
-  const canSubmit = hasValidLinks || proofFile || proofNotes.trim();
+  const canSubmit = hasValidLinks || proofFiles.length > 0 || proofNotes.trim();
 
   return (
     <Card className="border-l-4 border-l-blue-500">
@@ -220,25 +240,89 @@ export const ProofSubmission = ({
           </p>
         </div>
 
-        {/* File Upload */}
-        <div className="space-y-2">
-          <Label htmlFor={`proof-file-${bookingId}`} className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Upload File (Screenshots, Documents, etc.)
-          </Label>
-          <Input
-            id={`proof-file-${bookingId}`}
-            type="file"
-            accept="image/*,.pdf,.doc,.docx,.txt,.zip,.mp4,.mov"
-            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-          />
-          {proofFile && (
-            <div className="text-xs text-green-600">
-              Selected: {proofFile.name} ({Math.round(proofFile.size / 1024)}KB)
+        {/* Multiple File Upload */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Files (Screenshots, Documents, etc.)
+            </Label>
+            {proofFiles.length < 3 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addFileField}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Add More Files
+              </Button>
+            )}
+          </div>
+          
+          {proofFiles.length === 0 && (
+            <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">File #1</span>
+              </div>
+              <Input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.txt,.zip,.mp4,.mov"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setProofFiles([file]);
+                  }
+                }}
+              />
             </div>
           )}
+          
+          {proofFiles.map((file, index) => (
+            <div key={index} className="space-y-2 p-3 border rounded-lg bg-muted/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">File #{index + 1}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeFileField(index)}
+                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <Input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.txt,.zip,.mp4,.mov"
+                onChange={(e) => updateFile(index, e.target.files?.[0] || null)}
+              />
+              
+              {file && (
+                <div className="text-xs text-green-600">
+                  Selected: {file.name} ({Math.round(file.size / 1024)}KB)
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {proofFiles.length > 0 && proofFiles.length < 3 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addFileField}
+              className="flex items-center gap-1 w-full"
+            >
+              <Plus className="h-3 w-3" />
+              Add Another File ({proofFiles.length}/3)
+            </Button>
+          )}
+          
           <p className="text-xs text-muted-foreground">
-            Max 50MB. Supported: Images, PDFs, Documents, Videos, Archives
+            Max 3 files, 50MB each. Supported: Images, PDFs, Documents, Videos, Archives
           </p>
         </div>
 

@@ -263,12 +263,20 @@ export const BookingManagement = () => {
     }
   };
 
-  const handleProofSubmission = async (bookingId: string, proofData: { links: Array<{ url: string; label: string }>; file: File | null; notes: string }) => {
+  const handleProofSubmission = async (bookingId: string, proofData: { links: Array<{ url: string; label: string }>; files: File[]; notes: string }) => {
     try {
       let proofFileUrl = null;
+      const fileUrls: string[] = [];
 
-      if (proofData.file) {
-        proofFileUrl = await handleFileUpload(bookingId, proofData.file);
+      // Upload all files
+      for (const file of proofData.files) {
+        const fileUrl = await handleFileUpload(bookingId, file);
+        fileUrls.push(fileUrl);
+      }
+
+      // Keep backward compatibility - store first file in old field
+      if (fileUrls.length > 0) {
+        proofFileUrl = fileUrls[0];
       }
 
       await updateBookingStatus.mutateAsync({
