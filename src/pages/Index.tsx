@@ -55,6 +55,31 @@ export default function Index() {
     enabled: !!user?.id
   });
 
+  // Helper function to get tier display name
+  const getTierDisplayName = (tier: string | undefined): string => {
+    if (!tier) return 'Basic Creator';
+    
+    switch (tier) {
+      case 'basic':
+        return 'Basic Creator';
+      case 'mid':
+        return 'Creator Plus';
+      case 'pro':
+        return 'Pro Creator';
+      default:
+        return 'Basic Creator';
+    }
+  };
+
+  // Helper function to get user role display name
+  const getUserRoleDisplay = (): string => {
+    if (userRole === 'admin') return 'Admin';
+    if (userRole === 'creator' && creatorProfile?.approved) {
+      return getTierDisplayName(creatorProfile.tier);
+    }
+    return 'Client';
+  };
+
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -274,7 +299,7 @@ export default function Index() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{userRole || 'Client'}</div>
+                  <div className="text-2xl font-bold">{getUserRoleDisplay()}</div>
                   <p className="text-xs text-muted-foreground">Your current role</p>
                 </CardContent>
               </Card>

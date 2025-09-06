@@ -22,6 +22,39 @@ export const AdminPayments = () => {
   const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
+  // Fetch pricing tiers for dynamic tier assignment
+  const { data: pricingTiers } = useQuery({
+    queryKey: ['pricing-tiers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pricing_tiers')
+        .select('*')
+        .eq('active', true)
+        .order('price_usdc', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Helper function to determine tier from payment amount
+  const getTierFromAmount = (amount: number): string => {
+    if (!pricingTiers) return 'basic';
+    
+    // Find the matching tier based on payment amount
+    for (const tier of pricingTiers) {
+      if (Math.abs(Number(tier.price_usdc) - amount) < 0.01) {
+        return tier.tier_name;
+      }
+    }
+    
+    // Fallback logic if no exact match
+    if (amount === 0) return 'basic';
+    if (amount >= 50) return 'pro';
+    if (amount >= 25) return 'mid';
+    return 'basic';
+  };
+
   const { data: payments, isLoading } = useQuery({
     queryKey: ['admin-payments', statusFilter, networkFilter, searchQuery],
     queryFn: async () => {
@@ -97,7 +130,7 @@ export const AdminPayments = () => {
             .from('creators')
             .insert({
               user_id: payment.user_id,
-              tier: payment.amount === 0 ? 'basic' : payment.amount === 25 ? 'mid' : 'pro',
+              tier: getTierFromAmount(Number(payment.amount)),
               approved: true,
               approved_at: new Date().toISOString(),
               category: 'general'
@@ -111,7 +144,7 @@ export const AdminPayments = () => {
             .update({
               approved: true,
               approved_at: new Date().toISOString(),
-              tier: payment.amount === 0 ? 'basic' : payment.amount === 25 ? 'mid' : 'pro'
+              tier: getTierFromAmount(Number(payment.amount))
             })
             .eq('user_id', payment.user_id);
 
