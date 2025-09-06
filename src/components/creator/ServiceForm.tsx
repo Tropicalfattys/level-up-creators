@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { PAYMENT_METHODS } from '@/lib/contracts';
 
 interface Service {
@@ -219,6 +220,19 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
             <p className="text-sm text-yellow-800">
               <strong>Service Limit Reached:</strong> Your {serviceLimitCheck?.tier} tier allows up to {serviceLimitCheck?.limit} services. 
               You currently have {serviceLimitCheck?.currentCount} active services.
+              {serviceLimitCheck?.limit !== null && (
+                <>
+                  {' '}
+                  <Link 
+                    to="/become-creator" 
+                    className="font-semibold underline hover:no-underline"
+                    onClick={onClose}
+                  >
+                    Upgrade now to create more services
+                  </Link>
+                  .
+                </>
+              )}
             </p>
           </div>
         )}
