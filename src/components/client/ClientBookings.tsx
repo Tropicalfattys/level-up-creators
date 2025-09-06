@@ -393,6 +393,61 @@ export const ClientBookings = () => {
                       </div>
                     )}
 
+                    {/* Completed Deliverables - Show for accepted/released bookings */}
+                    {(booking.status === 'accepted' || booking.status === 'released') && (booking.proof_links?.length || booking.proof_link || booking.proof_file_url) && (
+                      <div className="border rounded-lg p-4 bg-green-50">
+                        <h4 className="font-medium mb-3 text-green-800">Final Deliverables:</h4>
+                        <div className="space-y-2">
+                          {booking.proof_links?.map((link, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <ExternalLink className="h-3 w-3 text-green-600" />
+                              <span className="text-xs text-green-700 font-medium">{link.label}:</span>
+                              <a 
+                                href={link.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-green-600 hover:underline text-sm truncate"
+                              >
+                                {link.url}
+                              </a>
+                            </div>
+                          ))}
+                          
+                          {booking.proof_link && !booking.proof_links?.length && (
+                            <div className="flex items-center gap-2">
+                              <ExternalLink className="h-3 w-3 text-green-600" />
+                              <a 
+                                href={booking.proof_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-green-600 hover:underline text-sm"
+                              >
+                                View Social Proof Link
+                              </a>
+                            </div>
+                          )}
+                          
+                          {booking.proof_file_url && (
+                            <div className="space-y-2">
+                              {booking.proof_file_url.split(',').map((fileUrl, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <ExternalLink className="h-3 w-3 text-green-600" />
+                                  <a 
+                                    href={fileUrl.trim()} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-green-600 hover:underline text-sm"
+                                  >
+                                    View File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Escrow Manager - Only show for delivered bookings */}
                     {booking.status === 'delivered' && (
                       <EscrowManager bookingId={booking.id} isClient={true} />
