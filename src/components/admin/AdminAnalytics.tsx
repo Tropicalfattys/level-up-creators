@@ -604,19 +604,19 @@ export const AdminAnalytics = () => {
               {stats?.top5Clients && stats.top5Clients.length > 0 ? (
                 <div className="space-y-3">
                   {stats.top5Clients.map((client: any, index: number) => (
-                    <div key={client.id} className="border rounded-lg p-3 bg-green-50/50 dark:bg-green-950/20">
+                    <div key={client.id} className="border rounded-lg p-3 bg-black text-white">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs dark:bg-green-900 dark:text-green-300">
+                          <span className="text-sm font-medium w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">
                             {index + 1}
                           </span>
-                          <span className="font-medium">{client.handle}</span>
+                          <span className="font-medium text-white">{client.handle}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-green-600">${client.totalSpent.toFixed(2)}</div>
+                          <div className="font-bold text-green-400">${client.totalSpent.toFixed(2)}</div>
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-300">
                         {client.bookingCount} bookings • Top category: {client.topCategory}
                       </div>
                     </div>
@@ -633,19 +633,19 @@ export const AdminAnalytics = () => {
               {stats?.top5Creators && stats.top5Creators.length > 0 ? (
                 <div className="space-y-3">
                   {stats.top5Creators.map((creator: any, index: number) => (
-                    <div key={creator.id} className="border rounded-lg p-3 bg-blue-50/50 dark:bg-blue-950/20">
+                    <div key={creator.id} className="border rounded-lg p-3 bg-black text-white">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs dark:bg-blue-900 dark:text-blue-300">
+                          <span className="text-sm font-medium w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">
                             {index + 1}
                           </span>
-                          <span className="font-medium">{creator.handle}</span>
+                          <span className="font-medium text-white">{creator.handle}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-600">${creator.totalEarned.toFixed(2)}</div>
+                          <div className="font-bold text-blue-400">${creator.totalEarned.toFixed(2)}</div>
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-300">
                         {creator.bookingCount} bookings • Top category: {creator.topCategory}
                       </div>
                     </div>
