@@ -543,8 +543,8 @@ export const CreatorProfile = () => {
                       {services.map((service: any) => (
                         <div key={service.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-2">
-                            <h3 className="font-semibold">{service.title}</h3>
-                            <div className="flex flex-col sm:flex-row items-center gap-2 mt-3 md:mt-0">
+                            <h3 className="font-semibold break-words">{service.title}</h3>
+                            <div className="flex flex-col items-center gap-2 mt-4 md:mt-0 flex-shrink-0">
                               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                                 ${service.price_usdc}
                               </Badge>
