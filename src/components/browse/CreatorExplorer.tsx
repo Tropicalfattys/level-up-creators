@@ -486,12 +486,6 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                             <Heart className={`h-4 w-4 ${isFollowing(creator.user_id) ? 'fill-current' : ''}`} />
                           </Button>
                         </div>
-                        
-                        {creator.headline && (
-                          <p className="text-zinc-300 text-sm text-center mb-3 line-clamp-2">
-                            {creator.headline}
-                          </p>
-                        )}
                       </div>
                       
                       <div className="grid grid-cols-3 gap-2 mb-4">
