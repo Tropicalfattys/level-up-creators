@@ -19,6 +19,9 @@ interface PayoutRecord {
   payout_status: string;
   paid_out_at: string | null;
   service_id: string;
+  booking_id: string | null;
+  booking_status: string | null;
+  has_open_dispute: boolean;
   creator_user: {
     handle: string | null;
     email: string | null;
@@ -72,6 +75,7 @@ export const AdminPayouts = () => {
           payout_status,
           paid_out_at,
           service_id,
+          booking_id,
           creator_user:users!payments_creator_id_fkey (
             handle,
             email,
@@ -83,6 +87,9 @@ export const AdminPayouts = () => {
           ),
           services:services!payments_service_id_fkey (
             title
+          ),
+          bookings:bookings!payments_booking_id_fkey (
+            status
           )
         `)
         .eq('payment_type', 'service_booking')
@@ -93,8 +100,31 @@ export const AdminPayouts = () => {
         console.error('Error fetching payouts:', error);
         throw error;
       }
+
+      // Transform data to include work status
+      const transformedData = await Promise.all(data.map(async (payout: any) => {
+        let hasOpenDispute = false;
+        
+        // Check for open disputes if there's a booking_id
+        if (payout.booking_id) {
+          const { data: disputes } = await supabase
+            .from('disputes')
+            .select('id')
+            .eq('booking_id', payout.booking_id)
+            .eq('status', 'open')
+            .limit(1);
+          
+          hasOpenDispute = disputes && disputes.length > 0;
+        }
+
+        return {
+          ...payout,
+          booking_status: payout.bookings?.status || null,
+          has_open_dispute: hasOpenDispute
+        };
+      }));
       
-      return data as PayoutRecord[];
+      return transformedData as PayoutRecord[];
     }
   });
 
@@ -276,95 +306,122 @@ export const AdminPayouts = () => {
     }
   };
 
+  const getWorkStatus = (payout: PayoutRecord) => {
+    if (payout.has_open_dispute) {
+      return { status: 'disputed', label: 'Work Disputed', variant: 'destructive' as const };
+    }
+    
+    if (payout.booking_status === 'accepted' || payout.booking_status === 'released') {
+      return { status: 'accepted', label: 'Work Accepted', variant: 'default' as const };
+    }
+    
+    if (payout.booking_status === 'delivered') {
+      return { status: 'delivered', label: 'Work Delivered', variant: 'secondary' as const };
+    }
+    
+    return { status: 'in_progress', label: 'Work In Progress', variant: 'secondary' as const };
+  };
+
   // Filter based on whether payout_tx_hash exists instead of payout_status
   const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash) || [];
   const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
   const pendingRefunds = refunds?.filter(r => !r.refund_tx_hash) || [];
   const completedRefunds = refunds?.filter(r => r.refund_tx_hash) || [];
 
-  const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isPending ? (
-                <Clock className="h-4 w-4 text-orange-500" />
-              ) : (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              )}
-              <span className="font-semibold">
-                {payout.creator_user?.handle || payout.creator_user?.email || 'Unknown Creator'}
-              </span>
+  const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => {
+    const workStatus = getWorkStatus(payout);
+    
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isPending ? (
+                  <Clock className="h-4 w-4 text-orange-500" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                )}
+                <span className="font-semibold">
+                  {payout.creator_user?.handle || payout.creator_user?.email || 'Unknown Creator'}
+                </span>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant={isPending ? "secondary" : "default"}>
+                  {isPending ? 'Pending' : 'Paid Out'}
+                </Badge>
+                {isPending && (
+                  <Badge variant={workStatus.variant} className="text-xs">
+                    {workStatus.label}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <Badge variant={isPending ? "secondary" : "default"}>
-              {isPending ? 'Pending' : 'Paid Out'}
-            </Badge>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Service:</span>
-              <div className="font-medium">{payout.services?.title || 'Unknown Service'}</div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Service:</span>
+                <div className="font-medium">{payout.services?.title || 'Unknown Service'}</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Payout Amount:</span>
+                <div className="font-semibold text-green-600">${formatAmount(payout.amount)} USDC</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Network:</span>
+                <div className="capitalize">{payout.network}</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Payment Date:</span>
+                <div>{new Date(payout.created_at).toLocaleDateString()}</div>
+              </div>
             </div>
-            <div>
-              <span className="text-muted-foreground">Payout Amount:</span>
-              <div className="font-semibold text-green-600">${formatAmount(payout.amount)} USDC</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Network:</span>
-              <div className="capitalize">{payout.network}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Payment Date:</span>
-              <div>{new Date(payout.created_at).toLocaleDateString()}</div>
-            </div>
-          </div>
 
-          <div>
-            <span className="text-muted-foreground text-sm">Payout Address:</span>
-            <div className="font-mono text-sm bg-muted p-2 rounded break-all">
-              {getPayoutAddress(payout.creator_user, payout.network)}
+            <div>
+              <span className="text-muted-foreground text-sm">Payout Address:</span>
+              <div className="font-mono text-sm bg-muted p-2 rounded break-all">
+                {getPayoutAddress(payout.creator_user, payout.network)}
+              </div>
             </div>
-          </div>
 
-          {isPending ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Transaction hash"
-                value={txHashes[payout.id] || ''}
-                onChange={(e) => setTxHashes(prev => ({ ...prev, [payout.id]: e.target.value }))}
-                className="flex-1"
-              />
-              <Button 
-                onClick={() => handlePayout(payout.id)}
-                disabled={payoutMutation.isPending || !txHashes[payout.id]?.trim()}
-              >
-                {payoutMutation.isPending ? 'Recording...' : 'Record Payout'}
-              </Button>
-            </div>
-          ) : (
-            payout.payout_tx_hash && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Transaction Hash:</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(getExplorerUrl(payout.payout_tx_hash!, payout.network), '_blank')}
-                  className="flex items-center gap-1"
+            {isPending ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Transaction hash"
+                  value={txHashes[payout.id] || ''}
+                  onChange={(e) => setTxHashes(prev => ({ ...prev, [payout.id]: e.target.value }))}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={() => handlePayout(payout.id)}
+                  disabled={payoutMutation.isPending || !txHashes[payout.id]?.trim()}
                 >
-                  <span className="font-mono text-xs">
-                    {payout.payout_tx_hash.slice(0, 10)}...{payout.payout_tx_hash.slice(-8)}
-                  </span>
-                  <ExternalLink className="h-3 w-3" />
+                  {payoutMutation.isPending ? 'Recording...' : 'Record Payout'}
                 </Button>
               </div>
-            )
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+            ) : (
+              payout.payout_tx_hash && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Transaction Hash:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(getExplorerUrl(payout.payout_tx_hash!, payout.network), '_blank')}
+                    className="flex items-center gap-1"
+                  >
+                    <span className="font-mono text-xs">
+                      {payout.payout_tx_hash.slice(0, 10)}...{payout.payout_tx_hash.slice(-8)}
+                    </span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const RefundCard = ({ refund, isPending }: { refund: RefundRecord; isPending: boolean }) => (
     <Card className="mb-4">
@@ -497,22 +554,14 @@ export const AdminPayouts = () => {
               ) : pendingRefunds.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No refunds to process</p>
-                  <p className="text-sm">Refund requests will appear here when disputes are resolved in favor of clients.</p>
+                  <p>No pending refunds</p>
+                  <p className="text-sm">Refunds will appear here when disputes are resolved in favor of clients.</p>
                 </div>
               ) : (
                 <div>
                   {pendingRefunds.map((refund) => (
                     <RefundCard key={refund.id} refund={refund} isPending={true} />
                   ))}
-                  {completedRefunds.length > 0 && (
-                    <>
-                      <div className="text-sm font-medium text-muted-foreground mt-6 mb-4">Completed Refunds</div>
-                      {completedRefunds.map((refund) => (
-                        <RefundCard key={refund.id} refund={refund} isPending={false} />
-                      ))}
-                    </>
-                  )}
                 </div>
               )}
             </TabsContent>
@@ -520,17 +569,31 @@ export const AdminPayouts = () => {
             <TabsContent value="completed">
               {isLoading ? (
                 <div className="text-center py-8">Loading completed payouts...</div>
-              ) : completedPayouts.length === 0 ? (
+              ) : completedPayouts.length === 0 && completedRefunds.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No completed payouts yet</p>
-                  <p className="text-sm">Completed payouts will appear here with transaction details.</p>
+                  <p>No completed transactions</p>
+                  <p className="text-sm">Completed payouts and refunds will appear here.</p>
                 </div>
               ) : (
-                <div>
-                  {completedPayouts.map((payout) => (
-                    <PayoutCard key={payout.id} payout={payout} isPending={false} />
-                  ))}
+                <div className="space-y-6">
+                  {completedPayouts.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Completed Payouts</h3>
+                      {completedPayouts.map((payout) => (
+                        <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {completedRefunds.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Completed Refunds</h3>
+                      {completedRefunds.map((refund) => (
+                        <RefundCard key={refund.id} refund={refund} isPending={false} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
