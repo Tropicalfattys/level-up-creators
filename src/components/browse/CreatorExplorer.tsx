@@ -467,12 +467,23 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           {getTierDisplayName(creator.tier)}
                         </Badge>
                         
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
-                            <span className="text-zinc-400">({creator.review_count})</span>
-                          </div>
+                         <div className="flex items-center justify-center gap-2 mb-2">
+                           <div className="flex items-center gap-1">
+                             <div className="flex items-center">
+                               {Array.from({ length: 5 }, (_, i) => (
+                                 <Star 
+                                   key={i} 
+                                   className={`h-4 w-4 ${
+                                     i < Math.floor(creator.rating) 
+                                       ? 'fill-yellow-400 text-yellow-400' 
+                                       : 'text-gray-300'
+                                   }`} 
+                                 />
+                               ))}
+                             </div>
+                             <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
+                             <span className="text-zinc-400">({creator.review_count} Reviews)</span>
+                           </div>
                           <Button
                             variant="ghost"
                             size="sm"

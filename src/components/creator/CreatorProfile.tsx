@@ -309,13 +309,28 @@ export const CreatorProfile = () => {
                 {/* Rating - only show if user has reviews */}
                 {reviews && reviews.length > 0 && (
                   <div className="flex justify-center items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">
-                        {creator?.rating ? creator.rating.toFixed(1) : 
-                         reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0'}
-                      </span>
-                    </div>
+                     <div className="flex items-center gap-1">
+                       <div className="flex items-center">
+                         {Array.from({ length: 5 }, (_, i) => {
+                           const rating = creator?.rating ? creator.rating : 
+                             reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 0;
+                           return (
+                             <Star 
+                               key={i} 
+                               className={`h-4 w-4 ${
+                                 i < Math.floor(rating) 
+                                   ? 'fill-yellow-400 text-yellow-400' 
+                                   : 'text-gray-300'
+                               }`} 
+                             />
+                           );
+                         })}
+                       </div>
+                       <span className="font-medium">
+                         {creator?.rating ? creator.rating.toFixed(1) : 
+                          reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0'}
+                       </span>
+                     </div>
                     <span className="text-muted-foreground">
                       ({reviews.length} reviews)
                     </span>
