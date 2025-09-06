@@ -71,7 +71,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           {service.description}
         </p>
         
-        <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-2">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-2 mt-4">
           <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white">
             {service.category}
           </Badge>
