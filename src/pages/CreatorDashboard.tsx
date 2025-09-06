@@ -11,7 +11,7 @@ import { EarningsTracker } from '@/components/creator/EarningsTracker';
 import { PayoutsTracker } from '@/components/creator/PayoutsTracker';
 import { MessagesList } from '@/components/messaging/MessagesList';
 import { VideoIntroManager } from '@/components/creator/VideoIntroManager';
-import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard, Video } from 'lucide-react';
+import { Package, Calendar, DollarSign, RefreshCw, MessageSquare, CreditCard, Video, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function CreatorDashboard() {
@@ -175,10 +175,10 @@ export default function CreatorDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Rating</p>
+                    <p className="text-sm font-medium text-muted-foreground">Your Review Rating</p>
                     <p className="text-2xl font-bold">{creator.rating.toFixed(1)}</p>
                   </div>
-                  <div className="text-yellow-500">★</div>
+                  <Star className="h-24 w-24 text-yellow-500 fill-current" />
                 </div>
               </CardContent>
             </Card>
