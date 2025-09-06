@@ -178,7 +178,7 @@ export default function CreatorDashboard() {
                     <p className="text-sm font-medium text-muted-foreground">Your Review Rating</p>
                     <p className="text-2xl font-bold">{creator.rating.toFixed(1)}</p>
                   </div>
-                  <Star className="h-24 w-24 text-yellow-500 fill-current" />
+                  <Star className="h-8 w-8 text-yellow-500 fill-current" />
                 </div>
               </CardContent>
             </Card>
