@@ -8,6 +8,7 @@ import { DollarSign, TrendingUp, Clock, Download, ExternalLink, Copy, Hash } fro
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { getExplorerUrl } from "@/lib/utils";
 
 interface PaymentEarning {
   id: string;
@@ -203,16 +204,7 @@ export const EarningsTracker = () => {
     toast.success('Transaction hash copied to clipboard');
   };
 
-  const getExplorerUrl = (network: string, txHash: string) => {
-    const explorers = {
-      ethereum: `https://etherscan.io/tx/${txHash}`,
-      solana: `https://explorer.solana.com/tx/${txHash}`,
-      bsc: `https://bscscan.com/tx/${txHash}`,
-      sui: `https://explorer.sui.io/txblock/${txHash}`,
-      cardano: `https://cardanoscan.io/transaction/${txHash}`
-    };
-    return explorers[network as keyof typeof explorers] || '#';
-  };
+  // Using centralized explorer URL utility
 
   if (isLoading) {
     return <div className="text-center py-8">Loading earnings data...</div>;

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Clock, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { getExplorerUrl } from "@/lib/utils";
 
 interface PayoutRecord {
   id: string;
@@ -291,20 +292,7 @@ export const AdminPayouts = () => {
     return refundAmount.toFixed(2);
   };
 
-  const getExplorerUrl = (txHash: string, network: string) => {
-    switch (network.toLowerCase()) {
-      case 'ethereum':
-        return `https://etherscan.io/tx/${txHash}`;
-      case 'base':
-        return `https://basescan.org/tx/${txHash}`;
-      case 'solana':
-        return `https://explorer.solana.com/tx/${txHash}`;
-      case 'cardano':
-        return `https://cardanoscan.io/transaction/${txHash}`;
-      default:
-        return `https://etherscan.io/tx/${txHash}`;
-    }
-  };
+  // Using centralized explorer URL utility
 
   const getWorkStatus = (payout: PayoutRecord) => {
     if (payout.has_open_dispute) {
@@ -406,7 +394,7 @@ export const AdminPayouts = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(getExplorerUrl(payout.payout_tx_hash!, payout.network), '_blank')}
+                    onClick={() => window.open(getExplorerUrl(payout.network, payout.payout_tx_hash!), '_blank')}
                     className="flex items-center gap-1"
                   >
                     <span className="font-mono text-xs">
@@ -488,7 +476,7 @@ export const AdminPayouts = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(getExplorerUrl(refund.refund_tx_hash!, refund.network), '_blank')}
+                  onClick={() => window.open(getExplorerUrl(refund.network, refund.refund_tx_hash!), '_blank')}
                   className="flex items-center gap-1"
                 >
                   <span className="font-mono text-xs">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, AlertCircle, ExternalLink, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getExplorerUrl } from "@/lib/utils";
 
 interface PaymentResult {
   transactionHash: string;
@@ -26,18 +27,7 @@ export const PaymentSuccess = ({
   creatorHandle,
   onClose
 }: PaymentSuccessProps) => {
-  const getExplorerUrl = (chain: string, txHash: string) => {
-    switch (chain.toLowerCase()) {
-      case 'ethereum':
-        return `https://etherscan.io/tx/${txHash}`;
-      case 'base':
-        return `https://basescan.org/tx/${txHash}`;
-      case 'solana':
-        return `https://explorer.solana.com/tx/${txHash}`;
-      default:
-        return '#';
-    }
-  };
+  // Using centralized explorer URL utility
 
   return (
     <Card>

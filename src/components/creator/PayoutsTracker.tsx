@@ -1,13 +1,13 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle, ExternalLink } from 'lucide-react';
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ExternalLink, Clock, CheckCircle2, DollarSign } from "lucide-react";
+import { getExplorerUrl } from "@/lib/utils";
 
 interface PayoutRecord {
   id: string;
@@ -69,20 +69,7 @@ export const PayoutsTracker = () => {
     return payoutAmount.toFixed(2);
   };
 
-  const getExplorerUrl = (txHash: string, network: string) => {
-    switch (network.toLowerCase()) {
-      case 'ethereum':
-        return `https://etherscan.io/tx/${txHash}`;
-      case 'base':
-        return `https://basescan.org/tx/${txHash}`;
-      case 'solana':
-        return `https://explorer.solana.com/tx/${txHash}`;
-      case 'cardano':
-        return `https://cardanoscan.io/transaction/${txHash}`;
-      default:
-        return `https://etherscan.io/tx/${txHash}`;
-    }
-  };
+  // Using centralized explorer URL utility
 
   const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => (
     <Card className="mb-4">
@@ -92,7 +79,7 @@ export const PayoutsTracker = () => {
             {isPending ? (
               <Clock className="h-4 w-4 text-orange-500" />
             ) : (
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
             )}
             <span className="font-medium">
               {payout.services?.title || 'Service'}
@@ -129,7 +116,7 @@ export const PayoutsTracker = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(getExplorerUrl(payout.payout_tx_hash!, payout.network), '_blank')}
+                onClick={() => window.open(getExplorerUrl(payout.network, payout.payout_tx_hash!), '_blank')}
                 className="flex items-center gap-1"
               >
                 <span className="text-xs">
@@ -183,7 +170,7 @@ export const PayoutsTracker = () => {
                 Pending ({pendingPayouts.length})
               </TabsTrigger>
               <TabsTrigger value="completed" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" />
                 Completed ({completedPayouts.length})
               </TabsTrigger>
             </TabsList>
@@ -207,7 +194,7 @@ export const PayoutsTracker = () => {
             <TabsContent value="completed">
               {completedPayouts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No completed payouts yet</p>
                   <p className="text-sm">Completed payouts will appear here with transaction details.</p>
                 </div>
