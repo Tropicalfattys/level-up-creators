@@ -10,7 +10,7 @@ export const AdminAnalytics = () => {
     queryKey: ['admin-analytics'],
     queryFn: async () => {
       try {
-        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes, pricingTiersRes, servicesRes, categoryBookingsRes] = await Promise.all([
+        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes, pricingTiersRes, servicesRes, categoryBookingsRes, topClientsRes, topCreatorsRes] = await Promise.all([
           supabase.from('users' as any).select('id, role, created_at'),
           supabase.from('creators' as any).select('id, approved, tier, created_at'),
           supabase.from('bookings' as any).select('id, status, usdc_amount, created_at'),
@@ -19,7 +19,9 @@ export const AdminAnalytics = () => {
           supabase.from('payments' as any).select('amount, payment_type, status, creator_id').eq('status', 'verified'),
           supabase.from('pricing_tiers' as any).select('tier_name, price_usdc, display_name').eq('active', true),
           supabase.from('services' as any).select('id, category'),
-          supabase.from('bookings' as any).select('id, status, usdc_amount, service_id, services!inner(category)').in('status', ['paid', 'delivered', 'accepted', 'released'])
+          supabase.from('bookings' as any).select('id, status, usdc_amount, service_id, services!inner(category)').in('status', ['paid', 'delivered', 'accepted', 'released']),
+          supabase.from('bookings' as any).select('client_id, usdc_amount, services!inner(category), users!client_id(handle, email)').in('status', ['paid', 'delivered', 'accepted', 'released']),
+          supabase.from('bookings' as any).select('creator_id, usdc_amount, services!inner(category), users!creator_id(handle, email)').in('status', ['paid', 'delivered', 'accepted', 'released'])
         ]);
 
         const users = usersRes.data || [];
@@ -29,6 +31,8 @@ export const AdminAnalytics = () => {
         const pricingTiers = pricingTiersRes.data || [];
         const services = servicesRes.data || [];
         const categoryBookings = categoryBookingsRes.data || [];
+        const topClientsData = topClientsRes.data || [];
+        const topCreatorsData = topCreatorsRes.data || [];
 
         // Calculate platform revenue from verified payments
         const revenueData = revenueRes.data || [];
@@ -147,6 +151,74 @@ export const AdminAnalytics = () => {
         const topCategoryByRevenue = categoriesByRevenue[0] || null;
         const topCategoryByVolume = categoriesByVolume[0] || null;
 
+        // Calculate top 5 clients by spending
+        const clientSpending = topClientsData.reduce((acc: any, booking: any) => {
+          const clientId = booking.client_id;
+          const amount = Number(booking.usdc_amount) || 0;
+          const category = booking.services?.category || 'Uncategorized';
+          const clientData = booking.users;
+
+          if (!acc[clientId]) {
+            acc[clientId] = {
+              id: clientId,
+              handle: clientData?.handle || clientData?.email?.split('@')[0] || 'Unknown',
+              email: clientData?.email || 'Unknown',
+              totalSpent: 0,
+              bookingCount: 0,
+              categories: {}
+            };
+          }
+
+          acc[clientId].totalSpent += amount;
+          acc[clientId].bookingCount += 1;
+          acc[clientId].categories[category] = (acc[clientId].categories[category] || 0) + 1;
+
+          return acc;
+        }, {});
+
+        const top5Clients = Object.values(clientSpending)
+          .sort((a: any, b: any) => b.totalSpent - a.totalSpent)
+          .slice(0, 5)
+          .map((client: any) => ({
+            ...client,
+            topCategory: Object.entries(client.categories)
+              .sort(([,a]: [string, any], [,b]: [string, any]) => b - a)[0]?.[0] || 'None'
+          }));
+
+        // Calculate top 5 creators by earnings (85% of bookings)
+        const creatorEarnings = topCreatorsData.reduce((acc: any, booking: any) => {
+          const creatorId = booking.creator_id;
+          const amount = (Number(booking.usdc_amount) || 0) * 0.85; // Creator gets 85%
+          const category = booking.services?.category || 'Uncategorized';
+          const creatorData = booking.users;
+
+          if (!acc[creatorId]) {
+            acc[creatorId] = {
+              id: creatorId,
+              handle: creatorData?.handle || creatorData?.email?.split('@')[0] || 'Unknown',
+              email: creatorData?.email || 'Unknown',
+              totalEarned: 0,
+              bookingCount: 0,
+              categories: {}
+            };
+          }
+
+          acc[creatorId].totalEarned += amount;
+          acc[creatorId].bookingCount += 1;
+          acc[creatorId].categories[category] = (acc[creatorId].categories[category] || 0) + 1;
+
+          return acc;
+        }, {});
+
+        const top5Creators = Object.values(creatorEarnings)
+          .sort((a: any, b: any) => b.totalEarned - a.totalEarned)
+          .slice(0, 5)
+          .map((creator: any) => ({
+            ...creator,
+            topCategory: Object.entries(creator.categories)
+              .sort(([,a]: [string, any], [,b]: [string, any]) => b - a)[0]?.[0] || 'None'
+          }));
+
         return {
           totalUsers: users.length,
           adminUsers: users.filter((u: any) => u.role === 'admin').length,
@@ -173,7 +245,9 @@ export const AdminAnalytics = () => {
           totalCreatorEarnings,
           topCategoryByRevenue,
           topCategoryByVolume,
-          categoriesByRevenue
+          categoriesByRevenue,
+          top5Clients,
+          top5Creators
         };
       } catch (error) {
         console.error('Analytics query error:', error);
@@ -203,7 +277,9 @@ export const AdminAnalytics = () => {
           totalCreatorEarnings: 0,
           topCategoryByRevenue: null,
           topCategoryByVolume: null,
-          categoriesByRevenue: []
+          categoriesByRevenue: [],
+          top5Clients: [],
+          top5Creators: []
         };
       }
     }
@@ -508,6 +584,78 @@ export const AdminAnalytics = () => {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Top Performers */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5" />
+            Top Performers
+          </CardTitle>
+          <CardDescription>Top 5 clients and creators by spending/earnings</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Top 5 Clients */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-lg">Top 5 Clients by Spending</h4>
+              {stats?.top5Clients && stats.top5Clients.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.top5Clients.map((client: any, index: number) => (
+                    <div key={client.id} className="border rounded-lg p-3 bg-green-50/50 dark:bg-green-950/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs dark:bg-green-900 dark:text-green-300">
+                            {index + 1}
+                          </span>
+                          <span className="font-medium">{client.handle}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-600">${client.totalSpent.toFixed(2)}</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {client.bookingCount} bookings • Top category: {client.topCategory}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No client data available</div>
+              )}
+            </div>
+
+            {/* Top 5 Creators */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-lg">Top 5 Creators by Earnings</h4>
+              {stats?.top5Creators && stats.top5Creators.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.top5Creators.map((creator: any, index: number) => (
+                    <div key={creator.id} className="border rounded-lg p-3 bg-blue-50/50 dark:bg-blue-950/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs dark:bg-blue-900 dark:text-blue-300">
+                            {index + 1}
+                          </span>
+                          <span className="font-medium">{creator.handle}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-blue-600">${creator.totalEarned.toFixed(2)}</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {creator.bookingCount} bookings • Top category: {creator.topCategory}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No creator data available</div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
