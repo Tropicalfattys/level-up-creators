@@ -173,7 +173,7 @@ export const AdminAnalytics = () => {
           totalCreatorEarnings,
           topCategoryByRevenue,
           topCategoryByVolume,
-          categoriesByRevenue: categoriesByRevenue.slice(0, 5)
+          categoriesByRevenue
         };
       } catch (error) {
         console.error('Analytics query error:', error);
@@ -491,7 +491,7 @@ export const AdminAnalytics = () => {
           {/* Category Breakdown */}
           {stats?.categoriesByRevenue && stats.categoriesByRevenue.length > 0 && (
             <div className="space-y-3">
-              <h4 className="font-semibold">Top 5 Categories by Revenue</h4>
+              <h4 className="font-semibold">All Categories by Revenue</h4>
               <div className="space-y-2">
                 {stats.categoriesByRevenue.map((category: any, index: number) => (
                   <div key={category.category} className="flex justify-between items-center py-2 border-b last:border-0">
