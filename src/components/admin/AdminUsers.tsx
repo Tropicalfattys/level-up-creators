@@ -42,6 +42,8 @@ interface UserProfile {
   payout_address_bsc?: string;
   payout_address_sui?: string;
   banned?: boolean;
+  totalSpentUSD?: number;
+  totalEarnedUSD?: number;
 }
 
 // Helper function to safely parse social_links JSON
@@ -190,14 +192,47 @@ export const AdminUsers = () => {
     return email === SUPER_ADMIN_EMAIL;
   };
 
-  const viewUserDetails = (user: any) => {
-    // Transform the user data to match UserProfile interface with proper social_links parsing
-    const transformedUser: UserProfile = {
-      ...user,
-      social_links: parseSocialLinks(user.social_links)
-    };
-    setSelectedUser(transformedUser);
-    setShowUserDetails(true);
+  const viewUserDetails = async (user: any) => {
+    try {
+      // Fetch client spending data (100% of what they spent)
+      const { data: clientSpending } = await supabase
+        .from('bookings')
+        .select('usdc_amount')
+        .eq('client_id', user.id)
+        .in('status', ['paid', 'delivered', 'accepted', 'released']);
+
+      // Fetch creator earnings data (85% of what they earned)
+      const { data: creatorEarnings } = await supabase
+        .from('bookings')
+        .select('usdc_amount')
+        .eq('creator_id', user.id)
+        .in('status', ['paid', 'delivered', 'accepted', 'released']);
+
+      // Calculate totals
+      const totalSpentUSD = clientSpending?.reduce((sum, booking) => sum + Number(booking.usdc_amount || 0), 0) || 0;
+      const totalEarnedUSD = creatorEarnings?.reduce((sum, booking) => sum + (Number(booking.usdc_amount || 0) * 0.85), 0) || 0;
+
+      // Transform the user data to match UserProfile interface with proper social_links parsing
+      const transformedUser: UserProfile = {
+        ...user,
+        social_links: parseSocialLinks(user.social_links),
+        totalSpentUSD,
+        totalEarnedUSD
+      };
+      setSelectedUser(transformedUser);
+      setShowUserDetails(true);
+    } catch (error) {
+      console.error('Error fetching user financial data:', error);
+      // Fallback to showing user details without financial data
+      const transformedUser: UserProfile = {
+        ...user,
+        social_links: parseSocialLinks(user.social_links),
+        totalSpentUSD: 0,
+        totalEarnedUSD: 0
+      };
+      setSelectedUser(transformedUser);
+      setShowUserDetails(true);
+    }
   };
 
   if (isLoading) {
@@ -504,6 +539,8 @@ export const AdminUsers = () => {
                   <div className="space-y-2 text-sm">
                     <div><strong>Referral Code:</strong> {selectedUser.referral_code || 'Not generated'}</div>
                     <div><strong>Referral Credits:</strong> ${selectedUser.referral_credits || 0}</div>
+                    <div><strong>Total Spent (USD):</strong> ${selectedUser.totalSpentUSD?.toFixed(2) || '0.00'}</div>
+                    <div><strong>Total Earned (USD):</strong> ${selectedUser.totalEarnedUSD?.toFixed(2) || '0.00'}</div>
                     <div><strong>Status:</strong> {selectedUser.banned ? 'Banned' : 'Active'}</div>
                     <div><strong>Joined:</strong> {new Date(selectedUser.created_at || '').toLocaleDateString()}</div>
                     {selectedUser.updated_at && (
