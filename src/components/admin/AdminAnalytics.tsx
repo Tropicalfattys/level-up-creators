@@ -10,19 +10,21 @@ export const AdminAnalytics = () => {
     queryKey: ['admin-analytics'],
     queryFn: async () => {
       try {
-        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes] = await Promise.all([
+        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes, pricingTiersRes] = await Promise.all([
           supabase.from('users' as any).select('id, role, created_at'),
           supabase.from('creators' as any).select('id, approved, tier, created_at'),
           supabase.from('bookings' as any).select('id, status, usdc_amount, created_at'),
           supabase.from('disputes' as any).select('id, status, created_at'),
           supabase.from('payments' as any).select('amount, payment_type, status').eq('status', 'verified'),
-          supabase.from('payments' as any).select('amount, payment_type, status, creator_id').eq('status', 'verified')
+          supabase.from('payments' as any).select('amount, payment_type, status, creator_id').eq('status', 'verified'),
+          supabase.from('pricing_tiers' as any).select('tier_name, price_usdc, display_name').eq('active', true)
         ]);
 
         const users = usersRes.data || [];
         const creators = creatorsRes.data || [];
         const bookings = bookingsRes.data || [];
         const disputes = disputesRes.data || [];
+        const pricingTiers = pricingTiersRes.data || [];
 
         // Calculate platform revenue from verified payments
         const revenueData = revenueRes.data || [];
@@ -52,20 +54,36 @@ export const AdminAnalytics = () => {
         
         const serviceFeeRevenue = serviceBookingVolume * 0.15;
         
+        // Create a flexible tier mapping that can handle historical price changes
+        const getTierFromAmount = (amount: number) => {
+          // Handle historical pricing for mid tier: $25, $29, $30
+          if (amount >= 25 && amount <= 35) return 'mid';
+          // Handle historical pricing for pro tier: $50, $79
+          if (amount >= 45 && amount <= 85) return 'pro';
+          // Basic tier is always free
+          return 'basic';
+        };
+        
         // Get tier breakdown for subscription revenue
         const tierRevenueBreakdown = detailedRevenueData
           .filter((p: any) => p.payment_type === 'creator_tier')
           .reduce((acc: any, payment: any) => {
             const amount = Number(payment.amount) || 0;
-            // Map amounts to tiers (based on pricing structure)
-            let tier = 'basic';
-            if (amount === 25) tier = 'mid';
-            else if (amount === 50) tier = 'pro';
+            const tier = getTierFromAmount(amount);
             
             acc[tier] = (acc[tier] || 0) + amount;
             acc[`${tier}_count`] = (acc[`${tier}_count`] || 0) + 1;
             return acc;
           }, {});
+
+        // Get current pricing for display
+        const currentPricing = pricingTiers.reduce((acc: any, tier: any) => {
+          acc[tier.tier_name] = {
+            price: Number(tier.price_usdc),
+            displayName: tier.display_name
+          };
+          return acc;
+        }, {});
 
         const serviceTransactionCount = detailedRevenueData
           .filter((p: any) => p.payment_type === 'service_booking').length;
@@ -113,6 +131,7 @@ export const AdminAnalytics = () => {
           serviceBookingVolume,
           serviceTransactionCount,
           tierRevenueBreakdown,
+          currentPricing,
           dailyStats,
           roleDistribution: roleDistribution.filter(r => r.value > 0)
         };
@@ -137,6 +156,7 @@ export const AdminAnalytics = () => {
           serviceBookingVolume: 0,
           serviceTransactionCount: 0,
           tierRevenueBreakdown: {},
+          currentPricing: {},
           dailyStats: [],
           roleDistribution: []
         };
@@ -291,21 +311,27 @@ export const AdminAnalytics = () => {
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Basic Tier ($0)</span>
+                  <span className="text-sm">
+                    {stats?.currentPricing?.basic?.displayName || 'Basic'} Tier (${stats?.currentPricing?.basic?.price || 0})
+                  </span>
                   <div className="text-right">
                     <div className="font-medium">${(stats?.tierRevenueBreakdown?.basic || 0).toFixed(2)}</div>
                     <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.basic_count || 0} payments</div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Mid Tier ($25)</span>
+                  <span className="text-sm">
+                    {stats?.currentPricing?.mid?.displayName || 'Mid'} Tier (${stats?.currentPricing?.mid?.price || 29})
+                  </span>
                   <div className="text-right">
                     <div className="font-medium">${(stats?.tierRevenueBreakdown?.mid || 0).toFixed(2)}</div>
                     <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.mid_count || 0} payments</div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Pro Tier ($50)</span>
+                  <span className="text-sm">
+                    {stats?.currentPricing?.pro?.displayName || 'Pro'} Tier (${stats?.currentPricing?.pro?.price || 79})
+                  </span>
                   <div className="text-right">
                     <div className="font-medium">${(stats?.tierRevenueBreakdown?.pro || 0).toFixed(2)}</div>
                     <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.pro_count || 0} payments</div>
