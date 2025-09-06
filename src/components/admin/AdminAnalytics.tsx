@@ -10,14 +10,16 @@ export const AdminAnalytics = () => {
     queryKey: ['admin-analytics'],
     queryFn: async () => {
       try {
-        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes, pricingTiersRes] = await Promise.all([
+        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes, pricingTiersRes, servicesRes, categoryBookingsRes] = await Promise.all([
           supabase.from('users' as any).select('id, role, created_at'),
           supabase.from('creators' as any).select('id, approved, tier, created_at'),
           supabase.from('bookings' as any).select('id, status, usdc_amount, created_at'),
           supabase.from('disputes' as any).select('id, status, created_at'),
           supabase.from('payments' as any).select('amount, payment_type, status').eq('status', 'verified'),
           supabase.from('payments' as any).select('amount, payment_type, status, creator_id').eq('status', 'verified'),
-          supabase.from('pricing_tiers' as any).select('tier_name, price_usdc, display_name').eq('active', true)
+          supabase.from('pricing_tiers' as any).select('tier_name, price_usdc, display_name').eq('active', true),
+          supabase.from('services' as any).select('id, category'),
+          supabase.from('bookings' as any).select('id, status, usdc_amount, service_id, services!inner(category)').in('status', ['paid', 'delivered', 'accepted', 'released'])
         ]);
 
         const users = usersRes.data || [];
@@ -25,6 +27,8 @@ export const AdminAnalytics = () => {
         const bookings = bookingsRes.data || [];
         const disputes = disputesRes.data || [];
         const pricingTiers = pricingTiersRes.data || [];
+        const services = servicesRes.data || [];
+        const categoryBookings = categoryBookingsRes.data || [];
 
         // Calculate platform revenue from verified payments
         const revenueData = revenueRes.data || [];
@@ -112,6 +116,37 @@ export const AdminAnalytics = () => {
           { name: 'Admins', value: users.filter((u: any) => u.role === 'admin').length, color: '#ffc658' }
         ];
 
+        // Business insights calculations
+        const totalClientSpending = categoryBookings.reduce((sum: number, booking: any) => sum + (Number(booking.usdc_amount) || 0), 0);
+        const totalCreatorEarnings = totalClientSpending * 0.85; // 85% after platform fee
+
+        // Category statistics
+        const categoryStats = categoryBookings.reduce((acc: any, booking: any) => {
+          const category = booking.services?.category || 'Uncategorized';
+          const amount = Number(booking.usdc_amount) || 0;
+          
+          if (!acc[category]) {
+            acc[category] = { revenue: 0, bookings: 0 };
+          }
+          
+          acc[category].revenue += amount;
+          acc[category].bookings += 1;
+          
+          return acc;
+        }, {});
+
+        // Top categories by revenue and volume
+        const categoriesByRevenue = Object.entries(categoryStats)
+          .map(([category, stats]: [string, any]) => ({ category, ...stats }))
+          .sort((a: any, b: any) => b.revenue - a.revenue);
+
+        const categoriesByVolume = Object.entries(categoryStats)
+          .map(([category, stats]: [string, any]) => ({ category, ...stats }))
+          .sort((a: any, b: any) => b.bookings - a.bookings);
+
+        const topCategoryByRevenue = categoriesByRevenue[0] || null;
+        const topCategoryByVolume = categoriesByVolume[0] || null;
+
         return {
           totalUsers: users.length,
           adminUsers: users.filter((u: any) => u.role === 'admin').length,
@@ -133,7 +168,12 @@ export const AdminAnalytics = () => {
           tierRevenueBreakdown,
           currentPricing,
           dailyStats,
-          roleDistribution: roleDistribution.filter(r => r.value > 0)
+          roleDistribution: roleDistribution.filter(r => r.value > 0),
+          totalClientSpending,
+          totalCreatorEarnings,
+          topCategoryByRevenue,
+          topCategoryByVolume,
+          categoriesByRevenue: categoriesByRevenue.slice(0, 5)
         };
       } catch (error) {
         console.error('Analytics query error:', error);
@@ -158,7 +198,12 @@ export const AdminAnalytics = () => {
           tierRevenueBreakdown: {},
           currentPricing: {},
           dailyStats: [],
-          roleDistribution: []
+          roleDistribution: [],
+          totalClientSpending: 0,
+          totalCreatorEarnings: 0,
+          topCategoryByRevenue: null,
+          topCategoryByVolume: null,
+          categoriesByRevenue: []
         };
       }
     }
@@ -385,6 +430,84 @@ export const AdminAnalytics = () => {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Business Insights */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Business Insights
+          </CardTitle>
+          <CardDescription>Key business metrics and category performance</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Main Metrics */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-green-50 rounded-lg p-4 dark:bg-green-950/30">
+              <div className="text-2xl font-bold text-green-600">${(stats?.totalClientSpending || 0).toFixed(2)}</div>
+              <p className="text-sm text-green-600/80">Total Client Spending</p>
+              <p className="text-xs text-muted-foreground">100% of all bookings</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 dark:bg-blue-950/30">
+              <div className="text-2xl font-bold text-blue-600">${(stats?.totalCreatorEarnings || 0).toFixed(2)}</div>
+              <p className="text-sm text-blue-600/80">Total Creator Earnings</p>
+              <p className="text-xs text-muted-foreground">85% after platform fees</p>
+            </div>
+          </div>
+
+          {/* Top Categories */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="font-semibold">Top Category by Revenue</h4>
+              {stats?.topCategoryByRevenue ? (
+                <div className="border rounded-lg p-3">
+                  <div className="font-medium">{stats.topCategoryByRevenue.category}</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${stats.topCategoryByRevenue.revenue.toFixed(2)} • {stats.topCategoryByRevenue.bookings} bookings
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No data available</div>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              <h4 className="font-semibold">Top Category by Volume</h4>
+              {stats?.topCategoryByVolume ? (
+                <div className="border rounded-lg p-3">
+                  <div className="font-medium">{stats.topCategoryByVolume.category}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {stats.topCategoryByVolume.bookings} bookings • ${stats.topCategoryByVolume.revenue.toFixed(2)}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No data available</div>
+              )}
+            </div>
+          </div>
+
+          {/* Category Breakdown */}
+          {stats?.categoriesByRevenue && stats.categoriesByRevenue.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-semibold">Top 5 Categories by Revenue</h4>
+              <div className="space-y-2">
+                {stats.categoriesByRevenue.map((category: any, index: number) => (
+                  <div key={category.category} className="flex justify-between items-center py-2 border-b last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium w-4 text-center text-muted-foreground">{index + 1}</span>
+                      <span className="font-medium">{category.category}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${category.revenue.toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground">{category.bookings} bookings</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
