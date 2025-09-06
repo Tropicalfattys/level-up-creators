@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Gift } from 'lucide-react';
+import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReferralStats } from './ReferralStats';
 
@@ -47,7 +47,9 @@ export const ReferralSystem = () => {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(referralUrl)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralUrl)}`,
-      telegram: `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`
+      telegram: `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`,
+      instagram: `instagram://camera?url=${encodeURIComponent(referralUrl)}`,
+      discord: `https://discord.com/channels/@me?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`
     };
 
     window.open(urls[platform as keyof typeof urls], '_blank');
@@ -105,7 +107,7 @@ export const ReferralSystem = () => {
           {/* Social Share */}
           <div>
             <label className="text-sm font-medium mb-3 block">Share on social media:</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -141,6 +143,24 @@ export const ReferralSystem = () => {
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Telegram
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => shareOnSocial('instagram')}
+                className="justify-start"
+              >
+                <Instagram className="h-4 w-4 mr-2" />
+                Instagram
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => shareOnSocial('discord')}
+                className="justify-start"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Discord
               </Button>
             </div>
           </div>
