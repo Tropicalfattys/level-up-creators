@@ -10,12 +10,13 @@ export const AdminAnalytics = () => {
     queryKey: ['admin-analytics'],
     queryFn: async () => {
       try {
-        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes] = await Promise.all([
+        const [usersRes, creatorsRes, bookingsRes, disputesRes, revenueRes, detailedRevenueRes] = await Promise.all([
           supabase.from('users' as any).select('id, role, created_at'),
           supabase.from('creators' as any).select('id, approved, tier, created_at'),
           supabase.from('bookings' as any).select('id, status, usdc_amount, created_at'),
           supabase.from('disputes' as any).select('id, status, created_at'),
-          supabase.from('payments' as any).select('amount, payment_type, status').eq('status', 'verified')
+          supabase.from('payments' as any).select('amount, payment_type, status').eq('status', 'verified'),
+          supabase.from('payments' as any).select('amount, payment_type, status, creator_id').eq('status', 'verified')
         ]);
 
         const users = usersRes.data || [];
@@ -38,6 +39,36 @@ export const AdminAnalytics = () => {
           
           return sum;
         }, 0);
+
+        // Calculate detailed revenue breakdown
+        const detailedRevenueData = detailedRevenueRes.data || [];
+        const subscriptionRevenue = detailedRevenueData
+          .filter((p: any) => p.payment_type === 'creator_tier')
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+        
+        const serviceBookingVolume = detailedRevenueData
+          .filter((p: any) => p.payment_type === 'service_booking')
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+        
+        const serviceFeeRevenue = serviceBookingVolume * 0.15;
+        
+        // Get tier breakdown for subscription revenue
+        const tierRevenueBreakdown = detailedRevenueData
+          .filter((p: any) => p.payment_type === 'creator_tier')
+          .reduce((acc: any, payment: any) => {
+            const amount = Number(payment.amount) || 0;
+            // Map amounts to tiers (based on pricing structure)
+            let tier = 'basic';
+            if (amount === 25) tier = 'mid';
+            else if (amount === 50) tier = 'pro';
+            
+            acc[tier] = (acc[tier] || 0) + amount;
+            acc[`${tier}_count`] = (acc[`${tier}_count`] || 0) + 1;
+            return acc;
+          }, {});
+
+        const serviceTransactionCount = detailedRevenueData
+          .filter((p: any) => p.payment_type === 'service_booking').length;
 
         // Calculate growth data for the last 7 days
         const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -77,6 +108,11 @@ export const AdminAnalytics = () => {
           totalDisputes: disputes.length,
           openDisputes: disputes.filter((d: any) => d.status === 'open').length,
           totalRevenue,
+          subscriptionRevenue,
+          serviceFeeRevenue,
+          serviceBookingVolume,
+          serviceTransactionCount,
+          tierRevenueBreakdown,
           dailyStats,
           roleDistribution: roleDistribution.filter(r => r.value > 0)
         };
@@ -96,6 +132,11 @@ export const AdminAnalytics = () => {
           totalDisputes: 0,
           openDisputes: 0,
           totalRevenue: 0,
+          subscriptionRevenue: 0,
+          serviceFeeRevenue: 0,
+          serviceBookingVolume: 0,
+          serviceTransactionCount: 0,
+          tierRevenueBreakdown: {},
           dailyStats: [],
           roleDistribution: []
         };
@@ -220,6 +261,106 @@ export const AdminAnalytics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Detailed Platform Revenue */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Detailed Platform Revenue
+          </CardTitle>
+          <CardDescription>Breakdown of platform earnings by revenue source</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Total Platform Earnings */}
+          <div className="bg-primary/5 rounded-lg p-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">${(stats?.totalRevenue || 0).toFixed(2)}</div>
+              <p className="text-sm text-muted-foreground mt-1">Total Platform Earnings</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Subscription Revenue */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-lg">Subscription Revenue</h4>
+              <div className="bg-green-50 rounded-lg p-4 dark:bg-green-950/30">
+                <div className="text-2xl font-bold text-green-600">${(stats?.subscriptionRevenue || 0).toFixed(2)}</div>
+                <p className="text-sm text-green-600/80">Total Subscriptions</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Basic Tier ($0)</span>
+                  <div className="text-right">
+                    <div className="font-medium">${(stats?.tierRevenueBreakdown?.basic || 0).toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.basic_count || 0} payments</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Mid Tier ($25)</span>
+                  <div className="text-right">
+                    <div className="font-medium">${(stats?.tierRevenueBreakdown?.mid || 0).toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.mid_count || 0} payments</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Pro Tier ($50)</span>
+                  <div className="text-right">
+                    <div className="font-medium">${(stats?.tierRevenueBreakdown?.pro || 0).toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground">{stats?.tierRevenueBreakdown?.pro_count || 0} payments</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Service Booking Fees */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-lg">Service Booking Fees</h4>
+              <div className="bg-blue-50 rounded-lg p-4 dark:bg-blue-950/30">
+                <div className="text-2xl font-bold text-blue-600">${(stats?.serviceFeeRevenue || 0).toFixed(2)}</div>
+                <p className="text-sm text-blue-600/80">Platform Fee (15%)</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Booking Volume</span>
+                  <span className="font-medium">${(stats?.serviceBookingVolume || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Number of Transactions</span>
+                  <span className="font-medium">{stats?.serviceTransactionCount || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Average Transaction</span>
+                  <span className="font-medium">
+                    ${stats?.serviceTransactionCount ? ((stats?.serviceBookingVolume || 0) / stats.serviceTransactionCount).toFixed(2) : '0.00'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Revenue Split */}
+          <div className="border-t pt-4">
+            <h4 className="font-semibold text-lg mb-3">Revenue Composition</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xl font-bold">
+                  {stats?.totalRevenue ? ((stats.subscriptionRevenue / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                </div>
+                <p className="text-sm text-muted-foreground">From Subscriptions</p>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold">
+                  {stats?.totalRevenue ? ((stats.serviceFeeRevenue / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                </div>
+                <p className="text-sm text-muted-foreground">From Service Fees</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* System Health */}
       <Card>
