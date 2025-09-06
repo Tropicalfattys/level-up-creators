@@ -77,6 +77,8 @@ export const PayoutsTracker = () => {
         return `https://basescan.org/tx/${txHash}`;
       case 'solana':
         return `https://explorer.solana.com/tx/${txHash}`;
+      case 'cardano':
+        return `https://cardanoscan.io/transaction/${txHash}`;
       default:
         return `https://etherscan.io/tx/${txHash}`;
     }
