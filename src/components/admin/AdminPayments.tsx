@@ -171,13 +171,29 @@ export const AdminPayments = () => {
           if (approveError) throw approveError;
         }
 
-        // Update user role to creator
-        const { error: roleError } = await supabase
+        // Update user role to creator ONLY if currently 'client' - preserve admin roles!
+        const { data: currentUser, error: userFetchError } = await supabase
           .from('users')
-          .update({ role: 'creator' })
-          .eq('id', payment.user_id);
+          .select('role')
+          .eq('id', payment.user_id)
+          .single();
 
-        if (roleError) throw roleError;
+        if (userFetchError) throw userFetchError;
+
+        // Only update role to 'creator' if user is currently 'client'
+        // NEVER overwrite 'admin' role - admins can be creators too!
+        if (currentUser?.role === 'client') {
+          const { error: roleError } = await supabase
+            .from('users')
+            .update({ role: 'creator' })
+            .eq('id', payment.user_id);
+
+          if (roleError) throw roleError;
+          
+          console.log(`Updated user ${payment.user_id} role from 'client' to 'creator'`);
+        } else {
+          console.log(`Preserved existing role '${currentUser?.role}' for user ${payment.user_id} - not changing to creator`);
+        }
       }
 
       toast.success(
