@@ -37,22 +37,39 @@ export const AdminPayments = () => {
     }
   });
 
-  // Helper function to determine tier from payment amount
-  const getTierFromAmount = (amount: number): string => {
-    if (!pricingTiers) return 'basic';
+  // Helper function to determine tier from payment amount (now async to always get fresh data)
+  const getTierFromAmount = async (amount: number): Promise<string> => {
+    console.log(`Getting tier for amount: $${amount}`);
+    
+    // Always fetch fresh pricing data from database to avoid race conditions
+    const { data: currentPricingTiers, error } = await supabase
+      .from('pricing_tiers')
+      .select('*')
+      .eq('active', true)
+      .order('price_usdc', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching pricing tiers:', error);
+      return 'basic'; // Only fallback on database error
+    }
+
+    if (!currentPricingTiers) {
+      console.error('No pricing tiers found in database');
+      return 'basic';
+    }
+
+    console.log('Available pricing tiers:', currentPricingTiers.map(t => ({ tier: t.tier_name, price: t.price_usdc })));
     
     // Find the matching tier based on payment amount
-    for (const tier of pricingTiers) {
+    for (const tier of currentPricingTiers) {
       if (Math.abs(Number(tier.price_usdc) - amount) < 0.01) {
+        console.log(`Found matching tier: ${tier.tier_name} for amount $${amount}`);
         return tier.tier_name;
       }
     }
     
-    // Fallback logic if no exact match
-    if (amount === 0) return 'basic';
-    if (amount >= 50) return 'pro';
-    if (amount >= 25) return 'mid';
-    return 'basic';
+    console.error(`No matching tier found for amount $${amount}. Available tiers:`, currentPricingTiers.map(t => `${t.tier_name}: $${t.price_usdc}`));
+    return 'basic'; // Only return basic if truly no match found
   };
 
   const { data: payments, isLoading } = useQuery({
@@ -124,13 +141,16 @@ export const AdminPayments = () => {
           .eq('user_id', payment.user_id)
           .single();
 
+        const assignedTier = await getTierFromAmount(Number(payment.amount));
+        console.log(`Assigning tier: ${assignedTier} for payment amount: $${payment.amount}`);
+
         if (!existingCreator) {
           // Create new creator record
           const { error: creatorError } = await supabase
             .from('creators')
             .insert({
               user_id: payment.user_id,
-              tier: getTierFromAmount(Number(payment.amount)),
+              tier: assignedTier,
               approved: true,
               approved_at: new Date().toISOString(),
               category: 'general'
@@ -144,7 +164,7 @@ export const AdminPayments = () => {
             .update({
               approved: true,
               approved_at: new Date().toISOString(),
-              tier: getTierFromAmount(Number(payment.amount))
+              tier: assignedTier
             })
             .eq('user_id', payment.user_id);
 
