@@ -33,13 +33,8 @@ export const CreatorsFollowedCard = () => {
                         {creator.handle[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">@{creator.handle}</p>
-                      {creator.headline && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {creator.headline}
-                        </p>
-                      )}
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="text-sm font-medium truncate text-left">@{creator.handle}</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" asChild>
