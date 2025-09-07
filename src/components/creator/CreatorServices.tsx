@@ -197,6 +197,7 @@ export const CreatorServices = () => {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(service.id)}
+                    className="bg-gradient-to-r from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white border-0"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
