@@ -308,16 +308,6 @@ export const AdminBookings = () => {
                         
                         {/* Admin actions */}
                         <div className="flex gap-1">
-                          {booking.tx_hash && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(getExplorerUrl(booking.chain, booking.tx_hash), '_blank')}
-                              title="View Transaction"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                          )}
                           {booking.status === 'disputed' && (
                             <div className="flex gap-1">
                               <Button
