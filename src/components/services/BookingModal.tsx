@@ -48,9 +48,10 @@ interface BookingModalProps {
   creator: Creator;
   isOpen: boolean;
   onClose: () => void;
+  onBookingComplete?: () => void;
 }
 
-export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModalProps) => {
+export const BookingModal = ({ service, creator, isOpen, onClose, onBookingComplete }: BookingModalProps) => {
   const [step, setStep] = useState<'review' | 'payment' | 'submitted'>('review');
   const [bookingId, setBookingId] = useState<string | null>(null);
   const { user } = useAuth();
@@ -66,6 +67,8 @@ export const BookingModal = ({ service, creator, isOpen, onClose }: BookingModal
     setStep('submitted');
     queryClient.invalidateQueries({ queryKey: ['user-bookings'] });
     queryClient.invalidateQueries({ queryKey: ['creator-bookings'] });
+    // Notify parent that booking is complete
+    onBookingComplete?.();
   };
 
   const handleClose = () => {

@@ -49,6 +49,11 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
     setShowBookingModal(true);
   };
 
+  const handleBookingComplete = () => {
+    setShowBookingModal(false);
+    onClose();
+  };
+
   // Create creator object for BookingModal
   const creator = service.creator ? {
     id: service.creator.id,
@@ -162,6 +167,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
           creator={creator}
           isOpen={showBookingModal}
           onClose={() => setShowBookingModal(false)}
+          onBookingComplete={handleBookingComplete}
         />
       )}
     </>
