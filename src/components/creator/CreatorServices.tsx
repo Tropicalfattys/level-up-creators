@@ -134,7 +134,7 @@ export const CreatorServices = () => {
       {services && services.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
-            <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors">
+            <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors flex flex-col h-full">
               <CardHeader className="border-4 border-black rounded-lg">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl text-black">{service.title}</CardTitle>
@@ -149,7 +149,7 @@ export const CreatorServices = () => {
                   {service.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 mt-auto">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-black">Price:</span>
