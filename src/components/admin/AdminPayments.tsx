@@ -240,6 +240,18 @@ export const AdminPayments = () => {
     return payment.service?.title || 'Unknown';
   };
 
+  // Helper function to detect repayments (retry payments)
+  const isRepayment = (payment: any, allPayments: any[]) => {
+    if (!payment.booking_id) return false;
+    
+    return allPayments.some(p => 
+      p.booking_id === payment.booking_id && 
+      p.status === 'rejected' && 
+      p.id !== payment.id &&
+      new Date(p.created_at) < new Date(payment.created_at)
+    );
+  };
+
   // Helper function to calculate payout amount (creator's 85% share)
   const getPayoutAmount = (payment: any) => {
     // Only calculate payout for service payments, not creator tier subscriptions
@@ -418,67 +430,79 @@ export const AdminPayments = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {payment.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => updatePaymentStatus(payment.id, 'verified')}
-                            disabled={processingPayments.has(payment.id)}
-                          >
-                            {processingPayments.has(payment.id) && (
-                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                            )}
-                            Verify
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={processingPayments.has(payment.id)}
-                              >
-                                {processingPayments.has(payment.id) && (
-                                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                                )}
-                                Reject
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Reject Payment</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to reject this payment? This action cannot be undone.
-                                  <br /><br />
-                                  <strong>Transaction:</strong> {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
-                                  <br />
-                                  <strong>Amount:</strong> ${payment.amount} {payment.currency}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => updatePaymentStatus(payment.id, 'rejected')}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      <div className="flex flex-col gap-2">
+                        {/* Show repayment indicator first if applicable */}
+                        {isRepayment(payment, payments || []) && (
+                          <Badge variant="outline" className="text-blue-600 border-blue-600 w-fit">
+                            Repayment
+                          </Badge>
+                        )}
+                        
+                        {/* Existing action buttons for pending payments */}
+                        {payment.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => updatePaymentStatus(payment.id, 'verified')}
+                              disabled={processingPayments.has(payment.id)}
+                            >
+                              {processingPayments.has(payment.id) && (
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              )}
+                              Verify
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={processingPayments.has(payment.id)}
                                 >
-                                  Reject Payment
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
-                      {payment.status === 'verified' && payment.booking?.status === 'paid' && (
-                        <div className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="text-xs">Synced</span>
-                        </div>
-                      )}
-                      {payment.status === 'rejected' && (
-                        <div className="flex items-center gap-1 text-destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="text-xs">Rejected</span>
-                        </div>
-                      )}
+                                  {processingPayments.has(payment.id) && (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                  )}
+                                  Reject
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reject Payment</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to reject this payment? This action cannot be undone.
+                                    <br /><br />
+                                    <strong>Transaction:</strong> {payment.tx_hash.slice(0, 8)}...{payment.tx_hash.slice(-8)}
+                                    <br />
+                                    <strong>Amount:</strong> ${payment.amount} {payment.currency}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Reject Payment
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
+                        
+                        {/* Status indicators for completed payments */}
+                        {payment.status === 'verified' && payment.booking?.status === 'paid' && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="text-xs">Synced</span>
+                          </div>
+                        )}
+                        {payment.status === 'rejected' && (
+                          <div className="flex items-center gap-1 text-destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-xs">Rejected</span>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
