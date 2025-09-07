@@ -31,6 +31,7 @@ interface BookingWithDetails {
   proof_file_url?: string;
   proof_links?: Array<{ url: string; label: string }>;
   work_started_at?: string;
+  deliveryNote?: string;
   services: {
     title: string;
   } | null;
@@ -74,7 +75,11 @@ export const BookingManagement = () => {
         .select(`
           *,
           services (title),
-          client:users!bookings_client_id_fkey (id, handle, avatar_url)
+          client:users!bookings_client_id_fkey (id, handle, avatar_url),
+          delivery_messages:messages!messages_booking_id_fkey (
+            body,
+            created_at
+          )
         `)
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
@@ -84,15 +89,33 @@ export const BookingManagement = () => {
         throw error;
       }
       
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links.map((link: any) => ({
-              url: typeof link === 'string' ? link : link.url || '',
-              label: typeof link === 'string' ? 'Link' : link.label || 'Link'
-            }))
-          : []
-      })) as BookingWithDetails[];
+      return (data || []).map(booking => {
+        // Extract delivery note from messages
+        let deliveryNote = '';
+        if (booking.delivery_messages && Array.isArray(booking.delivery_messages)) {
+          const deliveryMessage = booking.delivery_messages
+            .filter((msg: any) => msg.body && msg.body.startsWith('Delivery completed:'))
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+          
+          if (deliveryMessage) {
+            const noteContent = deliveryMessage.body.replace('Delivery completed:', '').trim();
+            if (noteContent && noteContent !== 'Files delivered') {
+              deliveryNote = noteContent;
+            }
+          }
+        }
+        
+        return {
+          ...booking,
+          deliveryNote,
+          proof_links: Array.isArray(booking.proof_links) 
+            ? booking.proof_links.map((link: any) => ({
+                url: typeof link === 'string' ? link : link.url || '',
+                label: typeof link === 'string' ? 'Link' : link.label || 'Link'
+              }))
+            : []
+        };
+      }) as BookingWithDetails[];
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes - prevent excessive refetching
@@ -700,10 +723,17 @@ export const BookingManagement = () => {
                                         </div>
                                       ))}
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                                   )}
+                                 </div>
+                                 
+                                 {booking.deliveryNote && (
+                                   <div className="mt-3 p-2 bg-slate-50 rounded border-l-4 border-blue-500">
+                                     <p className="text-sm font-medium mb-1 text-slate-700">Delivery Notes:</p>
+                                     <p className="text-sm text-slate-600">{booking.deliveryNote}</p>
+                                   </div>
+                                 )}
+                               </div>
+                             )}
                           </div>
                         )}
                         
@@ -767,11 +797,18 @@ export const BookingManagement = () => {
                                           </a>
                                         </div>
                                       ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                                     </div>
+                                   )}
+                                 </div>
+                                 
+                                 {booking.deliveryNote && (
+                                   <div className="mt-3 p-2 bg-green-50 rounded border-l-4 border-green-500">
+                                     <p className="text-sm font-medium mb-1 text-green-700">Delivery Notes:</p>
+                                     <p className="text-sm text-green-600">{booking.deliveryNote}</p>
+                                   </div>
+                                 )}
+                               </div>
+                             )}
                           </div>
                         )}
                       </div>
