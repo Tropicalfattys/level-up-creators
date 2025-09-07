@@ -207,7 +207,7 @@ export const AdminBookings = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Chain</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Deliverables</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -252,40 +252,97 @@ export const AdminBookings = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        {booking.tx_hash && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(getExplorerUrl(booking.chain, booking.tx_hash), '_blank')}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {booking.status === 'disputed' && (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateBookingStatus.mutate({
-                                bookingId: booking.id,
-                                status: 'refunded'
-                              })}
-                            >
-                              Refund
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateBookingStatus.mutate({
-                                bookingId: booking.id,
-                                status: 'released'
-                              })}
-                            >
-                              Release
-                            </Button>
+                      <div className="space-y-2">
+                        {/* Show deliverables for completed bookings */}
+                        {(booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released') && 
+                         ((booking.proof_links as any)?.length || booking.proof_link || booking.proof_file_url) && (
+                          <div className="space-y-1">
+                            {(booking.proof_links as any)?.map((link: any, index: number) => (
+                              <div key={index} className="flex items-center gap-1">
+                                <ExternalLink className="h-3 w-3 text-blue-600" />
+                                <a 
+                                  href={link.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-600 hover:underline text-xs truncate max-w-[120px]"
+                                  title={link.label}
+                                >
+                                  {link.label}
+                                </a>
+                              </div>
+                            ))}
+                            
+                            {booking.proof_link && !(booking.proof_links as any)?.length && (
+                              <div className="flex items-center gap-1">
+                                <ExternalLink className="h-3 w-3 text-blue-600" />
+                                <a 
+                                  href={booking.proof_link} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-600 hover:underline text-xs"
+                                >
+                                  Social Proof
+                                </a>
+                              </div>
+                            )}
+                            
+                            {booking.proof_file_url && (
+                              <>
+                                {booking.proof_file_url.split(',').map((fileUrl: string, index: number) => (
+                                  <div key={index} className="flex items-center gap-1">
+                                    <ExternalLink className="h-3 w-3 text-blue-600" />
+                                    <a 
+                                      href={fileUrl.trim()} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-blue-600 hover:underline text-xs"
+                                    >
+                                      File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
+                                    </a>
+                                  </div>
+                                ))}
+                              </>
+                            )}
                           </div>
                         )}
+                        
+                        {/* Admin actions */}
+                        <div className="flex gap-1">
+                          {booking.tx_hash && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(getExplorerUrl(booking.chain, booking.tx_hash), '_blank')}
+                              title="View Transaction"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {booking.status === 'disputed' && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateBookingStatus.mutate({
+                                  bookingId: booking.id,
+                                  status: 'refunded'
+                                })}
+                              >
+                                Refund
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateBookingStatus.mutate({
+                                  bookingId: booking.id,
+                                  status: 'released'
+                                })}
+                              >
+                                Release
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
