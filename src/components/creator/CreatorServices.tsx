@@ -170,7 +170,7 @@ export const CreatorServices = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopy(service)}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white border-0"
                   >
                     <Copy className="h-4 w-4 mr-1" />
                     Copy
@@ -179,7 +179,7 @@ export const CreatorServices = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(service)}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0"
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     Edit
@@ -188,7 +188,7 @@ export const CreatorServices = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleSnooze(service)}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white border-0"
                   >
                     {service.active ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
                     {service.active ? "Snooze" : "Reactivate"}
