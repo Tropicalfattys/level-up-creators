@@ -46,20 +46,44 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
   const { data: existingDispute } = useQuery({
     queryKey: ['booking-dispute', bookingId],
     queryFn: async () => {
+      // Ensure user is authenticated before querying
+      if (!user?.id) {
+        console.log('User not authenticated, skipping dispute query');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('disputes')
         .select('*')
         .eq('booking_id', bookingId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Dispute query error:', error);
+        throw error;
+      }
       return data;
-    }
+    },
+    enabled: !!user?.id // Only run query when user is authenticated
   });
 
   const acceptDelivery = useMutation({
     mutationFn: async () => {
       console.log('Accepting delivery for booking:', bookingId);
+      
+      // Ensure user is authenticated before making the call
+      if (!user?.id) {
+        throw new Error('User not authenticated - please refresh the page and try again');
+      }
+      
+      console.log('Current user ID:', user.id);
+      console.log('Booking details:', { bookingId, clientId: booking?.client_id, creatorId: booking?.creator_id });
+      
+      // Get fresh session to ensure auth context is valid
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication session invalid - please refresh the page');
+      }
       
       const { error } = await supabase
         .from('bookings')
@@ -87,7 +111,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
   const openDispute = useMutation({
     mutationFn: async (reason: string) => {
       if (!user?.id) {
-        throw new Error('User not authenticated');
+        throw new Error('User not authenticated - please refresh the page and try again');
       }
 
       if (!reason?.trim()) {
@@ -95,6 +119,13 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
       }
 
       console.log('Opening dispute for booking:', bookingId, 'reason:', reason);
+      console.log('Current user ID:', user.id);
+
+      // Get fresh session to ensure auth context is valid
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication session invalid - please refresh the page');
+      }
 
       // First update booking status
       const { error: bookingError } = await supabase
