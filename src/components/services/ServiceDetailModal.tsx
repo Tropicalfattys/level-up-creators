@@ -74,7 +74,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-full overflow-hidden">
           <DialogHeader>
             <div className="flex items-center gap-4 mb-4">
               <Avatar className="h-12 w-12">
@@ -113,7 +113,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-2">Description</h4>
-              <p className="text-muted-foreground leading-relaxed break-words max-w-full overflow-hidden">
+              <p className="text-muted-foreground leading-relaxed break-words overflow-wrap-anywhere hyphens-auto max-w-full overflow-hidden whitespace-pre-wrap">
                 {service.description}
               </p>
             </div>
