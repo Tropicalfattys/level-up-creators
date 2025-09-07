@@ -302,6 +302,25 @@ export const BookingManagement = () => {
         proofFileUrl = fileUrls.join(',');
       }
 
+      // Get booking details for message recipients
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('client_id, creator_id')
+        .eq('id', bookingId)
+        .single();
+
+      // Create a message with delivery notes if provided
+      if (proofData.notes && proofData.notes.trim() && booking) {
+        await supabase
+          .from('messages')
+          .insert({
+            booking_id: bookingId,
+            from_user_id: booking.creator_id,
+            to_user_id: booking.client_id,
+            body: `Delivery completed: ${proofData.notes.trim()}`
+          });
+      }
+
       await updateBookingStatus.mutateAsync({
         bookingId,
         status: 'delivered',
