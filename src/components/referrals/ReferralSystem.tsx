@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReferralStats } from './ReferralStats';
+import { ReferralSuccessful } from './ReferralSuccessful';
 
 export const ReferralSystem = () => {
   const [copiedCode, setCopiedCode] = useState(false);
@@ -240,6 +241,9 @@ export const ReferralSystem = () => {
               </div>
             </div>
           </div>
+          
+          {/* Successful Referrals Section */}
+          <ReferralSuccessful />
         </CardContent>
       </Card>
     </div>
