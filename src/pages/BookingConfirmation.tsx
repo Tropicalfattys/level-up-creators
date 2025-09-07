@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, ArrowLeft, MessageSquare } from 'lucide-react';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function BookingConfirmation() {
@@ -115,19 +115,13 @@ export default function BookingConfirmation() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4 mt-6">
-        <Link to={`/chat/${booking.id}`}>
-          <Button className="flex-1">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Start Chat
-          </Button>
-        </Link>
+      <div className="mt-6">
         <Link to={
           userRole === 'creator' ? '/creator-dashboard' : 
           userRole === 'admin' ? '/admin' : 
-          '/'
+          '/dashboard'
         }>
-          <Button variant="outline" className="flex-1">
+          <Button variant="outline" className="w-full">
             Back To Dashboard
           </Button>
         </Link>
