@@ -30,6 +30,7 @@ interface BookingWithDetails {
   proof_file_url?: string;
   proof_links?: Array<{ url: string; label: string }>;
   work_started_at?: string;
+  deliveryNote?: string;
   services: {
     title: string;
   } | null;
@@ -85,15 +86,45 @@ export const ClientBookings = () => {
       }
       
       // Convert the data and handle the proof_links JSON field properly
-      return (data || []).map(booking => ({
-        ...booking,
-        proof_links: Array.isArray(booking.proof_links) 
-          ? booking.proof_links.map((link: any) => ({
-              url: typeof link === 'string' ? link : link.url || '',
-              label: typeof link === 'string' ? 'Link' : link.label || 'Link'
-            }))
-          : []
-      })) as BookingWithDetails[];
+      const bookingsWithDetails = await Promise.all((data || []).map(async booking => {
+        let deliveryNote = '';
+        
+        // Fetch delivery message if booking is delivered or completed
+        if (['delivered', 'accepted', 'released'].includes(booking.status)) {
+          const { data: deliveryMessage } = await supabase
+            .from('messages')
+            .select('body')
+            .eq('booking_id', booking.id)
+            .eq('from_user_id', booking.creator_id)
+            .ilike('body', 'Delivery completed:%')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (deliveryMessage?.body) {
+            const noteMatch = deliveryMessage.body.match(/Delivery completed:\s*(.*)/s);
+            if (noteMatch && noteMatch[1]) {
+              const note = noteMatch[1].trim();
+              if (note && note !== 'Files delivered') {
+                deliveryNote = note;
+              }
+            }
+          }
+        }
+
+        return {
+          ...booking,
+          deliveryNote,
+          proof_links: Array.isArray(booking.proof_links) 
+            ? booking.proof_links.map((link: any) => ({
+                url: typeof link === 'string' ? link : link.url || '',
+                label: typeof link === 'string' ? 'Link' : link.label || 'Link'
+              }))
+            : []
+        };
+      }));
+      
+      return bookingsWithDetails as BookingWithDetails[];
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes - prevent excessive refetching
@@ -411,6 +442,15 @@ export const ClientBookings = () => {
                               ))}
                             </div>
                           )}
+                          
+                          {booking.deliveryNote && (
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                              <p className="text-xs text-blue-700 font-medium mb-1">Additional Notes:</p>
+                              <p className="text-sm text-blue-800 bg-blue-100 p-2 rounded border">
+                                {booking.deliveryNote}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -464,6 +504,15 @@ export const ClientBookings = () => {
                                   </a>
                                 </div>
                               ))}
+                            </div>
+                          )}
+                          
+                          {booking.deliveryNote && (
+                            <div className="mt-3 pt-3 border-t border-green-200">
+                              <p className="text-xs text-green-700 font-medium mb-1">Additional Notes:</p>
+                              <p className="text-sm text-green-800 bg-green-100 p-2 rounded border">
+                                {booking.deliveryNote}
+                              </p>
                             </div>
                           )}
                         </div>
