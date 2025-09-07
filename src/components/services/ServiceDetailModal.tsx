@@ -113,7 +113,7 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-2">Description</h4>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed break-words max-w-full overflow-hidden">
                 {service.description}
               </p>
             </div>
