@@ -301,6 +301,7 @@ export const BookingManagement = () => {
     switch (status) {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
+      case 'payment_rejected': return 'destructive';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -310,7 +311,7 @@ export const BookingManagement = () => {
 
   const getStatusProgress = (status: string, workStarted: boolean = false) => {
     // 4-step process: paid -> (work started) -> delivered -> accepted -> released
-    if (status === 'pending') return 0;
+    if (status === 'pending' || status === 'payment_rejected') return 0;
     if (status === 'paid') return workStarted ? 2 : 1;
     if (status === 'delivered') return 3;
     if (status === 'accepted') return 4;
@@ -325,7 +326,7 @@ export const BookingManagement = () => {
     
     return {
       all: safeBookings.length,
-      new: safeBookings.filter(b => b.status === 'pending' || (b.status === 'paid' && !b.work_started_at)).length,
+      new: safeBookings.filter(b => b.status === 'pending' || b.status === 'payment_rejected' || (b.status === 'paid' && !b.work_started_at)).length,
       active: safeBookings.filter(b => (b.status === 'paid' && b.work_started_at) || b.status === 'delivered').length,
       completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
     };
@@ -338,7 +339,7 @@ export const BookingManagement = () => {
     if (status === 'all') return safeBookings;
     
     if (status === 'new') {
-      return safeBookings.filter(booking => booking.status === 'pending' || (booking.status === 'paid' && !booking.work_started_at));
+      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'payment_rejected' || (booking.status === 'paid' && !booking.work_started_at));
     }
     if (status === 'active') {
       return safeBookings.filter(booking => (booking.status === 'paid' && booking.work_started_at) || booking.status === 'delivered');

@@ -107,7 +107,7 @@ export const ClientBookings = () => {
     
     return {
       all: safeBookings.length,
-      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid').length,
+      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected').length,
       delivered: safeBookings.filter(b => b.status === 'delivered').length,
       completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
     };
@@ -120,7 +120,7 @@ export const ClientBookings = () => {
     if (status === 'all') return safeBookings;
     
     if (status === 'active') {
-      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid');
+      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid' || booking.status === 'payment_rejected');
     }
     if (status === 'delivered') {
       return safeBookings.filter(booking => booking.status === 'delivered');
@@ -136,6 +136,7 @@ export const ClientBookings = () => {
     switch (status) {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
+      case 'payment_rejected': return 'destructive';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
