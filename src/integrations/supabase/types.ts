@@ -759,6 +759,55 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_credits_awarded: {
+        Row: {
+          awarded_at: string
+          booking_id: string
+          credit_amount: number
+          id: string
+          referred_user_id: string
+          referrer_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          booking_id: string
+          credit_amount?: number
+          id?: string
+          referred_user_id: string
+          referrer_id: string
+        }
+        Update: {
+          awarded_at?: string
+          booking_id?: string
+          credit_amount?: number
+          id?: string
+          referred_user_id?: string
+          referrer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_credits_awarded_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_awarded_referred_user_id_fkey"
+            columns: ["referred_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_awarded_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           booking_id: string | null
