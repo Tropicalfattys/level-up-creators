@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
+import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle, RefreshCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { LazyBookingChat } from '@/components/messaging/LazyBookingChat';
 import { EscrowManager } from '@/components/escrow/EscrowManager';
 import { LazyReviewSystem } from '@/components/reviews/LazyReviewSystem';
+import { RetryPaymentModal } from '@/components/payments/RetryPaymentModal';
 
 interface BookingWithDetails {
   id: string;
@@ -42,6 +43,8 @@ interface BookingWithDetails {
 export const ClientBookings = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
+  const [retryPaymentBookingId, setRetryPaymentBookingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const handleTabChange = (value: string) => {
     // Lock scroll position during tab change
@@ -328,6 +331,24 @@ export const ClientBookings = () => {
                             </p>
                           </div>
                         )}
+                        {booking.status === 'payment_rejected' && (
+                          <div className="flex items-center gap-2 p-2 bg-red-50 rounded border border-red-200">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            <div className="flex-1">
+                              <p className="text-sm text-red-800">
+                                Payment was rejected - please try again
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => setRetryPaymentBookingId(booking.id)}
+                              className="ml-2"
+                            >
+                              <RefreshCcw className="h-3 w-3 mr-1" />
+                              Retry Payment
+                            </Button>
+                          </div>
+                        )}
                         {(booking.status === 'accepted' || booking.status === 'released') && (
                           <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
                             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -521,6 +542,17 @@ export const ClientBookings = () => {
             )}
           </TabsContent>
         </Tabs>
+        {retryPaymentBookingId && (
+          <RetryPaymentModal
+            bookingId={retryPaymentBookingId}
+            isOpen={!!retryPaymentBookingId}
+            onClose={() => setRetryPaymentBookingId(null)}
+            onPaymentRetried={() => {
+              setRetryPaymentBookingId(null);
+              queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+            }}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

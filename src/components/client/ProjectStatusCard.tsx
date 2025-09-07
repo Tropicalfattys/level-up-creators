@@ -16,10 +16,11 @@ interface ProjectStatusCardProps {
   };
   onAccept?: () => void;
   onDispute?: () => void;
+  onRetryPayment?: () => void;
   isLoading?: boolean;
 }
 
-export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: ProjectStatusCardProps) => {
+export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment, isLoading }: ProjectStatusCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'secondary';
@@ -104,12 +105,33 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, isLoading }: P
         )}
         
         {booking.status === 'payment_rejected' && (
-          <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-200">
-            <div>
-              <p className="text-sm font-medium text-red-800">Payment Rejected</p>
-              <p className="text-xs text-red-600">Your payment was rejected. Please contact support or try again.</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-200">
+              <div>
+                <p className="text-sm font-medium text-red-800">Payment Rejected</p>
+                <p className="text-xs text-red-600">Your payment was rejected. Please contact support or try again.</p>
+              </div>
+              <AlertCircle className="h-4 w-4 text-red-600" />
             </div>
-            <AlertCircle className="h-4 w-4 text-red-600" />
+            
+            {/* Retry Payment Button */}
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                onClick={() => window.location.href = `/chat/${booking.id}`}
+                variant="outline"
+                className="flex-1"
+              >
+                Contact Support
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={onRetryPayment}
+                className="flex-1"
+              >
+                Retry Payment
+              </Button>
+            </div>
           </div>
         )}
         
