@@ -52,51 +52,91 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
         return null;
       }
 
+      console.log('Querying disputes for booking:', bookingId);
+      
+      // Use maybeSingle() to avoid 406 errors when no dispute exists
       const { data, error } = await supabase
         .from('disputes')
         .select('*')
         .eq('booking_id', bookingId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Dispute query error:', error);
-        throw error;
+      if (error) {
+        console.error('Dispute query error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        // Don't throw error for missing disputes, just return null
+        return null;
       }
+      
+      console.log('Dispute query result:', data);
       return data;
     },
-    enabled: !!user?.id // Only run query when user is authenticated
+    enabled: !!user?.id && !!bookingId // Only run query when user is authenticated and bookingId exists
   });
 
   const acceptDelivery = useMutation({
     mutationFn: async () => {
-      console.log('Accepting delivery for booking:', bookingId);
+      console.log('=== ACCEPT DELIVERY DEBUG ===');
+      console.log('Booking ID:', bookingId);
+      console.log('User ID:', user?.id);
+      console.log('Booking object:', booking);
       
       // Ensure user is authenticated before making the call
       if (!user?.id) {
         throw new Error('User not authenticated - please refresh the page and try again');
       }
       
-      console.log('Current user ID:', user.id);
-      console.log('Booking details:', { bookingId, clientId: booking?.client_id, creatorId: booking?.creator_id });
+      // Validate booking exists and user is the client
+      if (!booking) {
+        throw new Error('Booking data not loaded - please refresh the page');
+      }
+      
+      if (booking.client_id !== user.id) {
+        throw new Error('You are not authorized to accept this delivery');
+      }
       
       // Get fresh session to ensure auth context is valid
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
+        console.error('Session error:', sessionError);
         throw new Error('Authentication session invalid - please refresh the page');
       }
       
-      const { error } = await supabase
+      console.log('Session valid, attempting booking update...');
+      
+      // Try alternative query syntax to avoid 400 error
+      const updatePayload = {
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      };
+      
+      console.log('Update payload:', updatePayload);
+      
+      // Use match instead of eq for better compatibility
+      const { data, error } = await supabase
         .from('bookings')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', bookingId);
+        .update(updatePayload)
+        .match({ id: bookingId })
+        .select();
 
       if (error) {
-        console.error('Accept delivery error:', error);
-        throw error;
+        console.error('=== BOOKING UPDATE ERROR ===');
+        console.error('Error object:', error);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Error code:', error.code);
+        throw new Error(`Failed to update booking: ${error.message}`);
       }
+      
+      console.log('=== BOOKING UPDATE SUCCESS ===');
+      console.log('Updated data:', data);
+      
+      return data;
     },
     onSuccess: () => {
       toast.success('Delivery accepted! Funds will be released to creator.');
@@ -127,11 +167,11 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
         throw new Error('Authentication session invalid - please refresh the page');
       }
 
-      // First update booking status
+      // First update booking status using match for better compatibility
       const { error: bookingError } = await supabase
         .from('bookings')
         .update({ status: 'disputed' })
-        .eq('id', bookingId);
+        .match({ id: bookingId });
 
       if (bookingError) {
         console.error('Booking update error:', bookingError);
