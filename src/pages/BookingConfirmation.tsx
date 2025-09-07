@@ -122,9 +122,9 @@ export default function BookingConfirmation() {
             Start Chat
           </Button>
         </Link>
-        <Link to="/browse">
+        <Link to={user?.user_metadata?.role === 'creator' ? '/creator-dashboard' : '/'}>
           <Button variant="outline" className="flex-1">
-            Browse More Services
+            Back To Dashboard
           </Button>
         </Link>
       </div>
