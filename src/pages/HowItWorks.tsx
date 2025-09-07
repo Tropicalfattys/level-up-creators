@@ -242,7 +242,7 @@ export default function HowItWorks() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">For Creators</h2>
           <p className="text-xl text-muted-foreground">
             Turn your skills into income. Build your brand in Web3.
-            Level Up makes it easy for crypto-native creators to monetize content, connect with clients, and get paid securely in stablecoins.
+            LeveledUp makes it easy for crypto-native creators to monetize content, connect with clients, and get paid securely in stablecoins.
           </p>
           </div>
 
