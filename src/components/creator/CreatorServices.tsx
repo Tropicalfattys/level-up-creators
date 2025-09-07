@@ -135,7 +135,7 @@ export const CreatorServices = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors">
-              <CardHeader>
+              <CardHeader className="border border-black">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl text-black">{service.title}</CardTitle>
                   <Badge 
