@@ -288,7 +288,7 @@ export const ServiceForm = ({ service, isOpen, onClose }: ServiceFormProps) => {
                   id="target-username"
                   value={formData.target_username}
                   onChange={(e) => handleChange('target_username', e.target.value)}
-                  placeholder="Enter username of specific client"
+                  placeholder="Enter username of specific client, Do Not include @"
                   className="mt-1"
                   disabled={showLimitWarning}
                 />
