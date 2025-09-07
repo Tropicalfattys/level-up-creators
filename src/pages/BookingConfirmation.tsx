@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 
 export default function BookingConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking-details', bookingId],
@@ -122,7 +122,11 @@ export default function BookingConfirmation() {
             Start Chat
           </Button>
         </Link>
-        <Link to={user?.user_metadata?.role === 'creator' ? '/creator-dashboard' : '/'}>
+        <Link to={
+          userRole === 'creator' ? '/creator-dashboard' : 
+          userRole === 'admin' ? '/admin' : 
+          '/'
+        }>
           <Button variant="outline" className="flex-1">
             Back To Dashboard
           </Button>
