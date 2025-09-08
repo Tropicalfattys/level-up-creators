@@ -54,12 +54,12 @@ export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyRevie
         <Button
           variant="outline"
           onClick={() => setIsExpanded(true)}
-          className="w-full text-left"
+          className={`w-full text-left ${isMobile ? 'text-xs px-2 py-2' : ''}`}
         >
           <ChevronDown className="h-4 w-4 mr-2 flex-shrink-0" />
           {canReview ? (
             isMobile ? (
-              <span className="flex flex-col">
+              <span className="flex flex-col text-xs leading-tight">
                 <span>Show Reviews</span>
                 <span>& Leave Review</span>
               </span>
