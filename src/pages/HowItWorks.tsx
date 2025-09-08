@@ -431,7 +431,7 @@ export default function HowItWorks() {
 
       {/* CTA */}
       <section className={`py-20 bg-gradient-to-r from-primary to-secondary ${isMobile ? 'px-2' : 'px-4'}`}>
-        <div className={`${isMobile ? 'w-full' : 'container mx-auto'} text-center`}>
+        <div className={`${isMobile ? 'w-[90%] mx-auto' : 'container mx-auto'} text-center`}>
           <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
             Ready to get started?
           </h2>
