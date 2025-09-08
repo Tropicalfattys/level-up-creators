@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +18,9 @@ import { ReferralSuccessful } from './ReferralSuccessful';
 export const ReferralSystem = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const { user, userProfile } = useAuth();
+  const isMobile = useIsMobile();
 
   const copyReferralCode = () => {
     if (!userProfile?.referral_code) return;
@@ -173,16 +176,18 @@ export const ReferralSystem = () => {
         <CardHeader>
           <CardTitle className="flex flex-col gap-2">
             How It Works
-            <HoverCard>
-              <HoverCardTrigger asChild>
+            <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+              <DialogTrigger asChild>
                 <span className="text-xs bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent cursor-pointer hover:underline">
                   Important Information
                 </span>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-96 p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+              </DialogTrigger>
+              <DialogContent className={`${isMobile ? 'max-w-[95vw] w-[95vw] max-h-[90vh]' : 'max-w-4xl max-h-[80vh]'} overflow-hidden`}>
+                <DialogHeader>
+                  <DialogTitle>Referral Program Disclaimer</DialogTitle>
+                </DialogHeader>
                 <ScrollArea className="h-96">
                   <div className="p-6">
-                    <h4 className="text-lg font-semibold mb-4">Referral Program Disclaimer</h4>
                     <div className="space-y-4 text-sm text-muted-foreground">
                       <p>By participating in the Leveled Up Referral Program, users agree to the following terms:</p>
                       <ul className="space-y-2 list-disc pl-4">
@@ -195,8 +200,8 @@ export const ReferralSystem = () => {
                     </div>
                   </div>
                 </ScrollArea>
-              </HoverCardContent>
-            </HoverCard>
+              </DialogContent>
+            </Dialog>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
