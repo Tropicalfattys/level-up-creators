@@ -1,11 +1,12 @@
 
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExternalLink, Clock, CheckCircle2, DollarSign } from "lucide-react";
 import { getExplorerUrl } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ interface PayoutRecord {
 
 export const PayoutsTracker = () => {
   const { user } = useAuth();
+  const [selectedView, setSelectedView] = useState<"pending" | "completed">("pending");
 
   const { data: payouts, isLoading, error } = useQuery({
     queryKey: ['creator-payouts', user?.id],
@@ -111,7 +113,7 @@ export const PayoutsTracker = () => {
           </div>
           
           {!isPending && payout.payout_tx_hash && (
-            <div className="flex justify-between items-center">
+            <div className="space-y-2">
               <span className="text-sm text-muted-foreground">Transaction:</span>
               <Button
                 variant="outline"
@@ -163,50 +165,75 @@ export const PayoutsTracker = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="pending" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="pending" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Pending ({pendingPayouts.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Completed ({completedPayouts.length})
-              </TabsTrigger>
-            </TabsList>
+          <div className="space-y-4">
+            <Select value={selectedView} onValueChange={(value: "pending" | "completed") => setSelectedView(value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {selectedView === "pending" ? (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Pending ({pendingPayouts.length})
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Completed ({completedPayouts.length})
+                    </div>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Pending ({pendingPayouts.length})
+                  </div>
+                </SelectItem>
+                <SelectItem value="completed">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Completed ({completedPayouts.length})
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-            <TabsContent value="pending">
-              {pendingPayouts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No pending payouts</p>
-                  <p className="text-sm">Payouts will appear here after services are completed and verified.</p>
-                </div>
-              ) : (
-                <div>
-                  {pendingPayouts.map((payout) => (
-                    <PayoutCard key={payout.id} payout={payout} isPending={true} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+            {selectedView === "pending" && (
+              <>
+                {pendingPayouts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No pending payouts</p>
+                    <p className="text-sm">Payouts will appear here after services are completed and verified.</p>
+                  </div>
+                ) : (
+                  <div>
+                    {pendingPayouts.map((payout) => (
+                      <PayoutCard key={payout.id} payout={payout} isPending={true} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
 
-            <TabsContent value="completed">
-              {completedPayouts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No completed payouts yet</p>
-                  <p className="text-sm">Completed payouts will appear here with transaction details.</p>
-                </div>
-              ) : (
-                <div>
-                  {completedPayouts.map((payout) => (
-                    <PayoutCard key={payout.id} payout={payout} isPending={false} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            {selectedView === "completed" && (
+              <>
+                {completedPayouts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No completed payouts yet</p>
+                    <p className="text-sm">Completed payouts will appear here with transaction details.</p>
+                  </div>
+                ) : (
+                  <div>
+                    {completedPayouts.map((payout) => (
+                      <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
