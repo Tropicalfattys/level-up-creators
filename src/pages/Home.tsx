@@ -202,7 +202,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className={isMobile ? "py-20 px-0" : "py-20 px-4"}>
         <div className={isMobile ? "w-full text-center px-4" : "container mx-auto text-center"}>
-          <h1 className="text-lg md:text-6xl font-bold mb-6">
+          <h1 className="text-2xl md:text-6xl font-bold mb-6">
             <div className="mb-2">
               Hire the right Content Creator for your budget & Amplify Your Project.
             </div>
