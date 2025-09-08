@@ -18,7 +18,7 @@ export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyRevie
   if (isExpanded) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className={`flex items-center ${isMobile ? 'flex-col gap-2 items-start' : 'justify-between'}`}>
           <h4 className="font-medium flex items-center gap-2">
             <Star className="h-4 w-4" />
             Reviews
@@ -50,11 +50,11 @@ export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyRevie
           Reviews & Ratings
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isMobile ? 'px-4 py-3' : ''}>
         <Button
           variant="outline"
           onClick={() => setIsExpanded(true)}
-          className={`w-full text-left ${isMobile ? 'text-xs px-2 py-2' : ''}`}
+          className={`w-full text-left ${isMobile ? 'text-xs px-3 py-3 h-auto min-h-[3rem]' : ''}`}
         >
           <ChevronDown className="h-4 w-4 mr-2 flex-shrink-0" />
           {canReview ? (

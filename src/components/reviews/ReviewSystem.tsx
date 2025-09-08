@@ -278,7 +278,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
               <Button 
                 type="submit" 
                 disabled={submitReview.isPending || rating === 0}
-                className={isMobile ? "w-full text-sm px-3 py-2" : ""}
+                className={isMobile ? "w-full text-xs px-4 py-3 text-white" : "text-white"}
               >
                 {submitReview.isPending ? 'Submitting...' : 'Submit Review'}
               </Button>
