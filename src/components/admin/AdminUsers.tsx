@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Users, Search, Shield, DollarSign, Plus, ShieldX, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserProfile {
   id: string;
@@ -75,6 +76,7 @@ export const AdminUsers = () => {
     role: 'client'
   });
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // Super admin email that cannot be demoted
   const SUPER_ADMIN_EMAIL = 'michaelweston1515@gmail.com';
@@ -243,7 +245,7 @@ export const AdminUsers = () => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className={isMobile ? "space-y-4" : "flex items-center justify-between"}>
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -255,7 +257,7 @@ export const AdminUsers = () => {
             </div>
             <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className={isMobile ? "w-full" : ""}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create User
                 </Button>
@@ -325,7 +327,7 @@ export const AdminUsers = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filters */}
-          <div className="flex gap-4">
+          <div className={isMobile ? "space-y-3" : "flex gap-4"}>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -336,7 +338,7 @@ export const AdminUsers = () => {
               />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className={isMobile ? "w-full" : "w-48"}>
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
@@ -351,33 +353,35 @@ export const AdminUsers = () => {
           {/* Users List */}
           <div className="space-y-4">
             {filteredUsers?.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                    {user.handle?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{user.handle || 'No username'}</p>
-                      {user.banned && (
-                        <Badge variant="destructive" className="text-xs">
-                          BANNED
-                        </Badge>
-                      )}
-                      {isSuperAdmin(user.email || '') && (
-                        <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800">
-                          SUPER ADMIN
-                        </Badge>
-                      )}
+              <div key={user.id} className={isMobile ? "p-4 border rounded-lg space-y-4" : "flex items-center justify-between p-4 border rounded-lg"}>
+                <div className={isMobile ? "space-y-3" : "flex items-center gap-4"}>
+                  <div className={isMobile ? "flex items-center gap-4" : "flex items-center gap-4"}>
+                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                      {user.handle?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
                     </div>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Joined {new Date(user.created_at).toLocaleDateString()}
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium">{user.handle || 'No username'}</p>
+                        {user.banned && (
+                          <Badge variant="destructive" className="text-xs">
+                            BANNED
+                          </Badge>
+                        )}
+                        {isSuperAdmin(user.email || '') && (
+                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800">
+                            SUPER ADMIN
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Joined {new Date(user.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
+                <div className={isMobile ? "space-y-3" : "flex items-center gap-2"}>
+                  <div className={isMobile ? "flex items-center gap-2 flex-wrap" : "flex items-center gap-1"}>
                     <Badge variant={roleColor(user.role || 'client')}>
                       {user.role || 'client'}
                     </Badge>
@@ -385,20 +389,22 @@ export const AdminUsers = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => viewUserDetails(user)}
+                      className={isMobile ? "flex-1" : ""}
                     >
                       <Eye className="h-3 w-3" />
+                      {isMobile && <span className="ml-1">View Profile</span>}
                     </Button>
+                    {user.referral_credits && user.referral_credits > 0 && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        ${user.referral_credits}
+                      </Badge>
+                    )}
                   </div>
-                  {user.referral_credits && user.referral_credits > 0 && (
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />
-                      ${user.referral_credits}
-                    </Badge>
-                  )}
                   
                   {/* Admin Controls */}
                   {!isSuperAdmin(user.email || '') && (
-                    <>
+                    <div className={isMobile ? "grid grid-cols-1 gap-2" : "flex gap-2"}>
                       {/* Make Admin Button - only show for non-admin users */}
                       {user.role !== 'admin' && (
                         <Button
@@ -406,6 +412,7 @@ export const AdminUsers = () => {
                           variant="outline"
                           onClick={() => handleMakeAdmin(user.id)}
                           disabled={updateUserRole.isPending}
+                          className={isMobile ? "w-full" : ""}
                         >
                           <Shield className="h-3 w-3 mr-1" />
                           Make Admin
@@ -419,13 +426,13 @@ export const AdminUsers = () => {
                           variant="outline"
                           onClick={() => handleRemoveAdmin(user.id)}
                           disabled={updateUserRole.isPending}
-                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          className={isMobile ? "w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50" : "text-orange-600 hover:text-orange-700 hover:bg-orange-50"}
                         >
                           <ShieldX className="h-3 w-3 mr-1" />
                           Remove Admin
                         </Button>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
