@@ -7,6 +7,7 @@ import { PaymentInstructions } from '@/components/payments/PaymentInstructions';
 import { PlanDisplay } from '@/components/payments/PlanDisplay';
 import { useDynamicCreatorTiers } from '@/hooks/usePricingTiers';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreatorPaymentProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   
   const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Use dynamic pricing
   const amount = dynamicTiers?.[tier]?.price || 0;
@@ -46,7 +48,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (step === 'submitted') {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : ""}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
@@ -81,7 +83,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (step === 'payment') {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" />
@@ -96,6 +98,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
             amount={amount}
             creatorId={user?.id || ''}
             paymentType="creator_tier"
+            isMobile={isMobile}
             onPaymentSubmitted={handlePaymentSubmitted}
             onCancel={handleClose}
           />
@@ -107,7 +110,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : ""}>
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading pricing information...</p>
@@ -120,7 +123,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (error) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : ""}>
           <DialogHeader>
             <DialogTitle className="text-red-600">Error Loading Pricing</DialogTitle>
             <DialogDescription>
@@ -140,7 +143,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (!dynamicTiers?.[tier]) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : ""}>
           <DialogHeader>
             <DialogTitle className="text-red-600">Plan Not Available</DialogTitle>
             <DialogDescription>
@@ -161,7 +164,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   if (amount === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : ""}>
           <DialogHeader>
             <DialogTitle>Confirm {tierDisplayName}</DialogTitle>
             <DialogDescription>
@@ -185,7 +188,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
   // Select payment method step
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
@@ -196,7 +199,7 @@ export const CreatorPayment = ({ isOpen, onClose, onPaymentSuccess, tier }: Crea
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
           <PlanDisplay tier={tier} amount={amount} />
 
           <div className="space-y-4">
