@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { getExplorerUrl } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PaymentEarning {
   id: string;
@@ -34,6 +35,7 @@ interface EarningsData {
 export const EarningsTracker = () => {
   const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: earnings, isLoading } = useQuery({
     queryKey: ['creator-earnings', user?.id],
@@ -213,8 +215,8 @@ export const EarningsTracker = () => {
   if (!earnings) return null;
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className={`space-y-6 ${isMobile ? '-mx-4' : ''}`}>
+      <div className={isMobile ? 'px-4' : ''}>
         <h3 className="text-lg font-semibold mb-2">Earnings Overview</h3>
         <p className="text-muted-foreground">
           Track your earnings and payment history (85% creator share after 15% platform fee)
@@ -222,7 +224,7 @@ export const EarningsTracker = () => {
       </div>
 
       {/* Earnings Summary Cards */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 px-4' : 'md:grid-cols-4'}`}>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1">
@@ -288,7 +290,7 @@ export const EarningsTracker = () => {
       </div>
 
       {/* Recent Earnings with Transaction Details */}
-      <Card>
+      <Card className={isMobile ? 'mx-4' : ''}>
         <CardHeader>
           <CardTitle>Recent Earnings</CardTitle>
           <CardDescription>Your latest verified payments with transaction details</CardDescription>
@@ -298,18 +300,18 @@ export const EarningsTracker = () => {
             <div className="space-y-4">
               {earnings.recentEarnings.map((earning) => (
                 <div key={earning.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-lg">{earning.service_title}</h4>
-                      <p className="text-sm text-muted-foreground">
+                  <div className={isMobile ? 'space-y-3' : 'flex items-center justify-between'}>
+                    <div className={isMobile ? 'space-y-2' : ''}>
+                      <h4 className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{earning.service_title}</h4>
+                      <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         Client: @{earning.client_handle} ({earning.client_email})
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(earning.created_at), 'PPpp')}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-green-600">
+                    <div className={isMobile ? 'flex items-center justify-between border-t pt-3' : 'text-right'}>
+                      <div className={`font-bold text-green-600 ${isMobile ? 'text-lg' : 'text-xl'}`}>
                         ${earning.amount.toFixed(2)} {earning.currency?.toUpperCase()}
                       </div>
                       <Badge variant="outline" className="text-xs mt-1">
@@ -320,43 +322,48 @@ export const EarningsTracker = () => {
 
                   {/* Transaction Details */}
                   <div className="bg-muted/50 rounded p-3 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
                       <span className="text-sm font-medium">Transaction Hash:</span>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-background px-2 py-1 rounded">
-                          {earning.tx_hash.slice(0, 8)}...{earning.tx_hash.slice(-8)}
+                      <div className={`flex items-center gap-2 ${isMobile ? 'justify-between' : ''}`}>
+                        <code className={`bg-background px-2 py-1 rounded ${isMobile ? 'text-xs flex-1 mr-2' : 'text-xs'}`}>
+                          {isMobile ? 
+                            `${earning.tx_hash.slice(0, 6)}...${earning.tx_hash.slice(-6)}` :
+                            `${earning.tx_hash.slice(0, 8)}...${earning.tx_hash.slice(-8)}`
+                          }
                         </code>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => copyTxHash(earning.tx_hash)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyTxHash(earning.tx_hash)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                            className="h-6 w-6 p-0"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
                       <span className="text-sm font-medium">Network:</span>
                       <Badge variant="secondary" className="text-xs">
                         {earning.network?.toUpperCase()}
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
                       <span className="text-sm font-medium">Full Transaction:</span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
-                        className="h-6 text-xs"
+                        className={`text-xs ${isMobile ? 'h-8 w-full' : 'h-6'}`}
                       >
                         <Hash className="h-3 w-3 mr-1" />
                         View on Explorer
