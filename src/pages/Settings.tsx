@@ -800,7 +800,7 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5 text-left">
-                  <Label>Marketing Emails</Label>
+                  <Label className="flex items-center gap-2">Marketing Emails <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
                   <p className="text-sm text-muted-foreground">
                     Receive updates about new features and promotions
                   </p>
