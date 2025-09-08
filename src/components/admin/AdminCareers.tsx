@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ interface JobPosting {
 }
 
 export const AdminCareers = () => {
+  const isMobile = useIsMobile();
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showNewJobModal, setShowNewJobModal] = useState(false);
@@ -354,7 +356,7 @@ export const AdminCareers = () => {
       {/* Job Postings Management */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className={isMobile ? 'space-y-4' : 'flex items-center justify-between'}>
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
@@ -366,7 +368,7 @@ export const AdminCareers = () => {
             </div>
             <Dialog open={showNewJobModal} onOpenChange={setShowNewJobModal}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className={isMobile ? 'w-full' : ''}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Job
                 </Button>
@@ -557,7 +559,7 @@ export const AdminCareers = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Job Title</Label>
                           <Input
@@ -670,7 +672,7 @@ export const AdminCareers = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t">
+                      <div className={isMobile ? 'space-y-3 pt-4 border-t' : 'flex items-center justify-between pt-4 border-t'}>
                         <div className="flex items-center space-x-2">
                           <Switch
                             checked={getCurrentJobValue(job, 'active') as boolean}
@@ -683,6 +685,7 @@ export const AdminCareers = () => {
                           onClick={() => handleSaveJob(job)}
                           disabled={!hasJobChanges(job.id) || updateJobMutation.isPending}
                           size="sm"
+                          className={isMobile ? 'w-full' : ''}
                         >
                           <Save className="h-4 w-4 mr-2" />
                           {updateJobMutation.isPending ? 'Saving...' : 'Save Changes'}
