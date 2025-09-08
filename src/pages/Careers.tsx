@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ export default function Careers() {
     }
   });
   const [submitted, setSubmitted] = useState(false);
+  const isMobile = useIsMobile();
 
   // Fetch job postings from database
   const { data: jobPostings = [], isLoading: jobsLoading, error: jobsError } = useQuery({
@@ -172,11 +174,13 @@ export default function Careers() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold mb-6 flex items-center justify-center gap-3">
-            <img 
-              src="/lovable-uploads/bafd9424-aabd-4841-94b4-9ca93b9b6669.png" 
-              alt="LeveledUp" 
-              className="h-12 w-12"
-            />
+            {!isMobile && (
+              <img 
+                src="/lovable-uploads/bafd9424-aabd-4841-94b4-9ca93b9b6669.png" 
+                alt="LeveledUp" 
+                className="h-12 w-12"
+              />
+            )}
             Careers at LeveledUp
           </h1>
           <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
