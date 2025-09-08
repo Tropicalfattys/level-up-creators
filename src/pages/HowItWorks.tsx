@@ -24,8 +24,8 @@ export default function HowItWorks() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <div className="container mx-auto text-center">
+      <section className={`py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10 ${isMobile ? 'px-2' : 'px-4'}`}>
+        <div className={`${isMobile ? 'w-full' : 'container mx-auto'} text-center`}>
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Simple, Secure, <span className="text-primary">Fast</span>
           </h1>
@@ -37,8 +37,8 @@ export default function HowItWorks() {
       </section>
 
       {/* Step by Step Process */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
+      <section className={`py-20 ${isMobile ? 'px-2' : 'px-4'}`}>
+        <div className={`${isMobile ? 'w-full' : 'container mx-auto'}`}>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">For Clients</h2>
             <p className="text-xl text-muted-foreground">
@@ -239,8 +239,8 @@ export default function HowItWorks() {
       </section>
 
       {/* For Creators Section */}
-      <section className="py-20 px-4 bg-background">
-        <div className="container mx-auto">
+      <section className={`py-20 bg-background ${isMobile ? 'px-2' : 'px-4'}`}>
+        <div className={`${isMobile ? 'w-full' : 'container mx-auto'}`}>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">For Creators</h2>
           <p className="text-xl text-muted-foreground">
@@ -368,8 +368,8 @@ export default function HowItWorks() {
       </section>
 
       {/* Security & Trust */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
+      <section className={`py-20 ${isMobile ? 'px-2' : 'px-4'}`}>
+        <div className={`${isMobile ? 'w-full' : 'container mx-auto'}`}>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Built for Security & Trust</h2>
             <p className="text-xl text-muted-foreground">
@@ -430,8 +430,8 @@ export default function HowItWorks() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-r from-primary to-secondary">
-        <div className="container mx-auto text-center">
+      <section className={`py-20 bg-gradient-to-r from-primary to-secondary ${isMobile ? 'px-2' : 'px-4'}`}>
+        <div className={`${isMobile ? 'w-full' : 'container mx-auto'} text-center`}>
           <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
             Ready to get started?
           </h2>
