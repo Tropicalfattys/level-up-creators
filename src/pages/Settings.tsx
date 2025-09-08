@@ -228,7 +228,7 @@ export default function Settings() {
                         How It Works
                       </span>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[90vw] max-h-[75vh] p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60]" side="bottom" align="center">
+                    <PopoverContent className="w-[90vw] max-h-[80vh] p-0 mx-2 z-[60]" side="bottom" align="center">
                       <div className="flex flex-col h-full">
                         <div className="flex items-center justify-between p-4 border-b">
                           <h4 className="font-semibold text-lg">Profile & Settings Information</h4>
@@ -557,7 +557,7 @@ export default function Settings() {
                         Important Disclaimer
                       </span>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[90vw] max-h-[75vh] p-0 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60]" side="bottom" align="center">
+                    <PopoverContent className="w-[90vw] max-h-[75vh] p-0 mx-2 z-[60]" side="bottom" align="center">
                       <div className="flex flex-col h-full">
                         <div className="flex items-center justify-between p-4 border-b">
                           <h4 className="font-semibold text-lg">Social Media Links Disclaimer</h4>
