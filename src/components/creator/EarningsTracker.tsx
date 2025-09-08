@@ -215,7 +215,7 @@ export const EarningsTracker = () => {
   if (!earnings) return null;
 
   return (
-    <div className={`space-y-6 ${isMobile ? '-mx-4' : ''}`}>
+    <div className="space-y-6">
       <div className={isMobile ? 'px-4' : ''}>
         <h3 className="text-lg font-semibold mb-2">Earnings Overview</h3>
         <p className="text-muted-foreground">
@@ -224,7 +224,7 @@ export const EarningsTracker = () => {
       </div>
 
       {/* Earnings Summary Cards */}
-      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 px-4' : 'md:grid-cols-4'}`}>
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-4'}`}>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1">
@@ -290,7 +290,7 @@ export const EarningsTracker = () => {
       </div>
 
       {/* Recent Earnings with Transaction Details */}
-      <Card className={isMobile ? 'mx-4' : ''}>
+      <Card>
         <CardHeader>
           <CardTitle>Recent Earnings</CardTitle>
           <CardDescription>Your latest verified payments with transaction details</CardDescription>
@@ -320,55 +320,77 @@ export const EarningsTracker = () => {
                     </div>
                   </div>
 
-                  {/* Transaction Details */}
-                  <div className="bg-muted/50 rounded p-3 space-y-2">
-                    <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
-                      <span className="text-sm font-medium">Transaction Hash:</span>
-                      <div className={`flex items-center gap-2 ${isMobile ? 'justify-between' : ''}`}>
-                        <code className={`bg-background px-2 py-1 rounded ${isMobile ? 'text-xs flex-1 mr-2' : 'text-xs'}`}>
-                          {isMobile ? 
-                            `${earning.tx_hash.slice(0, 6)}...${earning.tx_hash.slice(-6)}` :
-                            `${earning.tx_hash.slice(0, 8)}...${earning.tx_hash.slice(-8)}`
-                          }
-                        </code>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyTxHash(earning.tx_hash)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
-                            className="h-6 w-6 p-0"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Transaction Details */}
+                   <div className="bg-muted/50 rounded p-3 space-y-2">
+                     <div className="space-y-2">
+                       <span className="text-sm font-medium">Transaction Hash:</span>
+                       <code className={`bg-background px-2 py-1 rounded text-xs block`}>
+                         {isMobile ? 
+                           `${earning.tx_hash.slice(0, 6)}...${earning.tx_hash.slice(-6)}` :
+                           `${earning.tx_hash.slice(0, 8)}...${earning.tx_hash.slice(-8)}`
+                         }
+                       </code>
+                       {isMobile && (
+                         <div className="flex items-center gap-2">
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => copyTxHash(earning.tx_hash)}
+                             className="h-8 flex-1"
+                           >
+                             <Copy className="h-3 w-3 mr-1" />
+                             Copy
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                             className="h-8 flex-1"
+                           >
+                             <ExternalLink className="h-3 w-3 mr-1" />
+                             View
+                           </Button>
+                         </div>
+                       )}
+                       {!isMobile && (
+                         <div className="flex items-center gap-1">
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => copyTxHash(earning.tx_hash)}
+                             className="h-6 w-6 p-0"
+                           >
+                             <Copy className="h-3 w-3" />
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                             className="h-6 w-6 p-0"
+                           >
+                             <ExternalLink className="h-3 w-3" />
+                           </Button>
+                         </div>
+                       )}
+                     </div>
                     <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
                       <span className="text-sm font-medium">Network:</span>
                       <Badge variant="secondary" className="text-xs">
                         {earning.network?.toUpperCase()}
                       </Badge>
                     </div>
-                    <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
-                      <span className="text-sm font-medium">Full Transaction:</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
-                        className={`text-xs ${isMobile ? 'h-8 w-full' : 'h-6'}`}
-                      >
-                        <Hash className="h-3 w-3 mr-1" />
-                        View on Explorer
-                      </Button>
-                    </div>
+                     <div className={isMobile ? 'space-y-2' : 'flex items-center justify-between'}>
+                       <span className="text-sm font-medium">Full Transaction:</span>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                         className={`text-xs ${isMobile ? 'h-8 w-full' : 'h-6'}`}
+                       >
+                         <Hash className="h-3 w-3 mr-0.5" />
+                         View on Explorer
+                       </Button>
+                     </div>
                   </div>
                 </div>
               ))}
