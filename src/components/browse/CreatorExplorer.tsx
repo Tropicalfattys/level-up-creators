@@ -13,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign, Package, Filter, Search, Heart, MessageCircle, User } from 'lucide-react';
 import { useUserFollows } from '@/hooks/useUserFollows';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreatorData {
   id: string;
@@ -39,6 +40,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
+  const isMobile = useIsMobile();
   
   // Embla carousel for category icons
   const [emblaRef] = useEmblaCarousel({
@@ -467,36 +469,73 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           {getTierDisplayName(creator.tier)}
                         </Badge>
                         
-                         <div className="flex items-center justify-center gap-2 mb-2">
-                           <div className="flex items-center gap-1">
-                             <div className="flex items-center">
-                               {Array.from({ length: 5 }, (_, i) => (
-                                 <Star 
-                                   key={i} 
-                                   className={`h-4 w-4 ${
-                                     i < Math.floor(creator.rating) 
-                                       ? 'fill-yellow-400 text-yellow-400' 
-                                       : 'text-gray-300'
-                                   }`} 
-                                 />
-                               ))}
-                             </div>
-                             <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
-                             <span className="text-zinc-400">({creator.review_count} Reviews)</span>
-                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleFollowToggle(creator, e)}
-                            className={`p-1 h-auto ${
-                              isFollowing(creator.user_id) 
-                                ? 'text-red-500 hover:text-red-400' 
-                                : 'text-zinc-400 hover:text-white'
-                            }`}
-                          >
-                            <Heart className={`h-4 w-4 ${isFollowing(creator.user_id) ? 'fill-current' : ''}`} />
-                          </Button>
-                        </div>
+                        {isMobile ? (
+                          /* Mobile Layout - Stack vertically */
+                          <div className="space-y-2 mb-2">
+                            <div className="flex items-center justify-center gap-1">
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(creator.rating) 
+                                        ? 'fill-yellow-400 text-yellow-400' 
+                                        : 'text-gray-300'
+                                    }`} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-zinc-400">({creator.review_count} Reviews)</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleFollowToggle(creator, e)}
+                                className={`p-1 h-auto ${
+                                  isFollowing(creator.user_id) 
+                                    ? 'text-red-500 hover:text-red-400' 
+                                    : 'text-zinc-400 hover:text-white'
+                                }`}
+                              >
+                                <Heart className={`h-4 w-4 ${isFollowing(creator.user_id) ? 'fill-current' : ''}`} />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Desktop Layout - Keep horizontal */
+                          <div className="flex items-center justify-center gap-2 mb-2">
+                            <div className="flex items-center gap-1">
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(creator.rating) 
+                                        ? 'fill-yellow-400 text-yellow-400' 
+                                        : 'text-gray-300'
+                                    }`} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-white font-medium">{creator.rating.toFixed(1)}</span>
+                              <span className="text-zinc-400">({creator.review_count} Reviews)</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleFollowToggle(creator, e)}
+                              className={`p-1 h-auto ${
+                                isFollowing(creator.user_id) 
+                                  ? 'text-red-500 hover:text-red-400' 
+                                  : 'text-zinc-400 hover:text-white'
+                              }`}
+                            >
+                              <Heart className={`h-4 w-4 ${isFollowing(creator.user_id) ? 'fill-current' : ''}`} />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="grid grid-cols-3 gap-2 mb-4">
