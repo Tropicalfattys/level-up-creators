@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Search, 
   CreditCard, 
@@ -18,6 +19,8 @@ import {
 } from 'lucide-react';
 
 export default function HowItWorks() {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -46,7 +49,7 @@ export default function HowItWorks() {
           <div className="grid gap-12">
             {/* Step 1 */}
             <Card className="overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-8">
+              <div className={`grid gap-8 ${isMobile ? '' : 'lg:grid-cols-2'}`}>
                 <CardHeader className="lg:py-12">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-xl">
@@ -91,7 +94,7 @@ export default function HowItWorks() {
 
             {/* Step 2 */}
             <Card className="overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-8">
+              <div className={`grid gap-8 ${isMobile ? '' : 'lg:grid-cols-2'}`}>
                 <CardContent className="lg:py-12 order-2 lg:order-1">
                   <div className="aspect-video rounded-lg overflow-hidden">
                     <img 
@@ -140,7 +143,7 @@ export default function HowItWorks() {
 
             {/* Step 3 */}
             <Card className="overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-8">
+              <div className={`grid gap-8 ${isMobile ? '' : 'lg:grid-cols-2'}`}>
                 <CardHeader className="lg:py-12">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
@@ -185,7 +188,7 @@ export default function HowItWorks() {
 
             {/* Step 4 */}
             <Card className="overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-8">
+              <div className={`grid gap-8 ${isMobile ? '' : 'lg:grid-cols-2'}`}>
                 <CardContent className="lg:py-12 order-2 lg:order-1">
                   <div className="aspect-video rounded-lg overflow-hidden">
                     <img 
@@ -246,7 +249,7 @@ export default function HowItWorks() {
           </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className={`grid gap-8 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
             <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
               <Card className="bg-card border-0 h-full">
                 <CardHeader className="text-center">
@@ -374,7 +377,7 @@ export default function HowItWorks() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className={`grid gap-6 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
             <Card className="text-center">
               <CardHeader>
                 <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
