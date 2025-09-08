@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,6 +35,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
   const [hoveredStar, setHoveredStar] = useState(0);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // Fetch existing reviews for this booking
   const { data: reviews } = useQuery({
@@ -251,7 +253,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                       onClick={() => handleStarClick(star)}
                     >
                       <Star
-                        className={`h-6 w-6 ${
+                        className={`${isMobile ? 'h-4 w-4' : 'h-6 w-6'} ${
                           star <= (hoveredStar || rating)
                             ? 'fill-yellow-400 text-yellow-400'
                             : 'text-gray-300'
@@ -273,7 +275,11 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                 />
               </div>
 
-              <Button type="submit" disabled={submitReview.isPending || rating === 0}>
+              <Button 
+                type="submit" 
+                disabled={submitReview.isPending || rating === 0}
+                className={isMobile ? "w-full text-sm px-3 py-2" : ""}
+              >
                 {submitReview.isPending ? 'Submitting...' : 'Submit Review'}
               </Button>
             </form>

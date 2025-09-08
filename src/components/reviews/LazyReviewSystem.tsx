@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { ReviewSystem } from './ReviewSystem';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LazyReviewSystemProps {
   bookingId: string;
@@ -12,6 +13,7 @@ interface LazyReviewSystemProps {
 
 export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyReviewSystemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isMobile = useIsMobile();
 
   if (isExpanded) {
     return (
@@ -52,10 +54,21 @@ export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyRevie
         <Button
           variant="outline"
           onClick={() => setIsExpanded(true)}
-          className="w-full"
+          className="w-full text-left"
         >
-          <ChevronDown className="h-4 w-4 mr-2" />
-          {canReview ? 'Show Reviews & Leave Review' : 'Show Reviews'}
+          <ChevronDown className="h-4 w-4 mr-2 flex-shrink-0" />
+          {canReview ? (
+            isMobile ? (
+              <span className="flex flex-col">
+                <span>Show Reviews</span>
+                <span>& Leave Review</span>
+              </span>
+            ) : (
+              'Show Reviews & Leave Review'
+            )
+          ) : (
+            'Show Reviews'
+          )}
         </Button>
       </CardContent>
     </Card>
