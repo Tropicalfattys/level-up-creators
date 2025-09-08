@@ -216,7 +216,7 @@ export const EarningsTracker = () => {
 
   return (
     <div className="space-y-6">
-      <div className={isMobile ? 'px-4' : ''}>
+      <div>
         <h3 className="text-lg font-semibold mb-2">Earnings Overview</h3>
         <p className="text-muted-foreground">
           Track your earnings and payment history (85% creator share after 15% platform fee)
@@ -331,26 +331,26 @@ export const EarningsTracker = () => {
                          }
                        </code>
                        {isMobile && (
-                         <div className="flex items-center gap-2">
-                           <Button
-                             size="sm"
-                             variant="ghost"
-                             onClick={() => copyTxHash(earning.tx_hash)}
-                             className="h-8 flex-1"
-                           >
-                             <Copy className="h-3 w-3 mr-1" />
-                             Copy
-                           </Button>
-                           <Button
-                             size="sm"
-                             variant="ghost"
-                             onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
-                             className="h-8 flex-1"
-                           >
-                             <ExternalLink className="h-3 w-3 mr-1" />
-                             View
-                           </Button>
-                         </div>
+                          <div className="space-y-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyTxHash(earning.tx_hash)}
+                              className="h-8 w-full"
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
+                              className="h-8 w-full"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                          </div>
                        )}
                        {!isMobile && (
                          <div className="flex items-center gap-1">
@@ -387,7 +387,7 @@ export const EarningsTracker = () => {
                          onClick={() => window.open(getExplorerUrl(earning.network, earning.tx_hash), '_blank')}
                          className={`text-xs ${isMobile ? 'h-8 w-full' : 'h-6'}`}
                        >
-                         <Hash className="h-3 w-3 mr-0.5" />
+                         <Hash className="h-3 w-3 mr-0" />
                          View on Explorer
                        </Button>
                      </div>
