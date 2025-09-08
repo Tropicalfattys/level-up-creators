@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin, Wallet } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 
@@ -21,7 +23,9 @@ import { NETWORK_CONFIG } from '@/lib/contracts';
 export default function Settings() {
   const { userProfile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [profileData, setProfileData] = useState({
     handle: '',
     bio: '',
@@ -169,8 +173,16 @@ export default function Settings() {
     return null;
   };
 
+  const tabOptions = [
+    { value: 'profile', label: 'Profile' },
+    { value: 'social', label: 'Social & Links' },
+    { value: 'payments', label: 'Payments' },
+    { value: 'notifications', label: 'Notifications' },
+    { value: 'security', label: 'Security' }
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className={isMobile ? "px-4 py-8" : "container mx-auto px-4 py-8"}>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">
@@ -178,14 +190,29 @@ export default function Settings() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="social">Social & Links</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a section" />
+            </SelectTrigger>
+            <SelectContent>
+              {tabOptions.map((tab) => (
+                <SelectItem key={tab.value} value={tab.value}>
+                  {tab.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <TabsList>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="social">Social & Links</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="profile" className="space-y-6">
           <Card>
@@ -280,72 +307,144 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Profile Picture Upload */}
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profileData.avatar_url} alt="Profile" />
-                  <AvatarFallback className="text-lg">
-                    {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <Label htmlFor="avatar-upload" className="cursor-pointer">
-                    <Button variant="outline" size="sm" asChild>
-                      <div>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {uploading ? 'Uploading...' : 'Upload Photo'}
-                      </div>
-                    </Button>
-                  </Label>
-                  <Input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={uploadAvatar}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    JPG, PNG or GIF. Max size 5MB.
-                  </p>
-                </div>
-              </div>
+              {isMobile ? (
+                <>
+                  {/* Profile Picture Upload */}
+                  <div className="flex flex-col items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                      <AvatarFallback className="text-lg">
+                        {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-center">
+                      <Label htmlFor="avatar-upload" className="cursor-pointer">
+                        <Button variant="outline" size="sm" asChild>
+                          <div>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {uploading ? 'Uploading...' : 'Upload Photo'}
+                          </div>
+                        </Button>
+                      </Label>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={uploadAvatar}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        JPG, PNG or GIF. Max size 5MB.
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="handle">Handle</Label>
-                  <Input
-                    id="handle"
-                    value={profileData.handle}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, handle: e.target.value }))}
-                    placeholder="@username"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={userProfile?.email || ''}
-                    disabled
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Tell us about yourself..."
-                  className="min-h-20"
-                />
-              </div>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="handle">Handle</Label>
+                      <Input
+                        id="handle"
+                        value={profileData.handle}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, handle: e.target.value }))}
+                        placeholder="@username"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={userProfile?.email || ''}
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={profileData.bio}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                        placeholder="Tell us about yourself..."
+                        className="min-h-20"
+                      />
+                    </div>
+                  </div>
 
-              <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
-                {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
+                  <Button onClick={handleSaveProfile} disabled={updateProfile.isPending} className="w-full">
+                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Profile Picture Upload */}
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                      <AvatarFallback className="text-lg">
+                        {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <Label htmlFor="avatar-upload" className="cursor-pointer">
+                        <Button variant="outline" size="sm" asChild>
+                          <div>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {uploading ? 'Uploading...' : 'Upload Photo'}
+                          </div>
+                        </Button>
+                      </Label>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={uploadAvatar}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        JPG, PNG or GIF. Max size 5MB.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="handle">Handle</Label>
+                      <Input
+                        id="handle"
+                        value={profileData.handle}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, handle: e.target.value }))}
+                        placeholder="@username"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={userProfile?.email || ''}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell us about yourself..."
+                      className="min-h-20"
+                    />
+                  </div>
+
+                  <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
