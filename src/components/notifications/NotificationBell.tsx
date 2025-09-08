@@ -8,11 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleNotificationClick = async (notification: any) => {
     // Mark as read
@@ -46,7 +48,11 @@ export const NotificationBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 bg-zinc-900 border-zinc-800 z-50" align="end" sideOffset={8}>
+      <DropdownMenuContent 
+        className={`${isMobile ? 'w-72' : 'w-80'} bg-zinc-900 border-zinc-800 z-50`} 
+        align="end" 
+        sideOffset={isMobile ? 4 : 8}
+      >
         <div className="flex items-center justify-between p-3 border-b border-zinc-800">
           <h3 className="font-semibold text-white">Notifications</h3>
           {unreadCount > 0 && (
@@ -61,7 +67,7 @@ export const NotificationBell = () => {
           )}
         </div>
 
-        <ScrollArea className="h-96">
+        <ScrollArea className={`${isMobile ? 'h-64' : 'h-96'}`}>
           {recentNotifications.length > 0 ? (
             <>
               {recentNotifications.map((notification) => (
