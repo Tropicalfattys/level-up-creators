@@ -780,7 +780,7 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
+                  <Label className="flex items-center gap-2">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
                   <p className="text-sm text-muted-foreground">
                     Receive email updates about bookings and messages
                   </p>
