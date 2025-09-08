@@ -11,12 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ExternalLink, Search, Filter, DollarSign, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [chainFilter, setChainFilter] = useState('all');
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['admin-bookings', searchTerm, statusFilter, chainFilter],
@@ -159,8 +161,8 @@ export const AdminBookings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
+          <div className={`mb-6 ${isMobile ? 'space-y-4' : 'flex gap-4'}`}>
+            <div className={isMobile ? 'w-full' : 'flex-1'}>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -172,7 +174,7 @@ export const AdminBookings = () => {
               </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className={isMobile ? 'w-full' : 'w-[180px]'}>
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +188,7 @@ export const AdminBookings = () => {
               </SelectContent>
             </Select>
             <Select value={chainFilter} onValueChange={setChainFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className={isMobile ? 'w-full' : 'w-[150px]'}>
                 <SelectValue placeholder="Filter by chain" />
               </SelectTrigger>
               <SelectContent>
@@ -200,150 +202,297 @@ export const AdminBookings = () => {
             </Select>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Creator</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Chain</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Deliverables</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings?.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell>
+{isMobile ? (
+            <div className="space-y-4">
+              {bookings?.map((booking) => (
+                <Card key={booking.id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium">{booking.services?.title}</p>
+                        <h3 className="font-medium text-sm">{booking.services?.title}</h3>
                         <p className="text-xs text-muted-foreground">ID: {booking.id.slice(0, 8)}...</p>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                      {getStatusBadge(booking.status, !!booking.work_started_at)}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
+                        <p className="text-xs text-muted-foreground">Client</p>
                         <p className="font-medium">@{booking.client?.handle}</p>
-                        <p className="text-xs text-muted-foreground">{booking.client?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{booking.client?.email}</p>
                       </div>
-                    </TableCell>
-                    <TableCell>
                       <div>
+                        <p className="text-xs text-muted-foreground">Creator</p>
                         <p className="font-medium">@{booking.creator?.handle}</p>
-                        <p className="text-xs text-muted-foreground">{booking.creator?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{booking.creator?.email}</p>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
+                        <p className="text-xs text-muted-foreground">Amount</p>
                         <p className="font-medium">${booking.usdc_amount} USDC</p>
                         <p className="text-xs text-muted-foreground">
                           Platform: ${(Number(booking.usdc_amount) * 0.15).toFixed(2)}
                         </p>
                       </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(booking.status, !!booking.work_started_at)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">{booking.chain}</Badge>
-                    </TableCell>
-                    <TableCell>
                       <div>
-                        <p className="text-sm">{format(new Date(booking.created_at), 'MMM d')}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(booking.created_at), 'HH:mm')}
+                        <p className="text-xs text-muted-foreground">Chain & Date</p>
+                        <Badge variant="outline" className="capitalize text-xs">{booking.chain}</Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(booking.created_at), 'MMM d, HH:mm')}
                         </p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        {/* Show deliverables for completed bookings */}
-                        {(booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released') && 
-                         ((booking.proof_links as any)?.length || booking.proof_link || booking.proof_file_url) && (
-                          <div className="space-y-1">
-                            {(booking.proof_links as any)?.map((link: any, index: number) => (
-                              <div key={index} className="flex items-center gap-1">
-                                <ExternalLink className="h-3 w-3 text-blue-600" />
-                                <a 
-                                  href={link.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-blue-600 hover:underline text-xs truncate max-w-[120px]"
-                                  title={link.label}
-                                >
-                                  {link.label}
-                                </a>
-                              </div>
-                            ))}
-                            
-                            {booking.proof_link && !(booking.proof_links as any)?.length && (
-                              <div className="flex items-center gap-1">
-                                <ExternalLink className="h-3 w-3 text-blue-600" />
-                                <a 
-                                  href={booking.proof_link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-blue-600 hover:underline text-xs"
-                                >
-                                  Social Proof
-                                </a>
-                              </div>
-                            )}
-                            
-                            {booking.proof_file_url && (
-                              <>
-                                {booking.proof_file_url.split(',').map((fileUrl: string, index: number) => (
-                                  <div key={index} className="flex items-center gap-1">
-                                    <ExternalLink className="h-3 w-3 text-blue-600" />
-                                    <a 
-                                      href={fileUrl.trim()} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="text-blue-600 hover:underline text-xs"
-                                    >
-                                      File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
-                                    </a>
-                                  </div>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Admin actions */}
-                        <div className="flex gap-1">
-                          {booking.status === 'disputed' && (
-                            <div className="flex gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateBookingStatus.mutate({
-                                  bookingId: booking.id,
-                                  status: 'refunded'
-                                })}
+                    </div>
+
+                    {booking.tx_hash && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Transaction</p>
+                        <a 
+                          href={getExplorerUrl(booking.chain, booking.tx_hash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          View on Explorer
+                        </a>
+                      </div>
+                    )}
+                    
+                    {/* Deliverables */}
+                    {(booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released') && 
+                     ((booking.proof_links as any)?.length || booking.proof_link || booking.proof_file_url) && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Deliverables</p>
+                        <div className="space-y-1">
+                          {(booking.proof_links as any)?.map((link: any, index: number) => (
+                            <div key={index} className="flex items-center gap-1">
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                              <a 
+                                href={link.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-xs truncate"
+                                title={link.label}
                               >
-                                Refund
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateBookingStatus.mutate({
-                                  bookingId: booking.id,
-                                  status: 'released'
-                                })}
-                              >
-                                Release
-                              </Button>
+                                {link.label}
+                              </a>
                             </div>
+                          ))}
+                          
+                          {booking.proof_link && !(booking.proof_links as any)?.length && (
+                            <div className="flex items-center gap-1">
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                              <a 
+                                href={booking.proof_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-xs"
+                              >
+                                Social Proof
+                              </a>
+                            </div>
+                          )}
+                          
+                          {booking.proof_file_url && (
+                            <>
+                              {booking.proof_file_url.split(',').map((fileUrl: string, index: number) => (
+                                <div key={index} className="flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  <a 
+                                    href={fileUrl.trim()} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-xs"
+                                  >
+                                    File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
+                                  </a>
+                                </div>
+                              ))}
+                            </>
                           )}
                         </div>
                       </div>
-                    </TableCell>
+                    )}
+                    
+                    {/* Admin actions */}
+                    {booking.status === 'disputed' && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => updateBookingStatus.mutate({
+                            bookingId: booking.id,
+                            status: 'refunded'
+                          })}
+                        >
+                          Refund
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => updateBookingStatus.mutate({
+                            bookingId: booking.id,
+                            status: 'released'
+                          })}
+                        >
+                          Release
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Creator</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Chain</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Deliverables</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {bookings?.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{booking.services?.title}</p>
+                          <p className="text-xs text-muted-foreground">ID: {booking.id.slice(0, 8)}...</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">@{booking.client?.handle}</p>
+                          <p className="text-xs text-muted-foreground">{booking.client?.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">@{booking.creator?.handle}</p>
+                          <p className="text-xs text-muted-foreground">{booking.creator?.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">${booking.usdc_amount} USDC</p>
+                          <p className="text-xs text-muted-foreground">
+                            Platform: ${(Number(booking.usdc_amount) * 0.15).toFixed(2)}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(booking.status, !!booking.work_started_at)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{booking.chain}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="text-sm">{format(new Date(booking.created_at), 'MMM d')}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(booking.created_at), 'HH:mm')}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          {/* Show deliverables for completed bookings */}
+                          {(booking.status === 'delivered' || booking.status === 'accepted' || booking.status === 'released') && 
+                           ((booking.proof_links as any)?.length || booking.proof_link || booking.proof_file_url) && (
+                            <div className="space-y-1">
+                              {(booking.proof_links as any)?.map((link: any, index: number) => (
+                                <div key={index} className="flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  <a 
+                                    href={link.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-xs truncate max-w-[120px]"
+                                    title={link.label}
+                                  >
+                                    {link.label}
+                                  </a>
+                                </div>
+                              ))}
+                              
+                              {booking.proof_link && !(booking.proof_links as any)?.length && (
+                                <div className="flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  <a 
+                                    href={booking.proof_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-blue-600 hover:underline text-xs"
+                                  >
+                                    Social Proof
+                                  </a>
+                                </div>
+                              )}
+                              
+                              {booking.proof_file_url && (
+                                <>
+                                  {booking.proof_file_url.split(',').map((fileUrl: string, index: number) => (
+                                    <div key={index} className="flex items-center gap-1">
+                                      <ExternalLink className="h-3 w-3 text-blue-600" />
+                                      <a 
+                                        href={fileUrl.trim()} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="text-blue-600 hover:underline text-xs"
+                                      >
+                                        File {booking.proof_file_url.split(',').length > 1 ? `${index + 1}` : ''}
+                                      </a>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Admin actions */}
+                          <div className="flex gap-1">
+                            {booking.status === 'disputed' && (
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateBookingStatus.mutate({
+                                    bookingId: booking.id,
+                                    status: 'refunded'
+                                  })}
+                                >
+                                  Refund
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateBookingStatus.mutate({
+                                    bookingId: booking.id,
+                                    status: 'released'
+                                  })}
+                                >
+                                  Release
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
