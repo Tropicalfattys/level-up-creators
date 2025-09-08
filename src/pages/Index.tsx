@@ -315,7 +315,7 @@ export default function Index() {
         )}
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
               <Card className="bg-card border-0 h-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -356,7 +356,7 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
               <Card className="bg-card border-0 h-full">
                 <CardHeader>
