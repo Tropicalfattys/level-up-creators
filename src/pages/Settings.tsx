@@ -225,7 +225,7 @@ export default function Settings() {
                               <li>To apply for verification, you must maintain at least two active social media accounts (e.g., Twitter + YouTube).</li>
                               <li>You must also post your unique referral link (found in your dashboard's referral section) on each social media account you submit.</li>
                               <li>During verification, our team will check your profile links and confirm ownership by verifying the posted referral link on your external accounts.</li>
-                              <li>Verification requires a fee and unlocks additional benefits.</li>
+                              <li>Verification is part of the "PRO Creator" plan and unlocks additional trust & benefits.</li>
                             </ul>
                           </div>
 
