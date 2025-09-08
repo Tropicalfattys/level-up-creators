@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ interface PricingTier {
 export const AdminPricing = () => {
   const [editingTiers, setEditingTiers] = useState<Record<string, Partial<PricingTier>>>({});
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: pricingTiers, isLoading, error } = useQuery({
     queryKey: ['pricing-tiers'],
@@ -205,7 +207,7 @@ export const AdminPricing = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor={`price-${tier.id}`}>Price (USDC)</Label>
                           <Input
@@ -297,7 +299,7 @@ export const AdminPricing = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t">
+                      <div className={`pt-4 border-t ${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'}`}>
                         <div className="flex items-center space-x-2">
                           <Switch
                             id={`active-${tier.id}`}
@@ -311,6 +313,7 @@ export const AdminPricing = () => {
                           onClick={() => handleSave(tier)}
                           disabled={!hasChanges(tier.id) || updatePricingMutation.isPending}
                           size="sm"
+                          className={isMobile ? 'w-full' : ''}
                         >
                           <Save className="h-4 w-4 mr-2" />
                           {updatePricingMutation.isPending ? 'Saving...' : 'Save Changes'}
