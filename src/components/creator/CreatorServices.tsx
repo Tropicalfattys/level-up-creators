@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const { data: services, isLoading, isError } = useQuery({
@@ -121,7 +123,7 @@ export const CreatorServices = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className={isMobile ? 'space-y-3' : 'flex items-center justify-between'}>
         <div>
           <h2 className="text-2xl font-bold text-white">My Services</h2>
           <p className="text-zinc-400">Manage the services you offer to clients</p>
