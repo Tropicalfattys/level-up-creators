@@ -179,9 +179,15 @@ export default function Settings() {
     { value: 'profile', label: 'Profile' },
     { value: 'social', label: 'Social & Links' },
     { value: 'payments', label: 'Payments' },
-    { value: 'notifications', label: 'Notifications' },
     { value: 'security', label: 'Security' }
   ];
+
+  // Redirect to profile tab if notifications tab is accessed
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      setActiveTab('profile');
+    }
+  }, [activeTab]);
 
   return (
     <div className={isMobile ? "px-4 py-8" : "container mx-auto px-4 py-8"}>
@@ -211,7 +217,6 @@ export default function Settings() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="social">Social & Links</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
         )}
@@ -235,7 +240,7 @@ export default function Settings() {
                       </DialogHeader>
                       <ScrollArea className="flex-1 px-4 max-h-[70vh]">
                         <div className="text-sm space-y-4 py-4">
-                            <p>Your account settings are organized into five tabs: Profile, Social Links, Payments, Notifications, and Security. Please review the following carefully to ensure your account is properly configured:</p>
+                            <p>Your account settings are organized into four tabs: Profile, Social Links, Payments, and Security. Please review the following carefully to ensure your account is properly configured:</p>
                             
                             <div>
                               <h5 className="font-semibold mb-2">1. Profile</h5>
@@ -272,15 +277,7 @@ export default function Settings() {
                             </div>
 
                             <div>
-                              <h5 className="font-semibold mb-2">4. Notifications</h5>
-                              <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li>Manage your email, push, and in-app notification preferences.</li>
-                                <li>Ensure you remain informed about bookings, payments, and updates.</li>
-                              </ul>
-                            </div>
-
-                            <div>
-                              <h5 className="font-semibold mb-2">5. Security</h5>
+                              <h5 className="font-semibold mb-2">4. Security</h5>
                               <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>Review and update your security settings, such as two-factor authentication (2FA).</li>
                                 <li>Keeping your account secure helps protect both you and your clients/creators.</li>
@@ -319,7 +316,7 @@ export default function Settings() {
                         <h4 className="font-semibold text-lg mb-3">Profile & Settings Information</h4>
                         <ScrollArea className="h-96">
                           <div className="text-sm space-y-4 pr-4">
-                            <p>Your account settings are organized into five tabs: Profile, Social Links, Payments, Notifications, and Security. Please review the following carefully to ensure your account is properly configured:</p>
+                            <p>Your account settings are organized into four tabs: Profile, Social Links, Payments, and Security. Please review the following carefully to ensure your account is properly configured:</p>
                             
                             <div>
                               <h5 className="font-semibold mb-2">1. Profile</h5>
@@ -355,16 +352,8 @@ export default function Settings() {
                               </ul>
                             </div>
 
-                            <div>
-                              <h5 className="font-semibold mb-2">4. Notifications</h5>
-                              <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li>Manage your email, push, and in-app notification preferences.</li>
-                                <li>Ensure you remain informed about bookings, payments, and updates.</li>
-                              </ul>
-                            </div>
-
-                            <div>
-                              <h5 className="font-semibold mb-2">5. Security</h5>
+                             <div>
+                               <h5 className="font-semibold mb-2">4. Security</h5>
                               <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>Review and update your security settings, such as two-factor authentication (2FA).</li>
                                 <li>Keeping your account secure helps protect both you and your clients/creators.</li>
@@ -769,49 +758,6 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Choose how you want to be notified
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5 text-left">
-                  <Label className="flex items-center gap-2">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email updates about bookings and messages
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5 text-left">
-                  <Label>Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about important updates in real-time
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5 text-left">
-                  <Label className="flex items-center gap-2">Marketing Emails <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive updates about new features and promotions
-                  </p>
-                </div>
-                <Switch />
-              </div>
-
-              <Button>Save Preferences</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">
           <Card>
