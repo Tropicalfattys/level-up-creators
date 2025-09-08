@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight, AlertCircle, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -45,7 +49,15 @@ interface BookingWithDetails {
 export const BookingManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('all');
+
+  const tabOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'new', label: 'New' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' }
+  ];
 
   const handleTabChange = (value: string) => {
     // Lock scroll position during tab change
@@ -431,6 +443,75 @@ export const BookingManagement = () => {
 
   const tabCounts = getTabCounts();
 
+  // Help content for mobile dialog and desktop hover
+  const helpContent = (
+    <ScrollArea className="h-96 w-full">
+      <div className="p-4 text-sm space-y-3">
+        <div className="font-semibold text-base">📌 How the Start Work Process Works</div>
+        
+        <div>
+          <div className="font-medium mb-1">1. Payment Verification</div>
+          <div className="text-xs space-y-1 ml-2">
+            <div>• Each new booking shows a status: Pending or Paid.</div>
+            <div>• Work cannot begin until the booking is marked Paid. Our escrow team verifies funds before approving.</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="font-medium mb-1">2. Starting Work</div>
+          <div className="text-xs space-y-1 ml-2">
+            <div>• Once the booking is marked Paid, click Start Work to begin.</div>
+            <div>• You and the client can use the dedicated chat window to discuss details and exchange files (e.g., logos, reference materials).</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="font-medium mb-1">3. Submitting Proof</div>
+          <div className="text-xs space-y-1 ml-2">
+            <div>• You must provide at least one form of proof, link and or file upload.</div>
+            <div>• Proof may include:</div>
+            <div>• Verified links (e.g., Twitter posts, YouTube videos, blog articles).</div>
+            <div>• File uploads (images, short videos, documents, etc.).</div>
+            <div>• Additional files may also be shared in the chat window for full transparency.</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="font-medium mb-1">4. Client Review Stage</div>
+          <div className="text-xs space-y-1 ml-2">
+            <div>• After you submit proof, the client may either:</div>
+            <div>• Accept Work → Funds are released within 72 hours (85% to you, 15% to the platform).</div>
+            <div>• File a Dispute → Both parties can provide evidence via chat. Admins review and make a final decision.</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="font-medium mb-1">5. Reviews</div>
+          <div className="text-xs space-y-1 ml-2">
+            <div>• Once the transaction is complete, both you and the client may leave a star rating (1–5) and written review.</div>
+            <div>• Reviews become part of your public profile.</div>
+          </div>
+        </div>
+
+        <div className="border-t pt-2 mt-3">
+          <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
+          <div className="text-xs">Keep all communication and file transfers within the platform. This ensures proper dispute resolution if needed. Off-platform agreements are not protected by escrow.</div>
+        </div>
+
+        <div className="border-t pt-2 mt-3">
+          <div className="font-medium text-orange-600 mb-1">⚠️ Platform Safety Notice</div>
+          <div className="text-xs space-y-1">
+            <div>This chat and file-sharing feature is provided solely for professional collaboration related to booked services. All communications and uploaded files are monitored and recorded for quality assurance and dispute resolution.</div>
+            <div>• Misuse of this feature—including harassment, threats, bullying, spamming, solicitation, or sharing of prohibited content—will result in immediate suspension or permanent removal from the platform.</div>
+            <div>• In cases of suspected fraud, malicious activity, or violation of applicable laws, relevant information may be disclosed to law enforcement upon request or in response to a valid warrant.</div>
+            <div>• Users are reminded to keep all interactions respectful, professional, and limited to project-related communication. Video calling is not supported.</div>
+            <div className="mt-2 font-medium">By using this feature, you agree to conduct yourself professionally and acknowledge that violations of these terms may result in loss of platform access.</div>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+
   return (
     <TooltipProvider>
       <div className="space-y-6" style={{ scrollBehavior: 'auto' }}>
@@ -451,12 +532,29 @@ export const BookingManagement = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" style={{ scrollBehavior: 'auto' }}>
-          <TabsList>
-            <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-            <TabsTrigger value="new">New ({tabCounts.new})</TabsTrigger>
-            <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
-          </TabsList>
+          {isMobile ? (
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {tabOptions.find(option => option.value === activeTab)?.label} ({tabCounts[activeTab as keyof typeof tabCounts]})
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {tabOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label} ({tabCounts[option.value as keyof typeof tabCounts]})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <TabsList>
+              <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
+              <TabsTrigger value="new">New ({tabCounts.new})</TabsTrigger>
+              <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
+              <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value={activeTab} className="space-y-4">
             {filterBookings(activeTab).map((booking) => {
@@ -466,125 +564,137 @@ export const BookingManagement = () => {
               console.log(`Booking ${booking.id}: status=${booking.status}, work_started_at=${booking.work_started_at}, isWorkStarted=${isWorkStarted}`);
               
               return (
-                <Card key={booking.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {booking.services?.title || 'Service'}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-md p-0">
-                              <ScrollArea className="h-96 w-full">
-                                <div className="p-4 text-sm space-y-3">
-                                  <div className="font-semibold text-base">📌 How the Start Work Process Works</div>
-                                  
-                                  <div>
-                                    <div className="font-medium mb-1">1. Payment Verification</div>
-                                    <div className="text-xs space-y-1 ml-2">
-                                      <div>• Each new booking shows a status: Pending or Paid.</div>
-                                      <div>• Work cannot begin until the booking is marked Paid. Our escrow team verifies funds before approving.</div>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="font-medium mb-1">2. Starting Work</div>
-                                    <div className="text-xs space-y-1 ml-2">
-                                      <div>• Once the booking is marked Paid, click Start Work to begin.</div>
-                                      <div>• You and the client can use the dedicated chat window to discuss details and exchange files (e.g., logos, reference materials).</div>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="font-medium mb-1">3. Submitting Proof</div>
-                                    <div className="text-xs space-y-1 ml-2">
-                                      <div>• You must provide at least one form of proof, link and or file upload.</div>
-                                      <div>• Proof may include:</div>
-                                      <div>• Verified links (e.g., Twitter posts, YouTube videos, blog articles).</div>
-                                      <div>• File uploads (images, short videos, documents, etc.).</div>
-                                      <div>• Additional files may also be shared in the chat window for full transparency.</div>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="font-medium mb-1">4. Client Review Stage</div>
-                                    <div className="text-xs space-y-1 ml-2">
-                                      <div>• After you submit proof, the client may either:</div>
-                                      <div>• Accept Work → Funds are released within 72 hours (85% to you, 15% to the platform).</div>
-                                      <div>• File a Dispute → Both parties can provide evidence via chat. Admins review and make a final decision.</div>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="font-medium mb-1">5. Reviews</div>
-                                    <div className="text-xs space-y-1 ml-2">
-                                      <div>• Once the transaction is complete, both you and the client may leave a star rating (1–5) and written review.</div>
-                                      <div>• Reviews become part of your public profile.</div>
-                                    </div>
-                                  </div>
-
-                                  <div className="border-t pt-2 mt-3">
-                                    <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
-                                    <div className="text-xs">Keep all communication and file transfers within the platform. This ensures proper dispute resolution if needed. Off-platform agreements are not protected by escrow.</div>
-                                  </div>
-
-                                  <div className="border-t pt-2 mt-3">
-                                    <div className="font-medium text-orange-600 mb-1">⚠️ Platform Safety Notice</div>
-                                    <div className="text-xs space-y-1">
-                                      <div>This chat and file-sharing feature is provided solely for professional collaboration related to booked services. All communications and uploaded files are monitored and recorded for quality assurance and dispute resolution.</div>
-                                      <div>• Misuse of this feature—including harassment, threats, bullying, spamming, solicitation, or sharing of prohibited content—will result in immediate suspension or permanent removal from the platform.</div>
-                                      <div>• In cases of suspected fraud, malicious activity, or violation of applicable laws, relevant information may be disclosed to law enforcement upon request or in response to a valid warrant.</div>
-                                      <div>• Users are reminded to keep all interactions respectful, professional, and limited to project-related communication. Video calling is not supported.</div>
-                                      <div className="mt-2 font-medium">By using this feature, you agree to conduct yourself professionally and acknowledge that violations of these terms may result in loss of platform access.</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </ScrollArea>
-                            </TooltipContent>
-                          </Tooltip>
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                          <User className="h-3 w-3" />
-                          Client: 
-                          {booking.client?.handle ? (
-                            <Link 
-                              to={`/profile/${booking.client.handle}`}
-                              className="text-primary hover:underline"
-                            >
-                              @{booking.client.handle}
-                            </Link>
-                          ) : (
-                            <span>Unknown</span>
-                          )}
-                        </CardDescription>
-                        {booking.tx_hash && (
-                          <CardDescription className="flex items-center gap-2 mt-1">
-                            <Hash className="h-3 w-3" />
-                            <span className="font-mono text-xs">
-                              TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
-                            </span>
-                            <Button
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => copyTxHash(booking.tx_hash!)}
-                              className="h-4 w-4 p-0"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </CardDescription>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={getStatusColor(booking.status)}>
-                          {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
-                        </Badge>
-                        <p className="font-semibold mt-1">
-                          <DollarSign className="h-3 w-3 inline mr-1" />
-                          {booking.usdc_amount} USDC
-                        </p>
-                      </div>
+                <Card key={booking.id} className={isMobile ? "w-full" : ""}>
+                  <CardHeader className={isMobile ? "px-4 py-3" : ""}>
+                    <div className={isMobile ? "space-y-3" : "flex justify-between items-start"}>
+                      {isMobile ? (
+                        // Mobile Layout: Title first with help icon, then status and price
+                        <>
+                          <div className="flex items-center gap-2 justify-between">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {booking.services?.title || 'Service'}
+                              {isMobile ? (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <HelpCircle className="h-4 w-4 text-red-500 cursor-help flex-shrink-0" />
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-md max-h-[80vh] p-0">
+                                    {helpContent}
+                                  </DialogContent>
+                                </Dialog>
+                              ) : (
+                                <HoverCard>
+                                  <HoverCardTrigger asChild>
+                                    <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
+                                  </HoverCardTrigger>
+                                  <HoverCardContent side="right" className="max-w-md p-0 w-[400px]">
+                                    {helpContent}
+                                  </HoverCardContent>
+                                </HoverCard>
+                              )}
+                            </CardTitle>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <Badge variant={getStatusColor(booking.status)}>
+                              {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                            </Badge>
+                            <p className="font-semibold text-lg">
+                              <DollarSign className="h-4 w-4 inline mr-1" />
+                              {booking.usdc_amount} USDC
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <CardDescription className="flex items-center gap-2">
+                              <User className="h-3 w-3" />
+                              Client: 
+                              {booking.client?.handle ? (
+                                <Link 
+                                  to={`/profile/${booking.client.handle}`}
+                                  className="text-primary hover:underline"
+                                >
+                                  @{booking.client.handle}
+                                </Link>
+                              ) : (
+                                <span>Unknown</span>
+                              )}
+                            </CardDescription>
+                            {booking.tx_hash && (
+                              <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
+                                <Hash className="h-3 w-3" />
+                                <span className="font-mono text-xs">
+                                  TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                                </span>
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => copyTxHash(booking.tx_hash!)}
+                                  className="h-4 w-4 p-0"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </CardDescription>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        // Desktop Layout: Original side-by-side layout
+                        <>
+                          <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {booking.services?.title || 'Service'}
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
+                                </HoverCardTrigger>
+                                <HoverCardContent side="right" className="max-w-md p-0 w-[400px]">
+                                  {helpContent}
+                                </HoverCardContent>
+                              </HoverCard>
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <User className="h-3 w-3" />
+                              Client: 
+                              {booking.client?.handle ? (
+                                <Link 
+                                  to={`/profile/${booking.client.handle}`}
+                                  className="text-primary hover:underline"
+                                >
+                                  @{booking.client.handle}
+                                </Link>
+                              ) : (
+                                <span>Unknown</span>
+                              )}
+                            </CardDescription>
+                            {booking.tx_hash && (
+                              <CardDescription className="flex items-center gap-2 mt-1">
+                                <Hash className="h-3 w-3" />
+                                <span className="font-mono text-xs">
+                                  TX: {booking.tx_hash.slice(0, 8)}...{booking.tx_hash.slice(-6)}
+                                </span>
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => copyTxHash(booking.tx_hash!)}
+                                  className="h-4 w-4 p-0"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </CardDescription>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={getStatusColor(booking.status)}>
+                              {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                            </Badge>
+                            <p className="font-semibold mt-1">
+                              <DollarSign className="h-3 w-3 inline mr-1" />
+                              {booking.usdc_amount} USDC
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -596,25 +706,27 @@ export const BookingManagement = () => {
                     </div>
 
                     <div className="border rounded-lg p-4 bg-muted/20">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className={isMobile ? "space-y-3" : "flex items-center justify-between mb-4"}>
                         <h4 className="font-medium flex items-center gap-2">
                           <Package className="h-4 w-4" />
                           Project Actions
                         </h4>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Progress:</span>
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4].map((step) => (
-                              <div
-                                key={step}
-                                className={`w-2 h-2 rounded-full ${
-                                  step <= currentProgress 
-                                    ? 'bg-primary' 
-                                    : 'bg-muted-foreground/30'
-                                }`}
-                              />
-                            ))}
-                          </div>
+                      </div>
+
+                      {/* Progress bar moved after Project Actions section for mobile */}
+                      <div className={`${isMobile ? 'mt-4' : 'mb-4'} flex items-center gap-2 text-sm`}>
+                        <span className="text-muted-foreground">Progress:</span>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div
+                              key={step}
+                              className={`w-2 h-2 rounded-full ${
+                                step <= currentProgress 
+                                  ? 'bg-primary' 
+                                  : 'bg-muted-foreground/30'
+                              }`}
+                            />
+                          ))}
                         </div>
                       </div>
 
@@ -833,15 +945,19 @@ export const BookingManagement = () => {
                       </div>
                     </div>
 
-                    {/* Review System - FIXED: Now includes 'refunded' status */}
+                    {/* Review System - Mobile responsive */}
                     {(booking.status === 'accepted' || booking.status === 'released' || booking.status === 'refunded') && booking.client && (
                       <div className="border rounded-lg p-4 bg-muted/20">
-                        <h4 className="font-medium mb-3">Rate your client experience</h4>
-                        <LazyReviewSystem
-                          bookingId={booking.id}
-                          revieweeId={booking.client.id}
-                          canReview={true}
-                        />
+                        <h4 className={`font-medium mb-3 ${isMobile ? 'text-sm' : ''}`}>
+                          Rate your client experience
+                        </h4>
+                        <div className={isMobile ? 'text-sm' : ''}>
+                          <LazyReviewSystem
+                            bookingId={booking.id}
+                            revieweeId={booking.client.id}
+                            canReview={true}
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -873,8 +989,8 @@ export const BookingManagement = () => {
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className={`${isMobile ? 'space-y-2' : 'flex items-center justify-between'} pt-2 border-t`}>
+                      <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-4'} text-sm text-muted-foreground`}>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           Booked {format(new Date(booking.created_at), 'MMM d, yyyy')}
