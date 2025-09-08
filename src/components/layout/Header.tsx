@@ -135,6 +135,27 @@ export const Header = () => {
                 </SheetTrigger>
             <SheetContent side="right" className="bg-zinc-900 border-zinc-800">
               <div className="flex flex-col space-y-4 mt-6">
+                {/* User Profile Section - Only show when signed in */}
+                {user && (
+                  <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg mb-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.handle} />
+                      <AvatarFallback className="bg-zinc-700 text-white">
+                        {userProfile?.handle?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <p className="font-medium text-white text-sm">{userProfile?.handle}</p>
+                      {userRole && (
+                        <p className="text-xs text-cyan-400 font-medium capitalize">
+                          {userRole}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Links */}
                 <Link 
                   to="/browse" 
                   className="text-white/80 hover:text-white transition-colors p-2"
@@ -164,7 +185,75 @@ export const Header = () => {
                   Become a creator
                 </Link>
                 
-                {!user && (
+                {/* Authenticated User Actions */}
+                {user ? (
+                  <div className="border-t border-zinc-800 pt-4 space-y-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        navigate('/dashboard');
+                        setMobileMenuOpen(false);
+                      }} 
+                      className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        navigate('/settings');
+                        setMobileMenuOpen(false);
+                      }} 
+                      className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Button>
+                    
+                    {userRole === 'creator' && (
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => {
+                          navigate('/creator-dashboard');
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                      >
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Creator Dashboard
+                      </Button>
+                    )}
+
+                    {userRole === 'admin' && (
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => {
+                          navigate('/admin');
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </Button>
+                    )}
+
+                    <div className="border-t border-zinc-800 pt-2">
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => {
+                          handleSignOut();
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full justify-start text-white/80 hover:text-white hover:bg-zinc-800"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <div className="border-t border-zinc-800 pt-4 space-y-2">
                     <Button 
                       variant="ghost" 
