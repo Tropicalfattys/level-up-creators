@@ -287,9 +287,6 @@ export default function Index() {
             <SelectContent>
               <SelectItem value="overview">Overview</SelectItem>
               <SelectItem value="booked">Booked</SelectItem>
-              {canAccessCreatorTools && (
-                <SelectItem value="creator">Creator Tools</SelectItem>
-              )}
               <SelectItem value="messages">Messages</SelectItem>
               <SelectItem value="disputes">Disputes</SelectItem>
               <SelectItem value="referrals">Referrals</SelectItem>
@@ -302,9 +299,6 @@ export default function Index() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="booked">Booked</TabsTrigger>
-            {canAccessCreatorTools && (
-              <TabsTrigger value="creator">Creator Tools</TabsTrigger>
-            )}
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="disputes">Disputes</TabsTrigger>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
@@ -414,65 +408,6 @@ export default function Index() {
           <ClientBookings />
         </TabsContent>
 
-        {canAccessCreatorTools && (
-          <TabsContent value="creator">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Creator Tools</h2>
-                <Button asChild>
-                  <Link to="/creator-dashboard">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Full Dashboard
-                  </Link>
-                </Button>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
-                  <Card className="bg-card border-0 h-full">
-                    <CardHeader>
-                      <CardTitle>Services</CardTitle>
-                      <CardDescription>Manage your service offerings</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button asChild className="w-full">
-                        <Link to="/services">Manage Services</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
-                  <Card className="bg-card border-0 h-full">
-                    <CardHeader>
-                      <CardTitle>Bookings</CardTitle>
-                      <CardDescription>Track active bookings</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button asChild className="w-full">
-                        <Link to="/creator-dashboard">View Bookings</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="p-[2px] bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg h-full">
-                  <Card className="bg-card border-0 h-full">
-                    <CardHeader>
-                      <CardTitle>Earnings</CardTitle>
-                      <CardDescription>Track your earnings</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button asChild className="w-full">
-                        <Link to="/creator-dashboard">View Earnings</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        )}
 
         <TabsContent value="messages" className="space-y-6">
           <MessagesList />
