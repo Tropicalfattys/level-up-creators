@@ -1,12 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Privacy = () => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
+      <div className={isMobile ? "w-full px-0 py-16" : "container mx-auto px-4 py-16"}>
+        <div className={isMobile ? "w-full" : "max-w-4xl mx-auto"}>
           <Card className="bg-card border-border">
-            <CardContent className="p-8 md:p-12">
+            <CardContent className={isMobile ? "px-4 py-8" : "p-8 md:p-12"}>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-8">
                 Privacy Policy
               </h1>
