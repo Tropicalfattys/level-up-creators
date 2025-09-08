@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle, RefreshCcw } from 'lucide-react';
@@ -43,6 +45,7 @@ interface BookingWithDetails {
 
 export const ClientBookings = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('all');
   const [retryPaymentBookingId, setRetryPaymentBookingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -213,12 +216,26 @@ export const ClientBookings = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" style={{ scrollBehavior: 'auto' }}>
-          <TabsList>
-            <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
-            <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
-            <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
-          </TabsList>
+          {isMobile ? (
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger className="w-full mb-4">
+                <SelectValue placeholder="Select booking status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-md z-50">
+                <SelectItem value="all">All ({tabCounts.all})</SelectItem>
+                <SelectItem value="active">Active ({tabCounts.active})</SelectItem>
+                <SelectItem value="delivered">Delivered ({tabCounts.delivered})</SelectItem>
+                <SelectItem value="completed">Completed ({tabCounts.completed})</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <TabsList>
+              <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
+              <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
+              <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
+              <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value={activeTab} className="space-y-4">
             {filterBookings(activeTab).map((booking) => {
