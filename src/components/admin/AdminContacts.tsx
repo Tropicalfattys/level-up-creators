@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Mail, MessageSquare, Search, Users, Briefcase, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -15,6 +18,8 @@ import { format } from 'date-fns';
 export const AdminContacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('general');
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   // General Messages query (direct_messages table)
@@ -162,11 +167,23 @@ export const AdminContacts = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="general">General Messages</TabsTrigger>
-              <TabsTrigger value="service">Service Messages</TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {isMobile ? (
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="w-full mb-4">
+                  <SelectValue placeholder="Select message type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Messages</SelectItem>
+                  <SelectItem value="service">Service Messages</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">General Messages</TabsTrigger>
+                <TabsTrigger value="service">Service Messages</TabsTrigger>
+              </TabsList>
+            )}
             
             {/* General Messages Tab */}
             <TabsContent value="general" className="space-y-4 mt-6">
@@ -184,7 +201,7 @@ export const AdminContacts = () => {
 
               <div className="space-y-4">
                 {filteredGeneralMessages?.map((conversation: any) => (
-                  <div key={conversation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={conversation.id} className={`p-4 border rounded-lg ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-between'}`}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
                         <Users className="h-6 w-6 text-green-600" />
@@ -204,54 +221,57 @@ export const AdminContacts = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => setSelectedConversation(conversation)}
+                            className={isMobile ? 'w-full' : ''}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Conversation
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                        <DialogContent className={`${isMobile ? 'max-w-[95vw] w-[95vw] max-h-[90vh]' : 'max-w-4xl max-h-[80vh]'} overflow-hidden`}>
                           <DialogHeader>
                             <DialogTitle>General Conversation</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-3 bg-muted rounded">
-                              <Users className="h-5 w-5" />
-                              <span className="font-medium">
-                                @{conversation.participants[0]?.handle} ↔ @{conversation.participants[1]?.handle}
-                              </span>
-                              <Badge>{conversation.messageCount} messages</Badge>
-                            </div>
-                            
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                              {conversation.messages?.sort((a: any, b: any) => 
-                                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-                              ).map((message: any) => (
-                                <div key={message.id} className="flex gap-3 p-3 border rounded">
-                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-medium">
-                                      {message.from_user?.handle?.charAt(0) || '?'}
-                                    </span>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-medium text-sm">@{message.from_user?.handle}</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                          <ScrollArea className="h-full">
+                            <div className="space-y-4">
+                              <div className={`p-3 bg-muted rounded ${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-4'}`}>
+                                <Users className="h-5 w-5" />
+                                <span className="font-medium">
+                                  @{conversation.participants[0]?.handle} ↔ @{conversation.participants[1]?.handle}
+                                </span>
+                                <Badge>{conversation.messageCount} messages</Badge>
+                              </div>
+                              
+                              <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {conversation.messages?.sort((a: any, b: any) => 
+                                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                                ).map((message: any) => (
+                                  <div key={message.id} className="flex gap-3 p-3 border rounded">
+                                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                      <span className="text-xs font-medium">
+                                        {message.from_user?.handle?.charAt(0) || '?'}
                                       </span>
                                     </div>
-                                    <p className="text-sm">{message.body}</p>
+                                    <div className="flex-1">
+                                      <div className={`gap-2 mb-1 ${isMobile ? 'flex flex-col' : 'flex items-center'}`}>
+                                        <span className="font-medium text-sm">@{message.from_user?.handle}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm">{message.body}</p>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          </ScrollArea>
                         </DialogContent>
                       </Dialog>
                     </div>
@@ -285,7 +305,7 @@ export const AdminContacts = () => {
 
               <div className="space-y-4">
                 {filteredServiceMessages?.map((conversation: any) => (
-                  <div key={conversation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={conversation.id} className={`p-4 border rounded-lg ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-between'}`}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                         <Briefcase className="h-6 w-6 text-purple-600" />
@@ -310,7 +330,7 @@ export const AdminContacts = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${isMobile ? 'w-full flex-col space-y-2' : ''}`}>
                       <Badge variant="secondary">{conversation.booking?.status}</Badge>
                       <Dialog>
                         <DialogTrigger asChild>
@@ -318,32 +338,34 @@ export const AdminContacts = () => {
                             variant="outline" 
                             size="sm"
                             onClick={() => setSelectedConversation(conversation)}
+                            className={isMobile ? 'w-full' : ''}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Conversation
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                        <DialogContent className={`${isMobile ? 'max-w-[95vw] w-[95vw] max-h-[90vh]' : 'max-w-4xl max-h-[80vh]'} overflow-hidden`}>
                           <DialogHeader>
                             <DialogTitle>Service Conversation</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4 p-3 bg-muted rounded">
-                              <div>
-                                <h4 className="font-medium mb-2">Service Details</h4>
-                                <p className="text-sm"><strong>Service:</strong> {conversation.booking?.services?.title}</p>
-                                <p className="text-sm"><strong>Amount:</strong> ${conversation.booking?.usdc_amount} USDC</p>
-                                <p className="text-sm"><strong>Status:</strong> {conversation.booking?.status}</p>
+                          <ScrollArea className="h-full">
+                            <div className="space-y-4">
+                              <div className={`gap-4 p-3 bg-muted rounded ${isMobile ? 'flex flex-col space-y-4' : 'grid md:grid-cols-2'}`}>
+                                <div>
+                                  <h4 className="font-medium mb-2">Service Details</h4>
+                                  <p className="text-sm"><strong>Service:</strong> {conversation.booking?.services?.title}</p>
+                                  <p className="text-sm"><strong>Amount:</strong> ${conversation.booking?.usdc_amount} USDC</p>
+                                  <p className="text-sm"><strong>Status:</strong> {conversation.booking?.status}</p>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium mb-2">Participants</h4>
+                                  <p className="text-sm"><strong>Client:</strong> @{conversation.booking?.client?.handle}</p>
+                                  <p className="text-sm"><strong>Creator:</strong> @{conversation.booking?.creator?.handle}</p>
+                                  <p className="text-sm"><strong>Messages:</strong> {conversation.messageCount}</p>
+                                </div>
                               </div>
-                              <div>
-                                <h4 className="font-medium mb-2">Participants</h4>
-                                <p className="text-sm"><strong>Client:</strong> @{conversation.booking?.client?.handle}</p>
-                                <p className="text-sm"><strong>Creator:</strong> @{conversation.booking?.creator?.handle}</p>
-                                <p className="text-sm"><strong>Messages:</strong> {conversation.messageCount}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              
+                              <div className="space-y-3 max-h-96 overflow-y-auto">
                               {conversation.messages?.sort((a: any, b: any) => 
                                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                               ).map((message: any) => (
@@ -354,7 +376,7 @@ export const AdminContacts = () => {
                                     </span>
                                   </div>
                                   <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className={`gap-2 mb-1 ${isMobile ? 'flex flex-col' : 'flex items-center'}`}>
                                       <span className="font-medium text-sm">@{message.from_user?.handle}</span>
                                       <Badge variant="outline" className="text-xs">
                                         {message.from_user?.role}
@@ -367,9 +389,10 @@ export const AdminContacts = () => {
                                   </div>
                                 </div>
                               ))}
+                              </div>
                             </div>
-                          </div>
-                        </DialogContent>
+                           </ScrollArea>
+                         </DialogContent>
                       </Dialog>
                     </div>
                   </div>
