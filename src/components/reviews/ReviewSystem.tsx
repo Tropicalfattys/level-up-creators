@@ -317,15 +317,15 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
             <div className="space-y-4">
               {reviews.map((review) => (
                 <div key={review.id} className="border-b pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
+                  <div className={isMobile ? "flex flex-col items-center text-center space-y-2" : "flex items-start gap-3"}>
+                    <Avatar className={isMobile ? "h-12 w-12" : "h-8 w-8"}>
                       <AvatarImage src={review.reviewer?.avatar_url} />
                       <AvatarFallback>
                         {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className={isMobile ? "w-full" : "flex-1"}>
+                      <div className={isMobile ? "flex flex-col space-y-2" : "flex items-center gap-2 mb-1"}>
                         {review.reviewer?.handle ? (
                           <Link 
                             to={`/profile/${review.reviewer.handle}`}
@@ -336,7 +336,7 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                         ) : (
                           <span className="font-medium">@Unknown</span>
                         )}
-                        <div className="flex">
+                        <div className={isMobile ? "flex justify-center" : "flex"}>
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
@@ -348,11 +348,22 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                             />
                           ))}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(review.created_at), 'MMM d, yyyy')}
-                        </span>
+                        {isMobile ? (
+                          <>
+                            {review.comment && (
+                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(review.created_at), 'MMM d, yyyy')}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(review.created_at), 'MMM d, yyyy')}
+                          </span>
+                        )}
                       </div>
-                      {review.comment && (
+                      {!isMobile && review.comment && (
                         <p className="text-sm text-muted-foreground">{review.comment}</p>
                       )}
                     </div>
