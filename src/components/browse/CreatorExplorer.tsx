@@ -556,11 +556,11 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className={isMobile ? "flex flex-col space-y-2" : "flex gap-2"}>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                          className={`${isMobile ? "w-full" : "flex-1"} border-zinc-700 text-zinc-300 hover:bg-zinc-800`}
                           onClick={(e) => handleSendMessage(creator, e)}
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
@@ -568,7 +568,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         </Button>
                         <Button 
                           size="sm" 
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                          className={`${isMobile ? "w-full" : "flex-1"} bg-blue-600 hover:bg-blue-700 text-white`}
                           onClick={() => handleViewProfile(creator.handle)}
                         >
                           <User className="h-4 w-4 mr-1" />
