@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
@@ -20,6 +21,7 @@ import Autoplay from "embla-carousel-autoplay";
 
 export default function Home() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   // Fetch Pro creators for featured section
   const { data: proCreators = [], isLoading, error: proCreatorsError } = useQuery({
@@ -198,8 +200,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
+      <section className={isMobile ? "py-20 px-0" : "py-20 px-4"}>
+        <div className={isMobile ? "w-full text-center px-4" : "container mx-auto text-center"}>
           <h1 className="text-lg md:text-6xl font-bold mb-6">
             <div className="mb-2">
               Hire the right Content Creator for your budget & Amplify Your Project.
@@ -230,8 +232,8 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-6 md:py-16 px-4">
-        <div className="container mx-auto">
+      <section className={isMobile ? "py-6 md:py-16 px-0" : "py-6 md:py-16 px-4"}>
+        <div className={isMobile ? "w-full px-4" : "container mx-auto"}>
           <h2 className="text-4xl font-bold text-center mb-4">Level Up Your Marketing in 4 Easy Steps</h2>
           
           <div className="grid md:grid-cols-4 gap-8 mt-12">
@@ -263,8 +265,8 @@ export default function Home() {
       </section>
 
       {/* Services Categories Section with Carousel */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
+      <section className={isMobile ? "py-16 px-0" : "py-16 px-4"}>
+        <div className={isMobile ? "w-full px-4" : "container mx-auto"}>
           <h2 className="text-4xl font-bold text-center mb-4">Services That Drive Web3 Growth</h2>
           <p className="text-xl text-muted-foreground text-center mb-12">Higher the right creator for any type of marketing needs</p>
           
@@ -331,8 +333,8 @@ export default function Home() {
       </section>
 
       {/* Why LeveledUP Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
+      <section className={isMobile ? "py-16 px-0" : "py-16 px-4"}>
+        <div className={isMobile ? "w-full px-4" : "container mx-auto"}>
           <h2 className="text-4xl font-bold text-center mb-12">
             The First Creator <span className="md:inline block">Market<br className="md:hidden" />place</span> Built for Web3
           </h2>
@@ -366,8 +368,8 @@ export default function Home() {
       </section>
 
       {/* Featured Pro Creators Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
+      <section className={isMobile ? "py-16 px-0" : "py-16 px-4"}>
+        <div className={isMobile ? "w-full px-4" : "container mx-auto"}>
           <h2 className="text-4xl font-bold text-center mb-12">Featured Pro Creators</h2>
           
            {proCreatorsError ? (
