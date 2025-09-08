@@ -221,51 +221,25 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                 
                 {/* Action buttons for client */}
                 <div className={isMobile ? 'flex flex-col space-y-2' : 'flex gap-2'}>
-                  {isMobile ? (
-                    <>
-                      <Button 
-                        size="sm" 
-                        onClick={onAccept}
-                        disabled={isLoading}
-                        className="w-full"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Accept Delivery
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={onDispute}
-                        disabled={isLoading}
-                        className="w-full"
-                      >
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Open Dispute
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button 
-                        size="sm" 
-                        onClick={onAccept}
-                        disabled={isLoading}
-                        className="flex-1"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Accept Delivery
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={onDispute}
-                        disabled={isLoading}
-                        className="flex-1"
-                      >
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Open Dispute
-                      </Button>
-                    </>
-                  )}
+                  <Button 
+                    size="sm" 
+                    onClick={onAccept}
+                    disabled={isLoading}
+                    className={isMobile ? "w-full" : "flex-1"}
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Accept Delivery
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={onDispute}
+                    disabled={isLoading}
+                    className={isMobile ? "w-full" : "flex-1"}
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Open Dispute
+                  </Button>
                 </div>
               </div>
             )}
