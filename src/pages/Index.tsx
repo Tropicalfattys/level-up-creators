@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { MessagesList } from '@/components/messaging/MessagesList';
 import { CreatorsFollowedCard } from '@/components/dashboard/CreatorsFollowedCard';
 import { UserDisputes } from '@/components/disputes/UserDisputes';
@@ -33,6 +35,7 @@ import { useState } from 'react';
 
 export default function Index() {
   const { user, userRole, loading } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: creatorProfile } = useQuery({
     queryKey: ['creator-profile', user?.id],
@@ -230,8 +233,8 @@ export default function Index() {
       {isApprovedCreator && (
         <Card className="mb-8 border-green-200 bg-green-50">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className={`flex items-center ${isMobile ? 'flex-col gap-4' : 'justify-between'}`}>
+              <div className={isMobile ? 'text-center' : ''}>
                 <CardTitle className="flex items-center gap-2 text-green-700">
                   <Crown className="h-5 w-5" />
                   Creator Dashboard Active
@@ -240,7 +243,7 @@ export default function Index() {
                   You're approved! Access your full creator dashboard to manage services and bookings.
                 </CardDescription>
               </div>
-              <Button asChild>
+              <Button asChild className={isMobile ? 'w-full' : ''}>
                 <Link to="/creator-dashboard">
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Creator Dashboard
@@ -276,19 +279,40 @@ export default function Index() {
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="booked">Booked</TabsTrigger>
-          {canAccessCreatorTools && (
-            <TabsTrigger value="creator">Creator Tools</TabsTrigger>
-          )}
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-          <TabsTrigger value="disputes">Disputes</TabsTrigger>
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          {userRole === 'admin' && (
-            <TabsTrigger value="admin">Admin Panel</TabsTrigger>
-          )}
-        </TabsList>
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={handleTabChange}>
+            <SelectTrigger className="w-full mb-4">
+              <SelectValue placeholder="Select a section" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">Overview</SelectItem>
+              <SelectItem value="booked">Booked</SelectItem>
+              {canAccessCreatorTools && (
+                <SelectItem value="creator">Creator Tools</SelectItem>
+              )}
+              <SelectItem value="messages">Messages</SelectItem>
+              <SelectItem value="disputes">Disputes</SelectItem>
+              <SelectItem value="referrals">Referrals</SelectItem>
+              {userRole === 'admin' && (
+                <SelectItem value="admin">Admin Panel</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        ) : (
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="booked">Booked</TabsTrigger>
+            {canAccessCreatorTools && (
+              <TabsTrigger value="creator">Creator Tools</TabsTrigger>
+            )}
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="disputes">Disputes</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
+            {userRole === 'admin' && (
+              <TabsTrigger value="admin">Admin Panel</TabsTrigger>
+            )}
+          </TabsList>
+        )}
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid md:grid-cols-3 gap-6">
