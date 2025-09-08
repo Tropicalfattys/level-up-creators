@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +71,7 @@ export default function BecomeCreator() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: dynamicTiers, isLoading, error } = useDynamicCreatorTiers();
+  const isMobile = useIsMobile();
 
   const createCreatorApplication = useMutation({
     mutationFn: async (tier: 'basic' | 'mid' | 'pro') => {
@@ -240,9 +242,9 @@ export default function BecomeCreator() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 mb-8">
+              <ul className={`${isMobile ? 'space-y-5' : 'space-y-3'} mb-8`}>
                 {tier.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
+                  <li key={index} className={`${isMobile ? 'flex items-start gap-3 text-left' : 'flex items-center gap-3'}`}>
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-sm">{feature}</span>
                   </li>
