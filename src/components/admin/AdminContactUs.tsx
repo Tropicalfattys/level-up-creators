@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Mail, Calendar, User } from 'lucide-react';
 
 export const AdminContactUs = () => {
+  const isMobile = useIsMobile();
   const { data: contactMessages, isLoading } = useQuery({
     queryKey: ['admin-contact-messages'],
     queryFn: async () => {
@@ -45,27 +47,42 @@ export const AdminContactUs = () => {
           {contactMessages.map((message) => (
             <Card key={message.id}>
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className={isMobile ? 'space-y-3' : 'flex justify-between items-start'}>
                   <div className="space-y-1">
                     <CardTitle className="text-lg break-words">{message.subject}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                    <div className={isMobile ? 'space-y-2' : 'flex items-center gap-4 text-sm text-muted-foreground'}>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <User className="h-4 w-4" />
                         <span className="break-words">{message.name}</span>
+                        {!isMobile && (
+                          <>
+                            <Calendar className="h-4 w-4 ml-3" />
+                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                          </>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Mail className="h-4 w-4" />
                         <span className="break-words">{message.email}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                      </div>
+                      {isMobile && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                          </div>
+                          <Badge variant={message.status === 'open' ? 'default' : 'secondary'}>
+                            {message.status}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Badge variant={message.status === 'open' ? 'default' : 'secondary'}>
-                    {message.status}
-                  </Badge>
+                  {!isMobile && (
+                    <Badge variant={message.status === 'open' ? 'default' : 'secondary'}>
+                      {message.status}
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
