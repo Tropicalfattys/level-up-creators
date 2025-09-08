@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +47,7 @@ interface ExistingDispute {
 
 export const UserDisputes = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [selectedBooking, setSelectedBooking] = useState<string>('');
   const [disputeReason, setDisputeReason] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -222,7 +224,7 @@ export const UserDisputes = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className={isMobile ? 'flex flex-col space-y-3' : 'flex justify-between items-center'}>
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
