@@ -220,7 +220,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                 </div>
                 
                 {/* Action buttons for client */}
-                <div className={isMobile ? 'flex flex-col gap-2' : 'flex gap-2'}>
+                <div className={isMobile ? 'flex flex-col space-y-2' : 'flex gap-2'}>
                   {isMobile ? (
                     <>
                       <Button 
