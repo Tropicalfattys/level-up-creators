@@ -308,8 +308,8 @@ export const CreatorProfile = () => {
 
                 {/* Rating - only show if user has reviews */}
                 {reviews && reviews.length > 0 && (
-                  <div className="flex justify-center items-center gap-2">
-                     <div className="flex items-center gap-1">
+                  <div className="text-center space-y-2">
+                     <div className="flex justify-center items-center gap-1">
                        <div className="flex items-center">
                          {Array.from({ length: 5 }, (_, i) => {
                            const rating = creator?.rating ? creator.rating : 
@@ -331,9 +331,9 @@ export const CreatorProfile = () => {
                           reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0'}
                        </span>
                      </div>
-                    <span className="text-muted-foreground">
+                    <div className="text-muted-foreground">
                       ({reviews.length} reviews)
-                    </span>
+                    </div>
                   </div>
                 )}
 
