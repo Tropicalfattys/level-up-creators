@@ -5,7 +5,41 @@ import { z } from 'zod';
 export const handleSchema = z.string()
   .min(3, 'Username must be at least 3 characters')
   .max(30, 'Username must be less than 30 characters')
-  .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and dashes');
+  .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and dashes')
+  .refine((handle) => {
+    // Client-side username restrictions validation
+    const forbiddenUsernames = [
+      'admin', 'support', 'levelup', 'leveledup', 'ruleveledup', 'staff', 'team', 
+      'techsupport', 'tech-support', 'leveledupteam', 'leveledupsupport', 'escrow', 
+      'payment', 'verified', 'verify', 'ruleveledupverified', 'ruleveledupstaff', 
+      'ruleveledupadmin', 'ruleveledupteam', 'teamruleveledup', 'leveledupstaff', 
+      'leveledupverify', 'leveledupadmin', 'ruleveledupverify', 'ruleveledupverification', 
+      'ruleveledupverficationteam', 'ruleveledupescrow', 'ruleveleduppayment', 
+      'ruleveledupsupport', 'levelupstaff', 'levelupsupport', 'levelupverify', 
+      'leveledup-techsupport', 'ruleveledup-techsupport'
+    ];
+    
+    const forbiddenKeywords = [
+      'admin', 'official', 'support', 'leveledup', 'ruleveledup', 'verify', 
+      'escow', 'techsupport', 'tech-support'
+    ];
+    
+    const cleanedHandle = handle.toLowerCase().trim();
+    
+    // Check exact forbidden usernames
+    if (forbiddenUsernames.includes(cleanedHandle)) {
+      return false;
+    }
+    
+    // Check for forbidden keywords in username
+    for (const keyword of forbiddenKeywords) {
+      if (cleanedHandle.includes(keyword)) {
+        return false;
+      }
+    }
+    
+    return true;
+  }, 'Username contains forbidden words or is not allowed. Please choose a different username.');
 
 export const emailSchema = z.string()
   .email('Please enter a valid email address')
