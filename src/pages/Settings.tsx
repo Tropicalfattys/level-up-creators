@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Globe, Briefcase, Youtube, Twitter, Facebook, Instagram, MessageCircle, Users, BookOpen, Linkedin, Wallet, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -222,24 +223,18 @@ export default function Settings() {
               <CardDescription className="flex flex-col gap-1">
                 Update your public profile information
 {isMobile ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
                       <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
                         How It Works
                       </span>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[90vw] max-h-[80vh] p-0 mx-2 z-[60]" side="bottom" align="center">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-center justify-between p-4 border-b">
-                          <h4 className="font-semibold text-lg">Profile & Settings Information</h4>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                        </div>
-                        <ScrollArea className="flex-1 px-4">
-                          <div className="text-sm space-y-4 py-4">
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] p-0">
+                      <DialogHeader className="p-4 border-b">
+                        <DialogTitle>Profile & Settings Information</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="flex-1 px-4 max-h-[70vh]">
+                        <div className="text-sm space-y-4 py-4">
                             <p>Your account settings are organized into five tabs: Profile, Social Links, Payments, Notifications, and Security. Please review the following carefully to ensure your account is properly configured:</p>
                             
                             <div>
@@ -308,11 +303,10 @@ export default function Settings() {
                                 <li>Verification is contingent on active, up-to-date social accounts and posted referral links.</li>
                               </ul>
                             </div>
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                 ) : (
                   <HoverCard>
                     <HoverCardTrigger asChild>
@@ -551,24 +545,18 @@ export default function Settings() {
               <CardDescription className="flex flex-col gap-1">
                 Add your social media profiles and website links to appear on your creator profile
 {isMobile ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
                       <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
                         Important Disclaimer
                       </span>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[90vw] max-h-[75vh] p-0 mx-2 z-[60]" side="bottom" align="center">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-center justify-between p-4 border-b">
-                          <h4 className="font-semibold text-lg">Social Media Links Disclaimer</h4>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                        </div>
-                        <ScrollArea className="flex-1 px-4">
-                          <div className="text-sm space-y-4 py-4">
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] p-0">
+                      <DialogHeader className="p-4 border-b">
+                        <DialogTitle>Social Media Links Disclaimer</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="flex-1 px-4 max-h-[70vh]">
+                        <div className="text-sm space-y-4 py-4">
                             <ul className="list-disc list-inside space-y-2">
                               <li>All social media links you add here will be publicly visible on your profile.</li>
                               <li>If you are applying to become a Pro Creator (verified status), your social links will be reviewed as part of the verification process.</li>
@@ -587,11 +575,10 @@ export default function Settings() {
                               <p className="font-semibold text-amber-600">⚠️ Important:</p>
                               <p className="mt-2">If your referral links are not posted and visible on at least two connected social accounts, your Pro Creator application will be denied.</p>
                             </div>
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                 ) : (
                   <HoverCard>
                     <HoverCardTrigger asChild>
