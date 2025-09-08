@@ -228,7 +228,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                         variant="outline"
                         onClick={onDispute}
                         disabled={isLoading}
-                        className="flex-1"
+                        className="w-full"
                       >
                         <AlertCircle className="h-3 w-3 mr-1" />
                         Open Dispute
@@ -237,7 +237,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                         size="sm" 
                         onClick={onAccept}
                         disabled={isLoading}
-                        className="flex-1"
+                        className="w-full"
                       >
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Accept Delivery
