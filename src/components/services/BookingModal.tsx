@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar, Clock, DollarSign, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PaymentInstructions } from '@/components/payments/PaymentInstructions';
 import { PAYMENT_METHODS } from '@/lib/contracts';
 
@@ -56,6 +57,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
   const [bookingId, setBookingId] = useState<string | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const handleProceedToPayment = () => {
     // Go directly to payment step without creating booking yet
@@ -117,7 +119,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
     
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
           <DialogHeader>
             <DialogTitle>Complete Payment</DialogTitle>
             <DialogDescription>
@@ -131,6 +133,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
             creatorId={creatorId}
             bookingId={undefined} // Don't pass bookingId - it will be created during payment submission
             paymentType="service_booking"
+            isMobile={isMobile}
             onPaymentSubmitted={handlePaymentSubmitted}
             onCancel={handleClose}
           />
@@ -142,7 +145,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
   // Review step (default)
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
         <DialogHeader>
           <DialogTitle>Book Service</DialogTitle>
           <DialogDescription>
@@ -174,7 +177,7 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
 
                 <p className="text-sm text-muted-foreground">{service.description}</p>
 
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-3 gap-4'} pt-4 border-t`}>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-lg font-semibold">
                       <DollarSign className="h-4 w-4" />

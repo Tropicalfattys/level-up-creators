@@ -21,6 +21,7 @@ interface PaymentInstructionsProps {
   creatorId: string;
   bookingId?: string;
   paymentType: 'service_booking' | 'creator_tier';
+  isMobile?: boolean;
   onPaymentSubmitted: (paymentId: string, bookingId?: string) => void;
   onCancel: () => void;
 }
@@ -32,6 +33,7 @@ export const PaymentInstructions = ({
   creatorId,
   bookingId,
   paymentType,
+  isMobile = false,
   onPaymentSubmitted,
   onCancel
 }: PaymentInstructionsProps) => {
@@ -222,7 +224,7 @@ export const PaymentInstructions = ({
             Follow these steps to complete your payment manually
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className={`space-y-${isMobile ? '4' : '6'}`}>
           {/* Step 1: Payment Details */}
           <div className="space-y-4">
             <h4 className="font-semibold flex items-center gap-2">
@@ -230,20 +232,20 @@ export const PaymentInstructions = ({
               Send Payment
             </h4>
             
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
+            <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-3 space-y-2' : 'p-4 space-y-3'}`}>
+              <div className={`flex items-center ${isMobile ? 'flex-col gap-1' : 'justify-between'}`}>
                 <span className="text-sm font-medium">Network:</span>
                 <Badge variant="secondary" className={networkConfig.color}>
                   {networkConfig.name}
                 </Badge>
               </div>
               
-              <div className="flex items-center justify-between">
+              <div className={`flex items-center ${isMobile ? 'flex-col gap-1' : 'justify-between'}`}>
                 <span className="text-sm font-medium">Amount:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-lg font-bold">{amount} {paymentConfig.currency}</span>
+                  <span className={`font-mono ${isMobile ? 'text-base' : 'text-lg'} font-bold`}>{amount} {paymentConfig.currency}</span>
                   <Button
-                    size="sm"
+                    size={isMobile ? "sm" : "sm"}
                     variant="ghost"
                     onClick={() => copyToClipboard(amount.toString(), 'Amount')}
                   >
@@ -254,8 +256,8 @@ export const PaymentInstructions = ({
               
               <div className="space-y-2">
                 <span className="text-sm font-medium">Send to Address:</span>
-                <div className="flex items-center gap-2 p-2 bg-background rounded border">
-                  <code className="flex-1 text-xs break-all">{adminWallet}</code>
+                <div className={`flex items-center gap-2 ${isMobile ? 'p-2' : 'p-2'} bg-background rounded border`}>
+                  <code className={`flex-1 ${isMobile ? 'text-[10px]' : 'text-xs'} break-all`}>{adminWallet}</code>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -283,20 +285,21 @@ export const PaymentInstructions = ({
 
           {/* Step 2: Submit Transaction Hash */}
           <div className="space-y-4">
-            <h4 className="font-semibold flex items-center gap-2">
+            <h4 className={`font-semibold flex items-center ${isMobile ? 'flex-wrap' : ''} gap-2`}>
               <Badge variant="outline">2</Badge>
               Submit Transaction Hash
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <span className="text-orange-500 hover:underline cursor-help text-sm font-normal">
-                    Find your TX hash
-                  </span>
-                </HoverCardTrigger>
-                <HoverCardContent 
-                  className="w-96 p-0 bg-background border shadow-lg"
-                  align="center" 
-                  side="top"
-                >
+              {!isMobile && (
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <span className="text-orange-500 hover:underline cursor-help text-sm font-normal">
+                      Find your TX hash
+                    </span>
+                  </HoverCardTrigger>
+                  <HoverCardContent 
+                    className="w-96 p-0 bg-background border shadow-lg"
+                    align="center" 
+                    side="top"
+                  >
                   <div className="p-4">
                     <ScrollArea className="h-96">
                       <div className="space-y-4 pr-4">
@@ -338,9 +341,16 @@ export const PaymentInstructions = ({
                      </div>
                    </ScrollArea>
                   </div>
-                </HoverCardContent>
-              </HoverCard>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
             </h4>
+            
+            {isMobile && (
+              <div className="text-xs text-muted-foreground">
+                After sending payment, copy the transaction hash from your wallet's transaction history and paste it below.
+              </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
@@ -357,7 +367,7 @@ export const PaymentInstructions = ({
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-2'}`}>
                 <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
                   Cancel
                 </Button>
