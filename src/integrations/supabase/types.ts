@@ -1077,6 +1077,10 @@ export type Database = {
         }
         Returns: string
       }
+      validate_username_restrictions: {
+        Args: { username_input: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
