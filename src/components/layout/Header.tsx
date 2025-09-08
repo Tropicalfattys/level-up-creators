@@ -11,11 +11,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const Header = () => {
   const { user, userRole, userProfile } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Fetch categories from database
   const { data: categories, isLoading } = useQuery({
@@ -113,96 +115,21 @@ export const Header = () => {
           </Link>
         </nav>
 
-        <div className="flex items-center space-x-4">
-          {/* Notification Bell */}
-          {user && (
-            <NotificationBell />
-          )}
-
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.handle} />
-                    <AvatarFallback className="bg-zinc-800 text-white">
-                      {userProfile?.handle?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+        {isMobile ? (
+          /* Mobile Layout */
+          <div className="flex items-center space-x-3">
+            {/* Notification Bell for mobile */}
+            {user && (
+              <NotificationBell />
+            )}
+            
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-zinc-800">
+                  <Menu className="h-5 w-5" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 z-50" align="end" forceMount>
-                <div className="flex items-center justify-start gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium text-white">{userProfile?.handle}</p>
-                    <p className="w-full truncate text-sm text-zinc-400">
-                      {user.email}
-                    </p>
-                    {userRole && (
-                      <p className="text-xs text-cyan-400 font-medium capitalize">
-                        {userRole}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                
-                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                  <User className="mr-2 h-4 w-4" />
-                  Dashboard
-                </DropdownMenuItem>
-
-                <DropdownMenuItem onClick={() => navigate('/settings')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-
-                {userRole === 'admin' && (
-                  <DropdownMenuItem onClick={() => navigate('/admin')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </DropdownMenuItem>
-                )}
-
-                {userRole === 'creator' && (
-                  <DropdownMenuItem onClick={() => navigate('/creator-dashboard')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Creator Dashboard
-                  </DropdownMenuItem>
-                )}
-
-                {userRole !== 'creator' && userRole !== 'admin' && (
-                  <DropdownMenuItem onClick={() => navigate('/become-creator')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Become a Creator
-                  </DropdownMenuItem>
-                )}
-
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleSignOut} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" onClick={() => navigate('/auth')} className="text-white/80 hover:text-white hover:bg-zinc-800">
-                Sign In
-              </Button>
-              <Button onClick={() => navigate('/auth?mode=signup')} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700">
-                Create Account
-              </Button>
-            </div>
-          )}
-          
-          {/* Mobile Menu */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden text-white/80 hover:text-white hover:bg-zinc-800">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
+              </SheetTrigger>
             <SheetContent side="right" className="bg-zinc-900 border-zinc-800">
               <div className="flex flex-col space-y-4 mt-6">
                 <Link 
@@ -260,7 +187,93 @@ export const Header = () => {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
+          </div>
+        ) : (
+          /* Desktop Layout */
+          <div className="flex items-center space-x-4">
+            {/* Notification Bell */}
+            {user && (
+              <NotificationBell />
+            )}
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.handle} />
+                      <AvatarFallback className="bg-zinc-800 text-white">
+                        {userProfile?.handle?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 z-50" align="end" forceMount>
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium text-white">{userProfile?.handle}</p>
+                      <p className="w-full truncate text-sm text-zinc-400">
+                        {user.email}
+                      </p>
+                      {userRole && (
+                        <p className="text-xs text-cyan-400 font-medium capitalize">
+                          {userRole}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                    <User className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => navigate('/settings')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+
+                  {userRole === 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+
+                  {userRole === 'creator' && (
+                    <DropdownMenuItem onClick={() => navigate('/creator-dashboard')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Creator Dashboard
+                    </DropdownMenuItem>
+                  )}
+
+                  {userRole !== 'creator' && userRole !== 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/become-creator')} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Become a Creator
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-white hover:bg-zinc-800 focus:bg-zinc-800">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" onClick={() => navigate('/auth')} className="text-white/80 hover:text-white hover:bg-zinc-800">
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate('/auth?mode=signup')} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700">
+                  Create Account
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
