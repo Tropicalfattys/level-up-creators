@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
   const [disputeReason, setDisputeReason] = useState('');
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: booking } = useQuery({
     queryKey: ['booking', bookingId],
@@ -311,11 +313,11 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
 
         {/* Client Actions */}
         {isClient && booking.status === 'delivered' && !existingDispute && (
-          <div className="flex gap-2">
+          <div className={isMobile ? "flex flex-col space-y-2" : "flex gap-2"}>
             <Button 
               onClick={() => acceptDelivery.mutate()}
               disabled={acceptDelivery.isPending}
-              className="flex-1"
+              className={isMobile ? "w-full" : "flex-1"}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Accept Delivery
@@ -323,7 +325,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
             <Button
               variant="outline"
               onClick={() => setDisputing(true)}
-              className="flex-1"
+              className={isMobile ? "w-full" : "flex-1"}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
               Open Dispute
