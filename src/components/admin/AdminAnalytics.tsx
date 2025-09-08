@@ -4,8 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Shield, MessageCircle, DollarSign, TrendingUp, AlertTriangle, Star, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const AdminAnalytics = () => {
+  const isMobile = useIsMobile();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
@@ -290,9 +292,9 @@ export const AdminAnalytics = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isMobile ? 'px-4' : ''}`}>
       {/* Key Metrics */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-4'}`}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -348,7 +350,7 @@ export const AdminAnalytics = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -597,26 +599,26 @@ export const AdminAnalytics = () => {
           <CardDescription>Top 5 clients and creators by spending/earnings</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
             {/* Top 5 Clients */}
             <div className="space-y-3">
               <h4 className="font-semibold text-lg">Top 5 Clients by Spending</h4>
               {stats?.top5Clients && stats.top5Clients.length > 0 ? (
                 <div className="space-y-3">
                   {stats.top5Clients.map((client: any, index: number) => (
-                    <div key={client.id} className="border rounded-lg p-3 bg-black text-white">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">
+                    <div key={client.id} className="border rounded-lg p-3 bg-black text-white overflow-hidden">
+                      <div className={`flex items-center justify-between mb-2 ${isMobile ? 'flex-col gap-2' : ''}`}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-sm font-medium w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
                             {index + 1}
                           </span>
-                          <span className="font-medium text-white">{client.handle}</span>
+                          <span className="font-medium text-white truncate">{client.handle}</span>
                         </div>
-                        <div className="text-right">
+                        <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
                           <div className="font-bold text-green-400">${client.totalSpent.toFixed(2)}</div>
                         </div>
                       </div>
-                      <div className="text-sm text-gray-300">
+                      <div className="text-sm text-gray-300 break-words">
                         {client.bookingCount} bookings • Top category: {client.topCategory}
                       </div>
                     </div>
@@ -633,19 +635,19 @@ export const AdminAnalytics = () => {
               {stats?.top5Creators && stats.top5Creators.length > 0 ? (
                 <div className="space-y-3">
                   {stats.top5Creators.map((creator: any, index: number) => (
-                    <div key={creator.id} className="border rounded-lg p-3 bg-black text-white">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">
+                    <div key={creator.id} className="border rounded-lg p-3 bg-black text-white overflow-hidden">
+                      <div className={`flex items-center justify-between mb-2 ${isMobile ? 'flex-col gap-2' : ''}`}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-sm font-medium w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
                             {index + 1}
                           </span>
-                          <span className="font-medium text-white">{creator.handle}</span>
+                          <span className="font-medium text-white truncate">{creator.handle}</span>
                         </div>
-                        <div className="text-right">
+                        <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
                           <div className="font-bold text-blue-400">${creator.totalEarned.toFixed(2)}</div>
                         </div>
                       </div>
-                      <div className="text-sm text-gray-300">
+                      <div className="text-sm text-gray-300 break-words">
                         {creator.bookingCount} bookings • Top category: {creator.topCategory}
                       </div>
                     </div>
@@ -669,7 +671,7 @@ export const AdminAnalytics = () => {
           <CardDescription>Platform metrics and status</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Database Connection</span>
