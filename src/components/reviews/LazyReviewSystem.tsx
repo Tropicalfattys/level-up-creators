@@ -56,7 +56,7 @@ export const LazyReviewSystem = ({ bookingId, revieweeId, canReview }: LazyRevie
           onClick={() => setIsExpanded(true)}
           className={`w-full text-left ${isMobile ? 'text-xs px-3 py-3 h-auto min-h-[3rem]' : ''}`}
         >
-          <ChevronDown className="h-4 w-4 mr-2 flex-shrink-0" />
+          <ChevronDown className={`h-4 w-4 flex-shrink-0 ${isMobile ? 'mr-1' : 'mr-2'}`} />
           {canReview ? (
             isMobile ? (
               <span className="flex flex-col text-xs leading-tight">
