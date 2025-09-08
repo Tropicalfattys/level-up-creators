@@ -12,14 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ExternalLink, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPayouts } from "./AdminPayouts";
 import { AdminEscrow } from "./AdminEscrow";
 
 export const AdminPayments = () => {
+  const [selectedTab, setSelectedTab] = useState("payment-management");
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [networkFilter, setNetworkFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   // Fetch pricing tiers for dynamic tier assignment
@@ -520,13 +523,36 @@ export const AdminPayments = () => {
     );
   };
 
+  const tabOptions = [
+    { value: "payment-management", label: "Payment Management" },
+    { value: "payouts", label: "Payouts" },
+    { value: "escrow", label: "Escrow" }
+  ];
+
   return (
-    <Tabs defaultValue="payment-management" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="payment-management">Payment Management</TabsTrigger>
-        <TabsTrigger value="payouts">Payouts</TabsTrigger>
-        <TabsTrigger value="escrow">Escrow</TabsTrigger>
-      </TabsList>
+    <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+      {isMobile ? (
+        <div className="px-4">
+          <Select value={selectedTab} onValueChange={setSelectedTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a section" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border z-50">
+              {tabOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="payment-management">Payment Management</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts</TabsTrigger>
+          <TabsTrigger value="escrow">Escrow</TabsTrigger>
+        </TabsList>
+      )}
 
       <TabsContent value="payment-management">
         <PaymentManagementContent />

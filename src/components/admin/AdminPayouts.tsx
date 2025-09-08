@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Clock, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { getExplorerUrl } from "@/lib/utils";
 
 interface PayoutRecord {
@@ -57,8 +59,10 @@ interface RefundRecord {
 }
 
 export const AdminPayouts = () => {
+  const [selectedTab, setSelectedTab] = useState("pending");
   const [txHashes, setTxHashes] = useState<Record<string, string>>({});
   const [refundTxHashes, setRefundTxHashes] = useState<Record<string, string>>({});
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const { data: payouts, isLoading } = useQuery({
@@ -502,21 +506,40 @@ export const AdminPayouts = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="pending" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="pending" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Pending ({pendingPayouts.length})
-              </TabsTrigger>
-              <TabsTrigger value="refunds" className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Refunds ({pendingRefunds.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Completed ({completedPayouts.length})
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+            {isMobile ? (
+              <Select value={selectedTab} onValueChange={setSelectedTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select tab" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="pending">
+                    Pending ({pendingPayouts.length})
+                  </SelectItem>
+                  <SelectItem value="refunds">
+                    Refunds ({pendingRefunds.length})
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    Completed ({completedPayouts.length})
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <TabsList>
+                <TabsTrigger value="pending" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Pending ({pendingPayouts.length})
+                </TabsTrigger>
+                <TabsTrigger value="refunds" className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Refunds ({pendingRefunds.length})
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Completed ({completedPayouts.length})
+                </TabsTrigger>
+              </TabsList>
+            )}
 
             <TabsContent value="pending">
               {isLoading ? (
