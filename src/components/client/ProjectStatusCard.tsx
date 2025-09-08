@@ -220,9 +220,18 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                 </div>
                 
                 {/* Action buttons for client */}
-                <div className={isMobile ? 'flex flex-col space-y-2' : 'flex gap-2'}>
+                <div className={isMobile ? 'flex flex-col gap-2' : 'flex gap-2'}>
                   {isMobile ? (
                     <>
+                      <Button 
+                        size="sm" 
+                        onClick={onAccept}
+                        disabled={isLoading}
+                        className="w-full"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Accept Delivery
+                      </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
@@ -232,15 +241,6 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                       >
                         <AlertCircle className="h-3 w-3 mr-1" />
                         Open Dispute
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={onAccept}
-                        disabled={isLoading}
-                        className="w-full"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Accept Delivery
                       </Button>
                     </>
                   ) : (
