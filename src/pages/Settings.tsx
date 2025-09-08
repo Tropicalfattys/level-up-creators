@@ -780,7 +780,7 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="flex items-center gap-2">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
+                  <Label className="flex items-center gap-2 text-left">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
                   <p className="text-sm text-muted-foreground">
                     Receive email updates about bookings and messages
                   </p>
@@ -790,7 +790,7 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Push Notifications</Label>
+                  <Label className="text-left">Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">
                     Get notified about important updates in real-time
                   </p>
@@ -800,7 +800,7 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Marketing Emails</Label>
+                  <Label className="text-left">Marketing Emails</Label>
                   <p className="text-sm text-muted-foreground">
                     Receive updates about new features and promotions
                   </p>
