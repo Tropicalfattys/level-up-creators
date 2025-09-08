@@ -158,21 +158,22 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                <div className="flex items-start gap-4">
+                <div className={isMobile ? "flex flex-col items-center gap-3 text-center" : "flex items-start gap-4"}>
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
                     <AvatarFallback>
                       {creator.users.handle?.[0]?.toUpperCase() || 'C'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
+                  <div className={isMobile ? "space-y-2" : "flex-1"}>
                     <h3 className="font-semibold text-lg">{service.title}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1 justify-center">
                       <User className="h-3 w-3" />
                       by {creator.users.handle}
                     </p>
+                    {isMobile && <Badge variant="secondary">{service.category}</Badge>}
                   </div>
-                  <Badge variant="secondary">{service.category}</Badge>
+                  {!isMobile && <Badge variant="secondary">{service.category}</Badge>}
                 </div>
 
                 <p className="text-sm text-muted-foreground">{service.description}</p>
@@ -207,9 +208,9 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
           </Card>
 
           {/* Payment Information */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Payment Process:</h4>
-            <ol className="text-sm text-blue-800 space-y-1 list-decimal ml-4">
+          <div className={`bg-blue-50 border border-blue-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+            <h4 className={`font-medium text-blue-900 mb-2 ${isMobile ? 'text-sm' : ''}`}>Payment Process:</h4>
+            <ol className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-800 space-y-1 list-decimal ml-4`}>
               <li>You'll receive payment instructions for {paymentConfig?.displayName}</li>
               <li>Send the exact amount to the provided admin wallet address</li>
               <li>Submit your transaction hash for verification</li>
@@ -218,15 +219,15 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
-              Cancel
-            </Button>
+          <div className={isMobile ? "flex flex-col gap-3" : "flex gap-3"}>
             <Button 
               onClick={handleProceedToPayment}
               className="flex-1"
             >
               Proceed to Payment
+            </Button>
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+              Cancel
             </Button>
           </div>
 

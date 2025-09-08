@@ -224,7 +224,7 @@ export const PaymentInstructions = ({
             Follow these steps to complete your payment manually
           </CardDescription>
         </CardHeader>
-        <CardContent className={`space-y-${isMobile ? '4' : '6'}`}>
+        <CardContent className={`space-y-${isMobile ? '3' : '6'}`}>
           {/* Step 1: Payment Details */}
           <div className="space-y-4">
             <h4 className="font-semibold flex items-center gap-2">
@@ -232,7 +232,7 @@ export const PaymentInstructions = ({
               Send Payment
             </h4>
             
-            <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-3 space-y-2' : 'p-4 space-y-3'}`}>
+            <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2 space-y-2' : 'p-4 space-y-3'}`}>
               <div className={`flex items-center ${isMobile ? 'flex-col gap-1' : 'justify-between'}`}>
                 <span className="text-sm font-medium">Network:</span>
                 <Badge variant="secondary" className={networkConfig.color}>
