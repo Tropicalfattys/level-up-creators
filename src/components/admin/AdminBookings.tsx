@@ -100,10 +100,12 @@ export const AdminBookings = () => {
     switch (chain?.toLowerCase()) {
       case 'ethereum':
         return `https://etherscan.io/tx/${txHash}`;
-      case 'base':
-        return `https://basescan.org/tx/${txHash}`;
       case 'solana':
         return `https://explorer.solana.com/tx/${txHash}`;
+      case 'bsc':
+        return `https://bscscan.com/tx/${txHash}`;
+      case 'sui':
+        return `https://explorer.sui.io/txblock/${txHash}`;
       case 'cardano':
         return `https://cardanoscan.io/transaction/${txHash}`;
       default:
@@ -190,8 +192,10 @@ export const AdminBookings = () => {
               <SelectContent>
                 <SelectItem value="all">All Chains</SelectItem>
                 <SelectItem value="ethereum">Ethereum</SelectItem>
-                <SelectItem value="base">Base</SelectItem>
                 <SelectItem value="solana">Solana</SelectItem>
+                <SelectItem value="bsc">BSC</SelectItem>
+                <SelectItem value="sui">Sui</SelectItem>
+                <SelectItem value="cardano">Cardano</SelectItem>
               </SelectContent>
             </Select>
           </div>
