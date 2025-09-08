@@ -29,7 +29,7 @@ export default function HowItWorks() {
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Simple, Secure, <span className="text-primary">Fast</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+          <p className="text-sm md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Get personalized content from top crypto creators & influencers in just a few clicks.
             Our platform handles everything from discovery to payments, delivery, and reviews.
           </p>
