@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CreatorServices } from '@/components/creator/CreatorServices';
 import { BookingManagement } from '@/components/creator/BookingManagement';
 import { EarningsTracker } from '@/components/creator/EarningsTracker';
@@ -16,11 +18,22 @@ import { Link } from 'react-router-dom';
 
 export default function CreatorDashboard() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('services');
   const [stats, setStats] = useState({
     activeServices: 0,
     activeBookings: 0,
     totalEarnings: 0,
   });
+
+  const tabOptions = [
+    { value: 'services', label: 'Services', icon: Package },
+    { value: 'bookings', label: 'Bookings', icon: Calendar },
+    { value: 'earnings', label: 'Earnings', icon: DollarSign },
+    { value: 'payouts', label: 'Payouts', icon: CreditCard },
+    { value: 'messages', label: 'Messages', icon: MessageSquare },
+    { value: 'video-intro', label: 'Video Intro', icon: Video },
+  ];
 
   const { data: creator } = useQuery({
     queryKey: ['creator-profile', user?.id],
@@ -184,34 +197,55 @@ export default function CreatorDashboard() {
             </Card>
           </div>
 
-          {/* Dashboard Tabs - Updated to include Video Intro tab */}
-          <Tabs defaultValue="services" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="services" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Services
-              </TabsTrigger>
-              <TabsTrigger value="bookings" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Bookings
-              </TabsTrigger>
-              <TabsTrigger value="earnings" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Earnings
-              </TabsTrigger>
-              <TabsTrigger value="payouts" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Payouts
-              </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Messages
-              </TabsTrigger>
-              <TabsTrigger value="video-intro" className="flex items-center gap-2">
-                <Video className="h-4 w-4" />
-                Video Intro
-              </TabsTrigger>
-            </TabsList>
+          {/* Dashboard Tabs - Mobile dropdown, Desktop horizontal tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            {isMobile ? (
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a tab" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tabOptions.map((option) => {
+                    const IconComponent = option.icon;
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            ) : (
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="services" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Services
+                </TabsTrigger>
+                <TabsTrigger value="bookings" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Bookings
+                </TabsTrigger>
+                <TabsTrigger value="earnings" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Earnings
+                </TabsTrigger>
+                <TabsTrigger value="payouts" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Payouts
+                </TabsTrigger>
+                <TabsTrigger value="messages" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Messages
+                </TabsTrigger>
+                <TabsTrigger value="video-intro" className="flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Video Intro
+                </TabsTrigger>
+              </TabsList>
+            )}
 
             <TabsContent value="services">
               <CreatorServices />
