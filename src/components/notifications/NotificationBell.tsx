@@ -46,7 +46,7 @@ export const NotificationBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 bg-zinc-900 border-zinc-800 z-50" align="end">
+      <DropdownMenuContent className="w-80 bg-zinc-900 border-zinc-800 z-50" align="end" sideOffset={8}>
         <div className="flex items-center justify-between p-3 border-b border-zinc-800">
           <h3 className="font-semibold text-white">Notifications</h3>
           {unreadCount > 0 && (

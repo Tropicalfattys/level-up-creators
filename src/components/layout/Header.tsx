@@ -62,13 +62,13 @@ export const Header = () => {
   return (
     <header className="border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-3">
+        <Link to="/" className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
           <img 
             src="/lovable-uploads/d172b9fc-950a-4abe-8f59-00d751cecddc.png" 
             alt="LeveledUP Logo" 
-            className="h-10 w-10 object-contain"
+            className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
           />
-          <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+          <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
             LeveledUP
           </span>
         </Link>
@@ -117,19 +117,22 @@ export const Header = () => {
 
         {isMobile ? (
           /* Mobile Layout */
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             {/* Notification Bell for mobile */}
             {user && (
-              <NotificationBell />
+              <div className="flex-shrink-0">
+                <NotificationBell />
+              </div>
             )}
             
             {/* Mobile Menu */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-zinc-800">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
+            <div className="flex-shrink-0">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-zinc-800">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
             <SheetContent side="right" className="bg-zinc-900 border-zinc-800">
               <div className="flex flex-col space-y-4 mt-6">
                 <Link 
@@ -186,7 +189,8 @@ export const Header = () => {
                 )}
               </div>
             </SheetContent>
-          </Sheet>
+              </Sheet>
+            </div>
           </div>
         ) : (
           /* Desktop Layout */
