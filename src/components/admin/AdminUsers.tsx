@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Users, Search, Shield, DollarSign, Plus, ShieldX, Eye } from 'lucide-react';
 import { toast } from 'sonner';
@@ -448,14 +449,15 @@ export const AdminUsers = () => {
 
       {/* User Details Dialog */}
       <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh]" : "max-w-4xl max-h-[80vh]"}>
           <DialogHeader>
             <DialogTitle>User Profile Details</DialogTitle>
             <DialogDescription>
               Complete profile information for {selectedUser?.handle || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          {selectedUser && (
+          <ScrollArea className="flex-1 pr-4">
+            {selectedUser && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
@@ -557,7 +559,8 @@ export const AdminUsers = () => {
                 </div>
               </div>
             </div>
-          )}
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>
