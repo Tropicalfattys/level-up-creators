@@ -779,8 +779,8 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="flex items-center gap-2 justify-start">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
+                <div className="space-y-0.5 text-left">
+                  <Label className="flex items-center gap-2">Email Notifications <Badge variant="secondary" className="text-xs">Coming Soon</Badge></Label>
                   <p className="text-sm text-muted-foreground">
                     Receive email updates about bookings and messages
                   </p>
@@ -789,8 +789,8 @@ export default function Settings() {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-left">Push Notifications</Label>
+                <div className="space-y-0.5 text-left">
+                  <Label>Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">
                     Get notified about important updates in real-time
                   </p>
@@ -799,8 +799,8 @@ export default function Settings() {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-left">Marketing Emails</Label>
+                <div className="space-y-0.5 text-left">
+                  <Label>Marketing Emails</Label>
                   <p className="text-sm text-muted-foreground">
                     Receive updates about new features and promotions
                   </p>
