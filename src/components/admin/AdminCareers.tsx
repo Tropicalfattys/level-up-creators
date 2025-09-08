@@ -530,8 +530,8 @@ export const AdminCareers = () => {
                 
                 return (
                   <Card key={job.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
+                    <CardHeader className={isMobile ? "pb-3" : ""}>
+                      <div className={isMobile ? "space-y-3" : "flex items-center justify-between"}>
                         <div>
                           <CardTitle className="text-lg">
                             {getCurrentJobValue(job, 'title') as string}
@@ -543,7 +543,7 @@ export const AdminCareers = () => {
                             Changes update the live careers page immediately
                           </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className={isMobile ? "flex items-center justify-between" : "flex items-center gap-2"}>
                           <Badge variant={getCurrentJobValue(job, 'active') ? "default" : "secondary"}>
                             {getCurrentJobValue(job, 'active') ? "Active" : "Inactive"}
                           </Badge>
@@ -558,8 +558,8 @@ export const AdminCareers = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CardContent className={isMobile ? "space-y-3 p-4" : "space-y-4"}>
+                      <div className={isMobile ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
                         <div className="space-y-2">
                           <Label>Job Title</Label>
                           <Input
@@ -588,14 +588,15 @@ export const AdminCareers = () => {
                         />
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                      <div className={isMobile ? "space-y-2" : "space-y-3"}>
+                        <div className={isMobile ? "space-y-2" : "flex items-center justify-between"}>
                           <Label>Responsibilities</Label>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => addJobArrayItem(job.id, 'responsibilities')}
+                            className={isMobile ? "w-full" : ""}
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Add Responsibility
@@ -603,20 +604,22 @@ export const AdminCareers = () => {
                         </div>
                         <div className="space-y-2">
                           {currentResponsibilities.map((responsibility, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
-                              <Input
-                                value={responsibility}
-                                onChange={(e) => handleJobArrayChange(job.id, 'responsibilities', index, e.target.value)}
-                                placeholder="Enter responsibility"
-                                className="flex-1"
-                              />
+                            <div key={index} className={isMobile ? "space-y-2" : "flex items-center gap-2"}>
+                              <div className={isMobile ? "flex items-center gap-2" : "flex items-center gap-2 flex-1"}>
+                                <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                                <Input
+                                  value={responsibility}
+                                  onChange={(e) => handleJobArrayChange(job.id, 'responsibilities', index, e.target.value)}
+                                  placeholder="Enter responsibility"
+                                  className="flex-1"
+                                />
+                              </div>
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => removeJobArrayItem(job.id, 'responsibilities', index)}
-                                className="flex-shrink-0"
+                                className={isMobile ? "w-full" : "flex-shrink-0"}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -630,14 +633,15 @@ export const AdminCareers = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                      <div className={isMobile ? "space-y-2" : "space-y-3"}>
+                        <div className={isMobile ? "space-y-2" : "flex items-center justify-between"}>
                           <Label>Qualifications</Label>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => addJobArrayItem(job.id, 'qualifications')}
+                            className={isMobile ? "w-full" : ""}
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Add Qualification
@@ -645,20 +649,22 @@ export const AdminCareers = () => {
                         </div>
                         <div className="space-y-2">
                           {currentQualifications.map((qualification, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
-                              <Input
-                                value={qualification}
-                                onChange={(e) => handleJobArrayChange(job.id, 'qualifications', index, e.target.value)}
-                                placeholder="Enter qualification"
-                                className="flex-1"
-                              />
+                            <div key={index} className={isMobile ? "space-y-2" : "flex items-center gap-2"}>
+                              <div className={isMobile ? "flex items-center gap-2" : "flex items-center gap-2 flex-1"}>
+                                <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                                <Input
+                                  value={qualification}
+                                  onChange={(e) => handleJobArrayChange(job.id, 'qualifications', index, e.target.value)}
+                                  placeholder="Enter qualification"
+                                  className="flex-1"
+                                />
+                              </div>
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => removeJobArrayItem(job.id, 'qualifications', index)}
-                                className="flex-shrink-0"
+                                className={isMobile ? "w-full" : "flex-shrink-0"}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
