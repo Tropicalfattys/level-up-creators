@@ -1084,6 +1084,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_public_creators: {
+        Args: { approved_only?: boolean }
+        Returns: {
+          avatar_url: string
+          bio: string
+          category: string
+          created_at: string
+          handle: string
+          headline: string
+          id: string
+          rating: number
+          review_count: number
+          tier: string
+          user_id: string
+          verified: boolean
+        }[]
+      }
       get_public_profile: {
         Args: { user_id_param: string }
         Returns: {

@@ -82,26 +82,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
     queryFn: async (): Promise<CreatorData[]> => {
       console.log('Fetching creators with filters:', { searchQuery, categoryFilter, priceRange });
       
-      // Build the query for approved creators with their user data and tier
-      let query = supabase
-        .from('creators')
-        .select(`
-          id,
-          user_id,
-          headline,
-          category,
-          tier,
-          rating,
-          review_count,
-          users!creators_user_id_fkey (
-            handle,
-            avatar_url,
-            verified
-          )
-        `)
-        .eq('approved', true);
-
-      const { data: creatorsData, error } = await query;
+      // Build the query for approved creators using secure function
+      const { data: creatorsData, error } = await supabase.rpc('get_public_creators', { 
+        approved_only: true 
+      });
 
       if (error) {
         console.error('Error fetching creators:', error);
@@ -157,7 +141,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
 
           // Apply search filter
           const searchMatch = !searchQuery || (
-            creator.users?.handle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            creator.handle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             creator.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             services?.some(service => 
               service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -180,9 +164,9 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           return {
             id: creator.id,
             user_id: creator.user_id,
-            handle: creator.users?.handle || 'unknown',
-            avatar_url: creator.users?.avatar_url,
-            verified: creator.users?.verified,
+            handle: creator.handle || 'unknown',
+            avatar_url: creator.avatar_url,
+            verified: creator.verified,
             headline: creator.headline,
             category: creator.category,
             tier: creator.tier,
