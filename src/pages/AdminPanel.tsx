@@ -49,7 +49,7 @@ export default function AdminPanel() {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a section" />
               </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50 max-h-[50vh] overflow-y-auto">
+              <SelectContent className="bg-background border border-border z-50 max-h-[40vh]">
                 {tabOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
