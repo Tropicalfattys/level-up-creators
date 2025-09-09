@@ -22,20 +22,23 @@ export const UserHandle = ({
         throw new Error('Either handle or userId must be provided');
       }
 
-      let query = supabase
-        .from('users')
-        .select('handle, verified');
-
+      let result;
       if (handle) {
-        query = query.eq('handle', handle);
+        const { data, error } = await supabase.rpc('get_public_profile_by_handle', { 
+          handle_param: handle 
+        });
+        if (error) throw error;
+        result = data?.[0];
       } else {
-        query = query.eq('id', userId);
+        const { data, error } = await supabase.rpc('get_public_profile', { 
+          user_id_param: userId 
+        });
+        if (error) throw error;
+        result = data?.[0];
       }
-
-      const { data, error } = await query.single();
       
-      if (error) throw error;
-      return data;
+      if (!result) throw new Error('User not found');
+      return { handle: result.handle, verified: result.verified };
     },
     enabled: !!(handle || userId),
     staleTime: 5 * 60 * 1000, // 5 minutes
