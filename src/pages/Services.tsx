@@ -163,7 +163,8 @@ export default function Services() {
         .select(`
           id,
           handle,
-          avatar_url
+          avatar_url,
+          verified
         `)
         .in('id', creatorIds);
 
@@ -186,6 +187,7 @@ export default function Services() {
             users: {
               handle: user?.handle || 'Unknown',
               avatar_url: user?.avatar_url || '',
+              verified: user?.verified || false,
             }
           }
         };

@@ -11,6 +11,7 @@ import { Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { UserHandle } from '@/components/ui/user-handle';
 
 interface DirectMessage {
   id: string;
@@ -173,7 +174,7 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
             to={`/profile/${otherUser?.handle}`} 
             className="hover:text-primary transition-colors"
           >
-            @{otherUser?.handle || 'User'}
+            <UserHandle handle={otherUser?.handle || 'User'} />
           </Link>
         </CardTitle>
         <CardDescription>Direct conversation</CardDescription>

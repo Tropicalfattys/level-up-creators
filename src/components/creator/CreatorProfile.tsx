@@ -16,6 +16,7 @@ import { BookingModal } from '@/components/services/BookingModal';
 import { useUserFollows } from '@/hooks/useUserFollows';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { UserHandle } from '@/components/ui/user-handle';
 import { NETWORK_CONFIG } from '@/lib/contracts';
 import { toast } from 'sonner';
 
@@ -295,11 +296,13 @@ export const CreatorProfile = () => {
                   </AvatarFallback>
                 </Avatar>
                 
-                <div>
-                  <div className="flex items-center justify-center gap-3 mb-2">
-                    <h1 className="text-2xl font-bold">{user.handle}</h1>
-                    {isCreator && (
-                      <Button
+                 <div>
+                   <div className="flex items-center justify-center gap-3 mb-2">
+                     <h1 className="text-2xl font-bold">
+                       <UserHandle handle={user.handle} showAt={false} />
+                     </h1>
+                     {isCreator && (
+                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleFollowToggle}

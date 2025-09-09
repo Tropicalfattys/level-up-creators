@@ -10,6 +10,7 @@ import { Send, Paperclip, Download, FileText, Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useBookingChat } from '@/hooks/useBookingChat';
+import { UserHandle } from '@/components/ui/user-handle';
 
 interface Message {
   id: string;
@@ -299,7 +300,9 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
         <CardHeader className="pb-3 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg">Chat with @{otherUserHandle}</CardTitle>
+              <CardTitle className="text-lg">
+                Chat with <UserHandle handle={otherUserHandle} />
+              </CardTitle>
               <CardDescription>Discuss project details and deliverables</CardDescription>
             </div>
             <div className="flex items-center gap-2">
