@@ -537,6 +537,33 @@ export const AdminUsers = () => {
                     <div><strong>Telegram:</strong> {selectedUser.social_links?.telegram || 'Not set'}</div>
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Verification Links</h4>
+                  <div className="space-y-2 text-sm">
+                    {(selectedUser as any).verification_links && (selectedUser as any).verification_links.length > 0 ? (
+                      (selectedUser as any).verification_links
+                        .filter((link: string) => link && link.trim())
+                        .map((link: string, index: number) => (
+                          <div key={index} className="bg-muted p-2 rounded">
+                            <strong>Link {index + 1}:</strong>
+                            <a 
+                              href={link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block text-blue-600 hover:underline break-all mt-1"
+                            >
+                              {link}
+                            </a>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-muted-foreground text-sm">
+                        No verification links submitted
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">

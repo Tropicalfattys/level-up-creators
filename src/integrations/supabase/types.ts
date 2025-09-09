@@ -997,6 +997,7 @@ export type Database = {
           role: string | null
           social_links: Json | null
           updated_at: string | null
+          verification_links: Json | null
           verified: boolean
           website_url: string | null
           youtube_url: string | null
@@ -1021,6 +1022,7 @@ export type Database = {
           role?: string | null
           social_links?: Json | null
           updated_at?: string | null
+          verification_links?: Json | null
           verified?: boolean
           website_url?: string | null
           youtube_url?: string | null
@@ -1045,6 +1047,7 @@ export type Database = {
           role?: string | null
           social_links?: Json | null
           updated_at?: string | null
+          verification_links?: Json | null
           verified?: boolean
           website_url?: string | null
           youtube_url?: string | null

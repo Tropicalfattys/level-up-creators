@@ -36,6 +36,7 @@ export default function Settings() {
     portfolio_url: '',
     youtube_url: '',
     social_links: {},
+    verification_links: [] as string[],
     payout_address_eth: '',
     payout_address_sol: '',
     payout_address_cardano: '',
@@ -54,6 +55,7 @@ export default function Settings() {
         portfolio_url: userProfile.portfolio_url || '',
         youtube_url: userProfile.youtube_url || '',
         social_links: userProfile.social_links || {},
+        verification_links: (userProfile as any).verification_links || ['', ''],
         payout_address_eth: (userProfile as any).payout_address_eth || '',
         payout_address_sol: (userProfile as any).payout_address_sol || '',
         payout_address_cardano: (userProfile as any).payout_address_cardano || '',
@@ -77,6 +79,7 @@ export default function Settings() {
           portfolio_url: data.portfolio_url,
           youtube_url: data.youtube_url,
           social_links: data.social_links,
+          verification_links: data.verification_links,
           payout_address_eth: data.payout_address_eth,
           payout_address_sol: data.payout_address_sol,
           payout_address_cardano: data.payout_address_cardano,
@@ -94,6 +97,29 @@ export default function Settings() {
     },
     onError: (error: any) => {
       toast.error('Failed to update profile: ' + error.message);
+    }
+  });
+
+  const updateVerificationLinks = useMutation({
+    mutationFn: async (verificationLinks: string[]) => {
+      if (!userProfile?.id) throw new Error('No user profile');
+      
+      const { error } = await supabase
+        .from('users')
+        .update({
+          verification_links: verificationLinks,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userProfile.id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Verification links saved successfully!');
+      refreshProfile();
+    },
+    onError: (error: any) => {
+      toast.error('Failed to save verification links: ' + error.message);
     }
   });
 
@@ -125,6 +151,31 @@ export default function Settings() {
 
   const handleSaveProfile = () => {
     updateProfile.mutate(profileData);
+  };
+
+  const handleSaveVerificationLinks = () => {
+    updateVerificationLinks.mutate(profileData.verification_links);
+  };
+
+  const addVerificationLink = () => {
+    setProfileData(prev => ({
+      ...prev,
+      verification_links: [...prev.verification_links, '']
+    }));
+  };
+
+  const updateVerificationLink = (index: number, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      verification_links: prev.verification_links.map((link, i) => i === index ? value : link)
+    }));
+  };
+
+  const removeVerificationLink = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      verification_links: prev.verification_links.filter((_, i) => i !== index)
+    }));
   };
 
   const updateSocialLink = (platform: string, url: string) => {
@@ -754,6 +805,85 @@ export default function Settings() {
               <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? 'Saving...' : 'Save Social Links'}
               </Button>
+              
+              {/* Verification Section for Pro Creators */}
+              <div className="mt-8 pt-6 border-t">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-lg">Verify Social Media Accounts For Pro Creators</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Input the links from your social media account where you posted your unique referral link - Your unique referral link is located in the referrals tab in the LeveledUp dashboard
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {profileData.verification_links.length > 0 && profileData.verification_links.some(link => link.trim()) ? (
+                      profileData.verification_links.map((link, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            type="url"
+                            value={link}
+                            onChange={(e) => updateVerificationLink(index, e.target.value)}
+                            placeholder={`Verification link ${index + 1}`}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeVerificationLink(index)}
+                            className="px-3"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <Input
+                          type="url"
+                          value={profileData.verification_links[0] || ''}
+                          placeholder="https://twitter.com/your-post-with-referral-link"
+                          onChange={(e) => {
+                            const newLinks = [...profileData.verification_links];
+                            newLinks[0] = e.target.value;
+                            setProfileData(prev => ({ ...prev, verification_links: newLinks }));
+                          }}
+                        />
+                        <Input
+                          type="url"
+                          value={profileData.verification_links[1] || ''}
+                          placeholder="https://facebook.com/your-post-with-referral-link"
+                          onChange={(e) => {
+                            const newLinks = [...profileData.verification_links];
+                            newLinks[1] = e.target.value;
+                            setProfileData(prev => ({ ...prev, verification_links: newLinks }));
+                          }}
+                        />
+                      </>
+                    )}
+                    
+                    {profileData.verification_links.length < 10 && profileData.verification_links.some(link => link.trim()) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addVerificationLink}
+                        className="w-full"
+                      >
+                        Add More Links
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSaveVerificationLinks} 
+                    disabled={updateVerificationLinks.isPending}
+                    className="w-full"
+                  >
+                    {updateVerificationLinks.isPending ? 'Saving...' : 'Save & Submit'}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
