@@ -85,17 +85,20 @@ export const useUserFollows = () => {
         try {
           const follows: FollowedCreator[] = JSON.parse(storedFollows);
           
-          // Insert each follow into database
+          // Insert each follow into database with proper error handling
           for (const creator of follows) {
             const { error } = await supabase
               .from('user_follows')
-              .insert({
+              .upsert({
                 follower_id: user.id,
                 followed_user_id: creator.user_id
+              }, {
+                onConflict: 'follower_id,followed_user_id',
+                ignoreDuplicates: true
               });
 
-            // Ignore conflict errors (follow already exists)
-            if (error && !error.message.includes('duplicate key value')) {
+            // Only log non-duplicate errors
+            if (error && !error.message.includes('duplicate key value') && !error.message.includes('conflicts')) {
               console.error('Error inserting follow:', error);
             }
           }

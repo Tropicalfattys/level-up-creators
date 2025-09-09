@@ -242,7 +242,7 @@ export const CreatorProfile = () => {
         id: profile.creator?.id || profile.user.id,
         user_id: profile.user.id,
         handle: profile.user.handle,
-        avatar_url: profile.user.avatar_url,
+        avatar_url: undefined, // Excluded for performance reasons
         headline: profile.creator?.headline
       };
       addFollow(creatorToFollow);
@@ -276,7 +276,7 @@ export const CreatorProfile = () => {
     user_id: user.id,
     users: {
       handle: user.handle,
-      avatar_url: user.avatar_url
+      avatar_url: undefined // Excluded for performance reasons
     }
   } : null;
 
