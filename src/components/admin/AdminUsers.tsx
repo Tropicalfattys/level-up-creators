@@ -501,14 +501,14 @@ export const AdminUsers = () => {
 
       {/* User Details Dialog */}
       <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
-        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh]" : "max-w-4xl max-h-[80vh]"}>
-          <DialogHeader>
+        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh] flex flex-col" : "max-w-4xl max-h-[80vh] flex flex-col"}>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>User Profile Details</DialogTitle>
             <DialogDescription>
               Complete profile information for {selectedUser?.handle || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className={isMobile ? "h-[calc(90vh-140px)] pr-4" : "h-[calc(80vh-140px)] pr-4"}>
             {selectedUser && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
