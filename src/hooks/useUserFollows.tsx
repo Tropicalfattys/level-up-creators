@@ -37,10 +37,10 @@ export const useUserFollows = () => {
 
       const userIds = follows.map(f => f.followed_user_id);
 
-      // Get user profiles for followed creators
+      // Get user profiles for followed creators (excluding avatar_url due to performance issues)
       const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('id, handle, avatar_url')
+        .select('id, handle')
         .in('id', userIds);
 
       if (usersError) {
@@ -65,7 +65,7 @@ export const useUserFollows = () => {
           id: user.id,
           user_id: user.id,
           handle: user.handle || '',
-          avatar_url: user.avatar_url || undefined,
+          avatar_url: undefined, // Excluded for performance reasons
           headline: creator?.headline || undefined
         };
       }) as FollowedCreator[];
