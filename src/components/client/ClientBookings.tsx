@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, MessageSquare, DollarSign, User, ExternalLink, Hash, Copy, CheckCircle, AlertCircle, HelpCircle, RefreshCcw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -206,7 +206,7 @@ export const ClientBookings = () => {
   const tabCounts = getTabCounts();
 
   return (
-    <TooltipProvider>
+    <div>
       <div className="space-y-6" style={{ scrollBehavior: 'auto' }}>
         <div>
           <h3 className="text-lg font-semibold mb-2">My Bookings</h3>
@@ -244,19 +244,20 @@ export const ClientBookings = () => {
               return (
                 <Card key={booking.id}>
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className="space-y-3">
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           {booking.services?.title || 'Service'}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
+                          <Dialog>
+                            <DialogTrigger asChild>
                               <HelpCircle className="h-4 w-4 text-red-500 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-md p-0">
-                              <ScrollArea className="h-96 w-full">
-                                <div className="p-4 text-sm space-y-3">
-                                  <div className="font-semibold text-base">📌 How the Booking & Delivery Process Works</div>
-                                  
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md h-[80vh] p-0">
+                              <DialogHeader className="p-4 pb-2">
+                                <DialogTitle className="text-base">📌 How the Booking & Delivery Process Works</DialogTitle>
+                              </DialogHeader>
+                              <ScrollArea className="flex-1 px-4 pb-4">
+                                <div className="text-sm space-y-3">
                                   <div>
                                     <div className="font-medium mb-1">1. Booking a Service</div>
                                     <div className="text-xs space-y-1 ml-2">
@@ -315,9 +316,10 @@ export const ClientBookings = () => {
                                   </div>
                                 </div>
                               </ScrollArea>
-                            </TooltipContent>
-                          </Tooltip>
+                            </DialogContent>
+                          </Dialog>
                         </CardTitle>
+                        
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <User className="h-3 w-3" />
                           Creator: 
@@ -332,6 +334,7 @@ export const ClientBookings = () => {
                             <span>Unknown</span>
                           )}
                         </CardDescription>
+                        
                         {booking.tx_hash && (
                           <CardDescription className="flex items-center gap-2 mt-1">
                             <Hash className="h-3 w-3" />
@@ -349,11 +352,12 @@ export const ClientBookings = () => {
                           </CardDescription>
                         )}
                       </div>
-                      <div className="text-right">
+                      
+                      <div className="flex items-center gap-3 pt-2">
                         <Badge variant={getStatusColor(booking.status)}>
                           {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
                         </Badge>
-                        <p className="font-semibold mt-1">
+                        <p className="font-semibold">
                           <DollarSign className="h-3 w-3 inline mr-1" />
                           {booking.usdc_amount} USDC
                         </p>
@@ -620,6 +624,6 @@ export const ClientBookings = () => {
           />
         )}
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
