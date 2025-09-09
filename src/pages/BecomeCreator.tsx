@@ -82,7 +82,7 @@ export default function BecomeCreator() {
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingCreator) {
         // If user is already a creator, update their tier (tier upgrade)
