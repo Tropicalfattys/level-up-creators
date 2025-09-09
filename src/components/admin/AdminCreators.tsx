@@ -44,6 +44,7 @@ interface Creator {
 export const AdminCreators = () => {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [verifiedCreators, setVerifiedCreators] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -97,6 +98,18 @@ export const AdminCreators = () => {
   const viewCreatorDetails = (creator: Creator) => {
     setSelectedCreator(creator);
     setShowDetails(true);
+  };
+
+  const toggleVerification = (creatorId: string) => {
+    setVerifiedCreators(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(creatorId)) {
+        newSet.delete(creatorId);
+      } else {
+        newSet.add(creatorId);
+      }
+      return newSet;
+    });
   };
 
   if (isLoading) {
@@ -178,38 +191,47 @@ export const AdminCreators = () => {
                       <span className="text-muted-foreground">Applied:</span> {new Date(creator.created_at).toLocaleDateString()}
                     </div>
                     
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => viewCreatorDetails(creator)}
-                        className="flex-1 min-w-0"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View
-                      </Button>
-                      {!creator.approved && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() => updateCreatorStatus(creator.id, true)}
-                            className="flex-1 min-w-0"
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => updateCreatorStatus(creator.id, false)}
-                            className="flex-1 min-w-0"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                     <div className="flex flex-wrap gap-2 pt-2">
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => viewCreatorDetails(creator)}
+                         className="flex-1 min-w-0"
+                       >
+                         <Eye className="h-4 w-4 mr-2" />
+                         View
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => toggleVerification(creator.id)}
+                         className={`flex-1 min-w-0 ${verifiedCreators.has(creator.id) ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}`}
+                       >
+                         <Check className="h-4 w-4 mr-2" />
+                         Verified
+                       </Button>
+                       {!creator.approved && (
+                         <>
+                           <Button
+                             size="sm"
+                             onClick={() => updateCreatorStatus(creator.id, true)}
+                             className="flex-1 min-w-0"
+                           >
+                             <Check className="h-4 w-4 mr-2" />
+                             Approve
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="destructive"
+                             onClick={() => updateCreatorStatus(creator.id, false)}
+                             className="flex-1 min-w-0"
+                           >
+                             <X className="h-4 w-4 mr-2" />
+                             Reject
+                           </Button>
+                         </>
+                       )}
+                     </div>
                   </div>
                 </Card>
               ))}
@@ -271,34 +293,42 @@ export const AdminCreators = () => {
                     <TableCell>
                       {new Date(creator.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => viewCreatorDetails(creator)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {!creator.approved && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => updateCreatorStatus(creator.id, true)}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateCreatorStatus(creator.id, false)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex items-center gap-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => viewCreatorDetails(creator)}
+                         >
+                           <Eye className="h-4 w-4" />
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => toggleVerification(creator.id)}
+                           className={verifiedCreators.has(creator.id) ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}
+                         >
+                           <Check className="h-4 w-4" />
+                         </Button>
+                         {!creator.approved && (
+                           <>
+                             <Button
+                               size="sm"
+                               onClick={() => updateCreatorStatus(creator.id, true)}
+                             >
+                               <Check className="h-4 w-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="destructive"
+                               onClick={() => updateCreatorStatus(creator.id, false)}
+                             >
+                               <X className="h-4 w-4" />
+                             </Button>
+                           </>
+                         )}
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
