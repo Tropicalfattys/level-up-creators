@@ -330,7 +330,7 @@ export const AdminCreators = () => {
               )}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[70vh] pr-4">
+          <ScrollArea className="max-h-[60vh] pr-4">
             {selectedCreator && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
