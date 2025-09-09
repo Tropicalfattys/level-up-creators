@@ -1084,6 +1084,28 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_public_profile: {
+        Args: { user_id_param: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          handle: string
+          id: string
+          verified: boolean
+        }[]
+      }
+      get_public_profile_by_handle: {
+        Args: { handle_param: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          handle: string
+          id: string
+          verified: boolean
+        }[]
+      }
       validate_username_restrictions: {
         Args: { username_input: string }
         Returns: boolean
