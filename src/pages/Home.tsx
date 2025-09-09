@@ -34,7 +34,10 @@ export default function Home() {
         .from('creators')
         .select(`
           *,
-          users!inner(handle, avatar_url)
+          users!inner (
+            handle,
+            avatar_url
+          )
         `)
         .eq('tier', 'pro')
         .eq('approved', true)
