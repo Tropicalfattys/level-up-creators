@@ -444,7 +444,7 @@ export default function Settings() {
                         value={profileData.bio}
                         onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
                         placeholder="Tell us about yourself..."
-                        className="min-h-20"
+                        className="min-h-40"
                       />
                     </div>
                   </div>
