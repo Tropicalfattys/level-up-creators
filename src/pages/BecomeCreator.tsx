@@ -85,10 +85,23 @@ export default function BecomeCreator() {
         .single();
 
       if (existingCreator) {
-        throw new Error('Creator application already exists');
+        // If user is already a creator, update their tier (tier upgrade)
+        const { data, error } = await supabase
+          .from('creators')
+          .update({
+            tier: tier,
+            approved: false, // Reset approval status for tier upgrade review
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       }
 
-      // Create creator record with approved: false for admin review
+      // Create new creator record for users who aren't creators yet
       const { data, error } = await supabase
         .from('creators')
         .insert({
@@ -104,8 +117,13 @@ export default function BecomeCreator() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('Creator application submitted successfully! Please wait for admin approval.');
+    onSuccess: (data, tier) => {
+      const isExistingCreator = data.updated_at !== data.created_at;
+      if (isExistingCreator) {
+        toast.success('Tier upgrade request submitted successfully! Please wait for admin approval.');
+      } else {
+        toast.success('Creator application submitted successfully! Please wait for admin approval.');
+      }
       setShowPayment(false);
       setSelectedTier(null);
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
