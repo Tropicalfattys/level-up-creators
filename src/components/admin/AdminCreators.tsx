@@ -315,7 +315,7 @@ export const AdminCreators = () => {
 
       {/* Creator Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh] flex flex-col" : "max-w-4xl max-h-[80vh] flex flex-col"}>
+        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh]" : "max-w-4xl max-h-[80vh]"}>
           <DialogHeader>
             <DialogTitle>Creator Details</DialogTitle>
             <DialogDescription>
