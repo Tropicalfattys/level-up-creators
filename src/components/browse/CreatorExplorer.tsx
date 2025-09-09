@@ -395,7 +395,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                     <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700 z-50">
+                    <SelectContent className="bg-zinc-800 border-zinc-700 z-50 max-h-[40vh]">
                       <SelectItem value="all" className="text-white">All Categories</SelectItem>
                       {categories?.map((category) => (
                         <SelectItem key={category.id} value={category.value} className="text-white">

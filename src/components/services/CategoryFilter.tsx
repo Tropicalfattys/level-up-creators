@@ -37,7 +37,7 @@ export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
       <SelectTrigger className="w-full">
         <SelectValue placeholder="Filter by category" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="max-h-[40vh]">
         {allCategories.map((category) => (
           <SelectItem key={category.value} value={category.value}>
             {category.label}
