@@ -213,6 +213,92 @@ export const ClientBookings = () => {
           <p className="text-muted-foreground">
             Track your service bookings and communicate with creators
           </p>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
+                How it works
+              </span>
+            </DialogTrigger>
+            <DialogContent className="max-w-md h-[80vh] p-0">
+              <DialogHeader className="p-4 pb-2">
+                <DialogTitle className="text-base">📌 How the Booking & Delivery Process Works</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="flex-1 px-4 pb-4">
+                <div className="text-sm space-y-3">
+                  <div>
+                    <div className="font-medium mb-1">1. Booking a Service</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• Browse creator profiles and select a service</div>
+                      <div>• Choose payment method (MetaMask for EVM or Phantom for Solana)</div>
+                      <div>• Pay the exact USDC amount to our escrow wallet</div>
+                      <div>• Your payment is held safely until delivery is complete</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="font-medium mb-1">2. Work Begins</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• Creator receives notification of your booking</div>
+                      <div>• A private chat opens between you and the creator</div>
+                      <div>• Creator begins work on your requested service</div>
+                      <div>• You can message the creator for updates or clarifications</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-medium mb-1">3. Delivery Process</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• Creator uploads deliverables when work is complete</div>
+                      <div>• You receive notification that delivery is ready</div>
+                      <div>• Review the delivered content in your dashboard</div>
+                      <div>• Download files and check if requirements are met</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-medium mb-1">4. Review & Release</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• <span className="font-medium text-green-600">Accept:</span> If satisfied, click "Accept Delivery"</div>
+                      <div>• <span className="font-medium text-red-600">Dispute:</span> If issues exist, open a dispute for admin review</div>
+                      <div>• <span className="font-medium text-blue-600">Auto-Release:</span> After 3 days, funds auto-release to creator</div>
+                      <div>• Leave a review to help other users</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-medium mb-1">5. Payment Release</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• Upon acceptance or auto-release, escrow funds are sent to creator</div>
+                      <div>• Transaction is recorded with payout details</div>
+                      <div>• Both parties can leave reviews for each other</div>
+                      <div>• Service is marked as completed</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-medium mb-1">🛡️ Protection & Security</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• <span className="font-medium">Escrow Protection:</span> Funds held until delivery confirmed</div>
+                      <div>• <span className="font-medium">Dispute Resolution:</span> Admin team reviews any conflicts</div>
+                      <div>• <span className="font-medium">Secure Payments:</span> Direct wallet-to-wallet USDC transactions</div>
+                      <div>• <span className="font-medium">Chat History:</span> All communications saved for reference</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-medium mb-1">💡 Tips for Success</div>
+                    <div className="text-xs space-y-1 ml-2">
+                      <div>• Communicate clearly about your requirements</div>
+                      <div>• Respond promptly to creator messages</div>
+                      <div>• Review deliverables within the 3-day window</div>
+                      <div>• Leave honest reviews to build community trust</div>
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" style={{ scrollBehavior: 'auto' }}>
