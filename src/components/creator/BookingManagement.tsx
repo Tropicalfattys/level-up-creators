@@ -520,6 +520,31 @@ export const BookingManagement = () => {
           <p className="text-muted-foreground">
             Manage your active bookings and deliverables
           </p>
+          
+          {/* How it works link using existing helpContent and responsive pattern */}
+          {isMobile ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
+                  How it works
+                </span>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] p-0">
+                {helpContent}
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:underline">
+                  How it works
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent side="right" className="max-w-md p-0 w-[400px]">
+                {helpContent}
+              </HoverCardContent>
+            </HoverCard>
+          )}
         </div>
 
         {updateBookingStatus.isError && (
