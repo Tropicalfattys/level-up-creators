@@ -17,7 +17,7 @@ export const VerificationBadge = ({ verified = false, className = "" }: Verifica
     <img 
       src={data.publicUrl} 
       alt="Verified" 
-      className={`inline-block w-3 h-3 ml-1 ${className}`}
+      className={`inline-block w-5 h-5 ml-1 ${className}`}
       title="Verified Creator"
     />
   );
