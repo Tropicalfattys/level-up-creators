@@ -315,7 +315,7 @@ export const AdminCreators = () => {
 
       {/* Creator Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh]" : "max-w-4xl max-h-[80vh]"}>
+        <DialogContent className={isMobile ? "max-w-[95vw] w-[95vw] max-h-[90vh] h-[90vh] flex flex-col" : "max-w-4xl max-h-[80vh] flex flex-col"}>
           <DialogHeader>
             <DialogTitle>Creator Details</DialogTitle>
             <DialogDescription>
@@ -330,7 +330,7 @@ export const AdminCreators = () => {
               )}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="max-h-[70vh] pr-4">
             {selectedCreator && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
