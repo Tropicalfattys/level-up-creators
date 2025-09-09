@@ -29,31 +29,24 @@ export default function Home() {
     queryFn: async () => {
       console.log('Fetching pro creators...');
       
-      // Step 1: Get pro creators with user info
-      const { data: creatorsData, error: creatorsError } = await supabase
-        .from('creators')
-        .select(`
-          *,
-          users!inner (
-            handle,
-            avatar_url
-          )
-        `)
-        .eq('tier', 'pro')
-        .eq('approved', true)
-        .order('rating', { ascending: false })
-        .order('review_count', { ascending: false });
+      // Step 1: Get pro creators with service availability info
+      const { data: creatorsData, error: creatorsError } = await supabase.rpc('get_public_creators', {
+        approved_only: true
+      });
 
       if (creatorsError) {
         console.error('Pro creators query error:', creatorsError);
         throw creatorsError;
       }
 
-      console.log('Pro creators found:', creatorsData?.length || 0);
+      // Filter for pro tier creators only
+      const proCreatorsOnly = (creatorsData || []).filter(creator => creator.tier === 'pro');
+
+      console.log('Pro creators found:', proCreatorsOnly?.length || 0);
 
       // Step 2: Get service counts for each creator
       const creatorsWithServiceCount = await Promise.all(
-        (creatorsData || []).map(async (creator) => {
+        proCreatorsOnly.map(async (creator) => {
           // Get current user's handle for availability filtering
           const { data: { user } } = await supabase.auth.getUser();
           let userHandle = null;
@@ -79,7 +72,11 @@ export default function Home() {
 
           return {
             ...creator,
-            serviceCount: count || 0
+            serviceCount: count || 0,
+            users: {
+              handle: creator.handle,
+              avatar_url: creator.avatar_url
+            }
           };
         })
       );
@@ -411,14 +408,17 @@ export default function Home() {
                           <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-card border-2 border-border h-full overflow-hidden">
                             <div className="hover:scale-105 transition-transform duration-300">
                               <CardContent className="p-6 md:p-6 text-center">
-                                 <div className="mb-4">
-                                   <Avatar className="w-32 h-32 md:w-48 md:h-48 mx-auto">
-                                     <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
-                                     <AvatarFallback className="text-lg font-semibold">
-                                       {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
-                                     </AvatarFallback>
-                                   </Avatar>
-                                 </div>
+                                  <div className="mb-4">
+                                    <Avatar className="w-32 h-32 md:w-48 md:h-48 mx-auto">
+                                      <AvatarImage 
+                                        src={creator.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.users.handle)}&background=3b82f6&color=ffffff&size=256`} 
+                                        alt={creator.users.handle} 
+                                      />
+                                      <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                                        {creator.users.handle?.slice(0, 2).toUpperCase() || 'CR'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  </div>
                                 <div className="flex items-center justify-center gap-2 mb-2">
                                   <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
                                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">

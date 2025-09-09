@@ -193,7 +193,9 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
               >
                 <Link to={`/profile/${msg.from_user?.handle}`} className="flex-shrink-0">
                   <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary/20 transition-all">
-                    <AvatarImage src={msg.from_user?.avatar_url} />
+                    <AvatarImage 
+                      src={msg.from_user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.from_user?.handle || 'User')}&background=6b7280&color=ffffff&size=64`} 
+                    />
                     <AvatarFallback>
                       {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
                     </AvatarFallback>

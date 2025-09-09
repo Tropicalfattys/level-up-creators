@@ -140,7 +140,9 @@ export const ChatList = ({ userRole }: ChatListProps) => {
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border">
                 <Link to={`/profile/${otherUser?.handle}`} className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <Avatar className="h-10 w-10 hover:ring-2 hover:ring-primary/20 transition-all">
-                    <AvatarImage src={otherUser?.avatar_url} />
+                    <AvatarImage 
+                      src={otherUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.handle || 'User')}&background=6b7280&color=ffffff&size=128`} 
+                    />
                     <AvatarFallback>
                       {otherUser?.handle?.slice(0, 2).toUpperCase() || '??'}
                     </AvatarFallback>

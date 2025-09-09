@@ -28,7 +28,10 @@ export const CreatorsFollowedCard = () => {
                 <div key={creator.user_id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={creator.avatar_url} alt={creator.handle} />
+                      <AvatarImage 
+                        src={creator.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.handle)}&background=3b82f6&color=ffffff&size=64`} 
+                        alt={creator.handle} 
+                      />
                       <AvatarFallback className="bg-zinc-800 text-white text-xs">
                         {creator.handle[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>

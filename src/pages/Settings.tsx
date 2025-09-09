@@ -441,7 +441,10 @@ export default function Settings() {
                   {/* Profile Picture Upload */}
                   <div className="flex flex-col items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                      <AvatarImage 
+                        src={profileData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.handle || 'User')}&background=3b82f6&color=ffffff&size=256`} 
+                        alt="Profile" 
+                      />
                       <AvatarFallback className="text-lg">
                         {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
@@ -509,7 +512,10 @@ export default function Settings() {
                   {/* Profile Picture Upload */}
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                      <AvatarImage 
+                        src={profileData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.handle || 'User')}&background=3b82f6&color=ffffff&size=256`} 
+                        alt="Profile" 
+                      />
                       <AvatarFallback className="text-lg">
                         {profileData.handle?.[0]?.toUpperCase() || userProfile?.email?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>

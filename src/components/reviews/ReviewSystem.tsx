@@ -319,7 +319,9 @@ export const ReviewSystem = ({ bookingId, revieweeId, canReview }: ReviewSystemP
                 <div key={review.id} className="border-b pb-4 last:border-b-0 last:pb-0">
                   <div className={isMobile ? "flex flex-col items-center text-center space-y-2" : "flex items-start gap-3"}>
                     <Avatar className={isMobile ? "h-12 w-12" : "h-8 w-8"}>
-                      <AvatarImage src={review.reviewer?.avatar_url} />
+                      <AvatarImage 
+                        src={review.reviewer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer?.handle || 'User')}&background=6b7280&color=ffffff&size=64`} 
+                      />
                       <AvatarFallback>
                         {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
                       </AvatarFallback>

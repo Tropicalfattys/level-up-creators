@@ -80,7 +80,9 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
           <DialogHeader>
             <div className={isMobile ? "flex flex-col items-center gap-3 text-center mb-4" : "flex items-center gap-4 mb-4"}>
               <Avatar className="h-12 w-12">
-                <AvatarImage src={service.creator?.users.avatar_url} />
+                <AvatarImage 
+                  src={service.creator?.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(service.creator?.users.handle || 'Creator')}&background=3b82f6&color=ffffff&size=128`} 
+                />
                 <AvatarFallback>
                   {service.creator?.users.handle[0]?.toUpperCase() || 'C'}
                 </AvatarFallback>

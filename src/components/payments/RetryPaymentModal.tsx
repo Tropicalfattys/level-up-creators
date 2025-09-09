@@ -211,7 +211,10 @@ export const RetryPaymentModal = ({ bookingId, isOpen, onClose, onPaymentRetried
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={booking.creator.users.avatar_url} alt={booking.creator.users.handle} />
+                    <AvatarImage 
+                      src={booking.creator.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(booking.creator.users.handle)}&background=3b82f6&color=ffffff&size=128`} 
+                      alt={booking.creator.users.handle} 
+                    />
                     <AvatarFallback>
                       {booking.creator.users.handle?.[0]?.toUpperCase() || 'C'}
                     </AvatarFallback>

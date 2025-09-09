@@ -323,7 +323,9 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                   }`}
                 >
                   <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={msg.from_user?.avatar_url} />
+                    <AvatarImage 
+                      src={msg.from_user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.from_user?.handle || 'User')}&background=6b7280&color=ffffff&size=64`} 
+                    />
                     <AvatarFallback className="text-xs">
                       {msg.from_user?.handle?.slice(0, 2).toUpperCase() || '??'}
                     </AvatarFallback>

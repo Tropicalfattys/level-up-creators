@@ -141,7 +141,10 @@ export const Header = () => {
                   {user && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg mb-2">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.handle} />
+                        <AvatarImage 
+                          src={userProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.handle || 'User')}&background=3b82f6&color=ffffff&size=128`} 
+                          alt={userProfile?.handle} 
+                        />
                         <AvatarFallback className="bg-zinc-700 text-white">
                           {userProfile?.handle?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
@@ -297,7 +300,10 @@ export const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.handle} />
+                    <AvatarImage 
+                      src={userProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.handle || 'User')}&background=3b82f6&color=ffffff&size=64`} 
+                      alt={userProfile?.handle} 
+                    />
                       <AvatarFallback className="bg-zinc-800 text-white">
                         {userProfile?.handle?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>

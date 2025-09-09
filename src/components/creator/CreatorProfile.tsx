@@ -290,7 +290,9 @@ export const CreatorProfile = () => {
             <CardContent className="p-6">
               <div className="text-center space-y-4">
                 <Avatar className="h-24 w-24 mx-auto">
-                  <AvatarImage src={user.avatar_url} />
+                  <AvatarImage 
+                    src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.handle || 'User')}&background=3b82f6&color=ffffff&size=256`} 
+                  />
                   <AvatarFallback className="text-2xl">
                     {user.handle?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
@@ -474,7 +476,9 @@ export const CreatorProfile = () => {
                     <div key={review.id} className="space-y-2">
                       <div className="flex items-start gap-3">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={review.reviewer?.avatar_url} />
+                          <AvatarImage 
+                            src={review.reviewer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer?.handle || 'User')}&background=6b7280&color=ffffff&size=64`} 
+                          />
                           <AvatarFallback>
                             {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
                           </AvatarFallback>
@@ -686,7 +690,9 @@ export const CreatorProfile = () => {
                 <div key={review.id} className="space-y-2 pb-4 border-b border-border last:border-b-0">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={review.reviewer?.avatar_url} />
+                      <AvatarImage 
+                        src={review.reviewer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer?.handle || 'User')}&background=6b7280&color=ffffff&size=64`} 
+                      />
                       <AvatarFallback>
                         {review.reviewer?.handle?.slice(0, 2).toUpperCase() || '??'}
                       </AvatarFallback>

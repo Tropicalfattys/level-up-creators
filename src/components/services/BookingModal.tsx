@@ -182,7 +182,10 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
               <div className="space-y-4">
                 <div className={isMobile ? "flex flex-col items-center gap-3 text-center" : "flex items-start gap-4"}>
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={creator.users.avatar_url} alt={creator.users.handle} />
+                    <AvatarImage 
+                      src={creator.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.users.handle)}&background=3b82f6&color=ffffff&size=128`} 
+                      alt={creator.users.handle} 
+                    />
                     <AvatarFallback>
                       {creator.users.handle?.[0]?.toUpperCase() || 'C'}
                     </AvatarFallback>

@@ -29,7 +29,9 @@ export const CreatorCard = ({ creator }: CreatorCardProps) => {
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center space-y-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={creator.users.avatar_url} />
+              <AvatarImage 
+                src={creator.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.users.handle)}&background=3b82f6&color=ffffff&size=128`} 
+              />
               <AvatarFallback>
                 {creator.users.handle.slice(0, 2).toUpperCase()}
               </AvatarFallback>

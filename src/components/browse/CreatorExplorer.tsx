@@ -446,7 +446,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                     <div className="p-6 text-center">
                       <div className="flex flex-col items-center mb-4">
                         <Avatar className="h-15 w-15 mb-3">
-                          <AvatarImage src={creator.avatar_url} alt={creator.handle} />
+                           <AvatarImage 
+                            src={creator.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.handle)}&background=3b82f6&color=ffffff&size=128`} 
+                            alt={creator.handle} 
+                          />
                           <AvatarFallback className="bg-zinc-800 text-white text-lg">
                             {creator.handle[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>

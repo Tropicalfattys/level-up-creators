@@ -72,7 +72,9 @@ export const ShoppingCartModal = ({ isOpen, onClose }: ShoppingCartModalProps) =
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={item.creators?.users?.avatar_url} />
+                      <AvatarImage 
+                        src={item.creators?.users?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.creators?.users?.handle || 'Creator')}&background=3b82f6&color=ffffff&size=64`} 
+                      />
                       <AvatarFallback>
                         {item.creators?.users?.handle?.[0]?.toUpperCase()}
                       </AvatarFallback>

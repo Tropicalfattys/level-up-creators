@@ -43,7 +43,10 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
               to={`/profile/${service.creator.users.handle}`}
             >
               <Avatar className="h-15 w-15">
-                <AvatarImage src={service.creator.users.avatar_url} alt={service.creator.users.handle} />
+                <AvatarImage 
+                  src={service.creator.users.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(service.creator.users.handle)}&background=3b82f6&color=ffffff&size=128`} 
+                  alt={service.creator.users.handle} 
+                />
                 <AvatarFallback>
                   {service.creator.users.handle.charAt(0).toUpperCase()}
                 </AvatarFallback>
