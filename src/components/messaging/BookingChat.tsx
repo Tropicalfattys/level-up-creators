@@ -35,8 +35,11 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
+
+  // Check if user is banned - prevent messaging
+  const isUserBanned = userProfile?.banned === true;
 
   // Use the booking chat hook for real-time updates
   const { isConnected } = useBookingChat({ bookingId, userId: user?.id });
@@ -220,6 +223,12 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
     e.preventDefault();
     console.log('Send button clicked, message:', message);
     
+    // Check if user is banned - prevent sending messages
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot send messages at this time.');
+      return;
+    }
+    
     if (message.trim()) {
       sendMessage.mutate({ 
         messageBody: message,
@@ -378,9 +387,9 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
+                placeholder={isUserBanned ? "Account restricted" : "Type your message..."}
                 className="flex-1"
-                disabled={sendMessage.isPending || uploading}
+                disabled={sendMessage.isPending || uploading || isUserBanned}
               />
               <input
                 ref={fileInputRef}
@@ -394,14 +403,14 @@ export const BookingChat = ({ bookingId, otherUserId, otherUserHandle }: Booking
                 variant="outline"
                 size="icon"
                 onClick={handleFileSelect}
-                disabled={uploading || sendMessage.isPending}
+                disabled={uploading || sendMessage.isPending || isUserBanned}
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
               <Button 
                 size="icon" 
                 type="submit" 
-                disabled={sendMessage.isPending || uploading || !message.trim()}
+                disabled={sendMessage.isPending || uploading || !message.trim() || isUserBanned}
               >
                 <Send className="h-4 w-4" />
               </Button>

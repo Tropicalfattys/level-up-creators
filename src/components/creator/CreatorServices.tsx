@@ -27,9 +27,12 @@ interface Service {
 export const CreatorServices = () => {
   const [open, setOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+
+  // Check if creator is banned - prevent service management
+  const isUserBanned = userProfile?.banned === true;
 
   const { data: services, isLoading, isError } = useQuery({
     queryKey: ['creator-services'],
@@ -94,27 +97,50 @@ export const CreatorServices = () => {
     }
   });
 
-  const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
     setSelectedService(null);
   };
 
   const handleEdit = (service: Service) => {
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot edit services at this time.');
+      return;
+    }
     setSelectedService(service);
     setOpen(true);
   };
 
   const handleSnooze = (service: Service) => {
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot modify services at this time.');
+      return;
+    }
     snoozeMutation.mutate({ id: service.id, active: service.active });
   };
 
   const handleDelete = (id: string) => {
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot delete services at this time.');
+      return;
+    }
     deleteMutation.mutate(id);
   };
 
   const handleCopy = (service: Service) => {
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot create services at this time.');
+      return;
+    }
     setSelectedService({ ...service, id: undefined, title: `${service.title} (Copy)` });
+    setOpen(true);
+  };
+
+  const handleOpen = () => {
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot create services at this time.');
+      return;
+    }
     setOpen(true);
   };
 

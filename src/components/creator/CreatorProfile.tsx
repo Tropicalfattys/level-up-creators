@@ -17,6 +17,7 @@ import { useUserFollows } from '@/hooks/useUserFollows';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { NETWORK_CONFIG } from '@/lib/contracts';
+import { toast } from 'sonner';
 
 interface Review {
   id: string;
@@ -32,11 +33,14 @@ interface Review {
 export const CreatorProfile = () => {
   const { handle } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userProfile } = useAuth();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
+
+  // Check if current user is banned
+  const isUserBanned = userProfile?.banned === true;
 
   // Helper function to get tier display name
   const getTierDisplayName = (tier: string | undefined): string => {
@@ -216,6 +220,13 @@ export const CreatorProfile = () => {
       navigate('/auth');
       return;
     }
+    
+    // Check if user is banned - prevent booking
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot book services at this time.');
+      return;
+    }
+    
     setSelectedService(service);
     setIsBookingModalOpen(true);
   };
@@ -584,8 +595,14 @@ export const CreatorProfile = () => {
                             <span className="text-sm text-muted-foreground text-center md:text-left">
                               Delivery: {service.delivery_days} days
                             </span>
-                            <Button size="sm" onClick={() => handleBookService(service)} className="mx-auto md:mx-0">
-                              {currentUser ? 'Book Now' : 'Sign In to Book'}
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleBookService(service)} 
+                              className="mx-auto md:mx-0"
+                              disabled={isUserBanned}
+                            >
+                              {!currentUser ? 'Sign In to Book' : 
+                               isUserBanned ? 'Access Restricted' : 'Book Now'}
                             </Button>
                           </div>
                         </div>

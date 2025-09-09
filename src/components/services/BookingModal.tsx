@@ -55,9 +55,31 @@ interface BookingModalProps {
 export const BookingModal = ({ service, creator, isOpen, onClose, onBookingComplete }: BookingModalProps) => {
   const [step, setStep] = useState<'review' | 'payment' | 'submitted'>('review');
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+
+  // Check if user is banned - prevent booking
+  if (userProfile?.banned) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
+          <DialogHeader>
+            <DialogTitle>Access Restricted</DialogTitle>
+            <DialogDescription>
+              Your account access has been restricted. You cannot book services at this time. 
+              Please contact support if you believe this is an error.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={onClose} variant="outline">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const handleProceedToPayment = () => {
     // Go directly to payment step without creating booking yet

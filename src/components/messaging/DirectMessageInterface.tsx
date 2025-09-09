@@ -31,8 +31,11 @@ interface DirectMessageInterfaceProps {
 export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfaceProps) => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
+
+  // Check if user is banned - prevent messaging
+  const isUserBanned = userProfile?.banned === true;
 
   // Get other user info
   const { data: otherUser } = useQuery({
@@ -102,6 +105,13 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is banned - prevent sending messages
+    if (isUserBanned) {
+      toast.error('Your account access has been restricted. You cannot send messages at this time.');
+      return;
+    }
+    
     if (message.trim()) {
       sendMessage.mutate(message);
     }
@@ -222,14 +232,14 @@ export const DirectMessageInterface = ({ otherUserId }: DirectMessageInterfacePr
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={isUserBanned ? "Account restricted" : "Type your message..."}
               className="flex-1 min-w-0"
-              disabled={sendMessage.isPending}
+              disabled={sendMessage.isPending || isUserBanned}
             />
             <Button 
               size="sm" 
               type="submit" 
-              disabled={sendMessage.isPending || !message.trim()}
+              disabled={sendMessage.isPending || !message.trim() || isUserBanned}
               className="flex-shrink-0"
             >
               <Send className="h-4 w-4" />

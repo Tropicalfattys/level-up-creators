@@ -70,7 +70,7 @@ export const AdminUsers = () => {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
-  const [restrictedUsers, setRestrictedUsers] = useState<Set<string>>(new Set());
+  
   const [newUserData, setNewUserData] = useState({
     email: '',
     password: '',
@@ -192,18 +192,34 @@ export const AdminUsers = () => {
     updateUserRole.mutate({ userId, newRole: 'client' });
   };
 
+  // Update user restriction status in database
+  const updateUserRestriction = useMutation({
+    mutationFn: async ({ userId, banned }: { userId: string; banned: boolean }) => {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ banned })
+        .eq('id', userId)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { banned }) => {
+      toast.success(banned ? 'User restricted successfully' : 'User unrestricted successfully');
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (error) => {
+      console.error('Error updating user restriction:', error);
+      toast.error('Failed to update user restriction. Please try again.');
+    }
+  });
+
   const handleRestrict = (userId: string) => {
-    setRestrictedUsers(prev => new Set(prev).add(userId));
-    toast.success('User restricted successfully');
+    updateUserRestriction.mutate({ userId, banned: true });
   };
 
   const handleUnrestrict = (userId: string) => {
-    setRestrictedUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(userId);
-      return newSet;
-    });
-    toast.success('User unrestricted successfully');
+    updateUserRestriction.mutate({ userId, banned: false });
   };
 
   const isSuperAdmin = (email: string) => {
@@ -453,10 +469,11 @@ export const AdminUsers = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => restrictedUsers.has(user.id) ? handleUnrestrict(user.id) : handleRestrict(user.id)}
+                        onClick={() => user.banned ? handleUnrestrict(user.id) : handleRestrict(user.id)}
+                        disabled={updateUserRestriction.isPending}
                         className={isMobile ? "w-full" : ""}
                       >
-                        {restrictedUsers.has(user.id) ? (
+                        {user.banned ? (
                           <>
                             <UserCheck className="h-3 w-3 mr-1" />
                             Unrestrict
