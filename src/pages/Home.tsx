@@ -34,7 +34,7 @@ export default function Home() {
         .from('creators')
         .select(`
           *,
-          users (
+          users!inner (
             handle,
             avatar_url
           )
