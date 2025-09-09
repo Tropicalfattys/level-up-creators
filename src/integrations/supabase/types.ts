@@ -1123,6 +1123,20 @@ export type Database = {
           verified: boolean
         }[]
       }
+      submit_job_application: {
+        Args: {
+          application_email: string
+          application_name: string
+          application_phone: string
+          cover_letter_param: string
+          github_url_param: string
+          job_posting_id_param: string
+          portfolio_url_param: string
+          resume_url_param: string
+          social_links_param?: Json
+        }
+        Returns: string
+      }
       validate_username_restrictions: {
         Args: { username_input: string }
         Returns: boolean

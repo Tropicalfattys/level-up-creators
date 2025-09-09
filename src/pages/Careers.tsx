@@ -66,28 +66,26 @@ export default function Careers() {
     }
   });
 
-  // Form submission mutation using the same safe pattern as ContactForm
+  // Form submission mutation using secure database function
   const submitApplication = useMutation({
     mutationFn: async (data: typeof formData) => {
       // Find the selected job posting to get its ID
       const selectedJobPosting = jobPostings.find(job => job.id === data.position);
       
-      const { error } = await (supabase as any)
-        .from('job_applications')
-        .insert([{
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          job_posting_id: selectedJobPosting?.id || null,
-          resume_url: data.resumeUrl,
-          portfolio_url: data.portfolioUrl,
-          github_url: data.githubUrl,
-          cover_letter: data.coverLetter,
-          social_links: data.socialLinks,
-          status: 'pending'
-        }]);
+      const { data: result, error } = await supabase.rpc('submit_job_application', {
+        application_name: data.name,
+        application_email: data.email,
+        application_phone: data.phone || null,
+        job_posting_id_param: selectedJobPosting?.id || null,
+        resume_url_param: data.resumeUrl || null,
+        portfolio_url_param: data.portfolioUrl || null,
+        github_url_param: data.githubUrl || null,
+        cover_letter_param: data.coverLetter || null,
+        social_links_param: data.socialLinks || {}
+      });
 
       if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       toast.success('Application submitted successfully! We\'ll review it and get back to you within 3-5 business days.');
