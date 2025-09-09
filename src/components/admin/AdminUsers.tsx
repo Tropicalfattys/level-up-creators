@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
-import { Users, Search, Shield, DollarSign, Plus, ShieldX, Eye } from 'lucide-react';
+import { Users, Search, Shield, DollarSign, Plus, ShieldX, Eye, Ban, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -70,6 +70,7 @@ export const AdminUsers = () => {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [restrictedUsers, setRestrictedUsers] = useState<Set<string>>(new Set());
   const [newUserData, setNewUserData] = useState({
     email: '',
     password: '',
@@ -189,6 +190,20 @@ export const AdminUsers = () => {
 
   const handleRemoveAdmin = (userId: string) => {
     updateUserRole.mutate({ userId, newRole: 'client' });
+  };
+
+  const handleRestrict = (userId: string) => {
+    setRestrictedUsers(prev => new Set(prev).add(userId));
+    toast.success('User restricted successfully');
+  };
+
+  const handleUnrestrict = (userId: string) => {
+    setRestrictedUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userId);
+      return newSet;
+    });
+    toast.success('User unrestricted successfully');
   };
 
   const isSuperAdmin = (email: string) => {
@@ -433,6 +448,26 @@ export const AdminUsers = () => {
                           Remove Admin
                         </Button>
                       )}
+
+                      {/* Restrict/Unrestrict Button */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => restrictedUsers.has(user.id) ? handleUnrestrict(user.id) : handleRestrict(user.id)}
+                        className={isMobile ? "w-full" : ""}
+                      >
+                        {restrictedUsers.has(user.id) ? (
+                          <>
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Unrestrict
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="h-3 w-3 mr-1" />
+                            Restrict
+                          </>
+                        )}
+                      </Button>
                     </div>
                   )}
                 </div>
