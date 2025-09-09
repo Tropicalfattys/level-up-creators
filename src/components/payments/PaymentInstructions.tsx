@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Copy, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getPlatformWallet, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
 
@@ -288,23 +288,18 @@ export const PaymentInstructions = ({
             <h4 className={`font-semibold flex items-center ${isMobile ? 'flex-wrap' : ''} gap-2`}>
               <Badge variant="outline">2</Badge>
               Submit Transaction Hash
-              {!isMobile && (
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <span className="text-orange-500 hover:underline cursor-help text-sm font-normal">
-                      Find your TX hash
-                    </span>
-                  </HoverCardTrigger>
-                  <HoverCardContent 
-                    className="w-96 p-0 bg-background border shadow-lg"
-                    align="center" 
-                    side="top"
-                  >
-                  <div className="p-4">
-                    <ScrollArea className="h-96">
-                      <div className="space-y-4 pr-4">
-                      <h3 className="font-semibold text-lg">💡 How to Find Your Transaction Hash (Tx Hash)</h3>
-                      
+              <Dialog>
+                <DialogTrigger asChild>
+                  <span className="text-orange-500 hover:underline cursor-help text-sm font-normal">
+                    Find your TX hash
+                  </span>
+                </DialogTrigger>
+                <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh]' : 'max-w-2xl max-h-[80vh]'} overflow-hidden`}>
+                  <DialogHeader>
+                    <DialogTitle className="text-lg">💡 How to Find Your Transaction Hash (Tx Hash)</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
                         After sending your payment, you'll need to give us the transaction hash so we can verify it.
                       </p>
@@ -336,14 +331,12 @@ export const PaymentInstructions = ({
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                         <p className="text-sm text-amber-800 font-medium">
                           ⚠️ Do not send a screenshot. We must have the actual transaction hash to confirm your payment.
-                         </p>
-                       </div>
-                     </div>
-                   </ScrollArea>
-                  </div>
-                  </HoverCardContent>
-                </HoverCard>
-              )}
+                        </p>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
             </h4>
             
             {isMobile && (
