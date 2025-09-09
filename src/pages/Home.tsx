@@ -69,12 +69,8 @@ export default function Home() {
             .eq('creator_id', creator.user_id)
             .eq('active', true);
 
-          // Apply availability filter
-          if (userHandle) {
-            countQuery = countQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
-          } else {
-            countQuery = countQuery.eq('availability_type', 'everyone');
-          }
+          // For home page display, show all active services regardless of availability restrictions
+          // This showcases pro creators with their full service portfolio
 
           const { count } = await countQuery;
 
