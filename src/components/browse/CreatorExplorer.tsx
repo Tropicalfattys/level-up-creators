@@ -165,7 +165,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             id: creator.id,
             user_id: creator.user_id,
             handle: creator.handle || 'unknown',
-            avatar_url: undefined, // Excluded for performance reasons
+            avatar_url: creator.avatar_url, // Now included since database functions return avatar_url
             verified: creator.verified,
             headline: creator.headline,
             category: creator.category,

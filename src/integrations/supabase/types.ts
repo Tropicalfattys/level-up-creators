@@ -1090,6 +1090,7 @@ export type Database = {
       get_public_creators: {
         Args: { approved_only?: boolean }
         Returns: {
+          avatar_url: string
           bio: string
           category: string
           created_at: string
@@ -1106,6 +1107,7 @@ export type Database = {
       get_public_profile: {
         Args: { user_id_param: string }
         Returns: {
+          avatar_url: string
           bio: string
           created_at: string
           handle: string
@@ -1116,6 +1118,7 @@ export type Database = {
       get_public_profile_by_handle: {
         Args: { handle_param: string }
         Returns: {
+          avatar_url: string
           bio: string
           created_at: string
           handle: string

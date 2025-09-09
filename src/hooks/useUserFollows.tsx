@@ -37,10 +37,10 @@ export const useUserFollows = () => {
 
       const userIds = follows.map(f => f.followed_user_id);
 
-      // Get user profiles for followed creators (excluding avatar_url due to performance issues)
+      // Get user profiles for followed creators with avatar_url
       const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('id, handle')
+        .select('id, handle, avatar_url')
         .in('id', userIds);
 
       if (usersError) {
@@ -65,7 +65,7 @@ export const useUserFollows = () => {
           id: user.id,
           user_id: user.id,
           handle: user.handle || '',
-          avatar_url: undefined, // Excluded for performance reasons
+          avatar_url: user.avatar_url, // Now included since database functions return avatar_url
           headline: creator?.headline || undefined
         };
       }) as FollowedCreator[];
@@ -73,49 +73,7 @@ export const useUserFollows = () => {
     enabled: !!user?.id,
   });
 
-  // Migrate localStorage follows to database on first load
-  useEffect(() => {
-    if (!user?.id || isLoading) return;
-
-    const migrateLocalStorageFollows = async () => {
-      const followsKey = `user_follows_${user.id}`;
-      const storedFollows = localStorage.getItem(followsKey);
-      
-      if (storedFollows) {
-        try {
-          const follows: FollowedCreator[] = JSON.parse(storedFollows);
-          
-          // Insert each follow into database with proper error handling
-          for (const creator of follows) {
-            const { error } = await supabase
-              .from('user_follows')
-              .upsert({
-                follower_id: user.id,
-                followed_user_id: creator.user_id
-              }, {
-                onConflict: 'follower_id,followed_user_id',
-                ignoreDuplicates: true
-              });
-
-            // Only log non-duplicate errors
-            if (error && !error.message.includes('duplicate key value') && !error.message.includes('conflicts')) {
-              console.error('Error inserting follow:', error);
-            }
-          }
-          
-          // Remove from localStorage after successful migration
-          localStorage.removeItem(followsKey);
-          
-          // Refresh the query to show migrated data
-          queryClient.invalidateQueries({ queryKey: ['user-follows', user.id] });
-        } catch (error) {
-          console.error('Error migrating follows from localStorage:', error);
-        }
-      }
-    };
-
-    migrateLocalStorageFollows();
-  }, [user?.id, isLoading, queryClient]);
+  // No localStorage migration needed - keep it simple
 
   // Add follow mutation
   const addFollowMutation = useMutation({
