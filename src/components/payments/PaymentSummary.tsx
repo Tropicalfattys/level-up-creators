@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { DollarSign, Clock, User } from 'lucide-react';
+import { VerificationBadge } from '@/components/ui/verification-badge';
 
 interface PaymentSummaryProps {
   serviceTitle: string;
   creatorHandle: string;
+  verified?: boolean;
   amount: number;
   currency: string;
   deliveryDays?: number;
@@ -16,6 +18,7 @@ interface PaymentSummaryProps {
 export const PaymentSummary = ({
   serviceTitle,
   creatorHandle,
+  verified,
   amount,
   currency,
   deliveryDays,
@@ -40,6 +43,7 @@ export const PaymentSummary = ({
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
                   <span>@{creatorHandle}</span>
+                  <VerificationBadge verified={verified} />
                 </div>
                 {deliveryDays && (
                   <div className="flex items-center gap-1">

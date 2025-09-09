@@ -38,13 +38,13 @@ interface Creator {
     payout_address_bsc: string;
     payout_address_sui: string;
     payout_address_cardano: string;
+    verified: boolean;
   };
 }
 
 export const AdminCreators = () => {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [verifiedCreators, setVerifiedCreators] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -66,7 +66,8 @@ export const AdminCreators = () => {
             payout_address_sol,
             payout_address_bsc,
             payout_address_sui,
-            payout_address_cardano
+            payout_address_cardano,
+            verified
           )
         `)
         .order('created_at', { ascending: false });
@@ -100,16 +101,20 @@ export const AdminCreators = () => {
     setShowDetails(true);
   };
 
-  const toggleVerification = (creatorId: string) => {
-    setVerifiedCreators(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(creatorId)) {
-        newSet.delete(creatorId);
-      } else {
-        newSet.add(creatorId);
-      }
-      return newSet;
-    });
+  const toggleVerification = async (creatorId: string, currentVerifiedStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ verified: !currentVerifiedStatus })
+        .eq('id', creatorId);
+
+      if (error) throw error;
+      
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+    }
   };
 
   if (isLoading) {
@@ -201,15 +206,15 @@ export const AdminCreators = () => {
                          <Eye className="h-4 w-4 mr-2" />
                          View
                        </Button>
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => toggleVerification(creator.id)}
-                         className={`flex-1 min-w-0 ${verifiedCreators.has(creator.id) ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}`}
-                       >
-                         <Check className="h-4 w-4 mr-2" />
-                         Verified
-                       </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleVerification(creator.users.id, creator.users.verified)}
+                          className={`flex-1 min-w-0 ${creator.users.verified ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}`}
+                        >
+                          <Check className="h-4 w-4 mr-2" />
+                          Verified
+                        </Button>
                        {!creator.approved && (
                          <>
                            <Button
@@ -302,14 +307,14 @@ export const AdminCreators = () => {
                          >
                            <Eye className="h-4 w-4" />
                          </Button>
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => toggleVerification(creator.id)}
-                           className={verifiedCreators.has(creator.id) ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}
-                         >
-                           <Check className="h-4 w-4" />
-                         </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => toggleVerification(creator.users.id, creator.users.verified)}
+                            className={creator.users.verified ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 border-red-600 hover:bg-red-50'}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
                          {!creator.approved && (
                            <>
                              <Button

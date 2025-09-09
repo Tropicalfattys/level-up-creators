@@ -5,6 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { VerificationBadge } from '@/components/ui/verification-badge';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +29,7 @@ interface CreatorData {
   avg_delivery_days: number;
   min_price: number;
   service_count: number;
+  verified?: boolean;
 }
 
 interface CreatorExplorerProps {
@@ -93,7 +95,8 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
           review_count,
           users!creators_user_id_fkey (
             handle,
-            avatar_url
+            avatar_url,
+            verified
           )
         `)
         .eq('approved', true);
@@ -179,6 +182,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             user_id: creator.user_id,
             handle: creator.users?.handle || 'unknown',
             avatar_url: creator.users?.avatar_url,
+            verified: creator.users?.verified,
             headline: creator.headline,
             category: creator.category,
             tier: creator.tier,
@@ -464,7 +468,10 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                           </AvatarFallback>
                         </Avatar>
                         
-                        <h3 className="font-semibold text-lg mb-1">@{creator.handle}</h3>
+                        <h3 className="font-semibold text-lg mb-1 flex items-center">
+                          @{creator.handle}
+                          <VerificationBadge verified={creator.verified} />
+                        </h3>
                         <Badge variant="outline" className="border-blue-500 text-blue-400 mb-2">
                           {getTierDisplayName(creator.tier)}
                         </Badge>

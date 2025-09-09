@@ -34,6 +34,7 @@ interface UserProfile {
   payout_address_bsc?: string;
   payout_address_sui?: string;
   banned?: boolean;
+  verified?: boolean;
 }
 
 interface AuthContextType {
@@ -112,7 +113,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           payout_address_cardano: data.payout_address_cardano,
           payout_address_bsc: data.payout_address_bsc,
           payout_address_sui: data.payout_address_sui,
-          banned: data.banned
+          banned: data.banned,
+          verified: data.verified
         };
         
         setUserProfile(userProfile);

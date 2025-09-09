@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { VerificationBadge } from '@/components/ui/verification-badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign } from 'lucide-react';
@@ -20,6 +21,7 @@ interface ServiceCardProps {
       users: {
         handle: string;
         avatar_url?: string;
+        verified?: boolean;
       };
       rating?: number;
     };
@@ -50,13 +52,16 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
           </div>
           
           <CardDescription className="text-sm flex items-center justify-center gap-2">
-            <span>by </span>
-            <Link 
-              to={`/profile/${service.creator.users.handle}`}
-              className="text-primary hover:underline"
-            >
-              @{service.creator.users.handle}
-            </Link>
+            <span className="text-sm flex items-center justify-center gap-1">
+              by 
+              <Link 
+                to={`/profile/${service.creator.users.handle}`}
+                className="text-primary hover:underline"
+              >
+                @{service.creator.users.handle}
+              </Link>
+              <VerificationBadge verified={service.creator.users.verified} />
+            </span>
             {service.creator.rating && (
               <div className="flex items-center gap-1">
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
