@@ -1199,6 +1199,7 @@ export type Database = {
           creator_id: string
           creator_rating: number
           creator_review_count: number
+          creator_tier: string
           creator_verified: boolean
           delivery_days: number
           description: string

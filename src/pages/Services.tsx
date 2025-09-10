@@ -53,6 +53,7 @@ export default function Services() {
         payment_method: service.payment_method,
         created_at: service.created_at,
         creator_id: service.creator_id,
+        creator_tier: service.creator_tier || 'basic', // Include creator tier
         creator: {
           id: service.creator_id,
           user_id: service.creator_id,
@@ -65,8 +66,41 @@ export default function Services() {
           }
         }
       }));
+
+      // Function to get tier priority (lower number = higher priority)
+      const getTierPriority = (tier: string) => {
+        switch (tier?.toLowerCase()) {
+          case 'pro': return 1;
+          case 'mid': 
+          case 'plus': return 2;
+          case 'basic': 
+          default: return 3;
+        }
+      };
+
+      // Apply tier-priority sorting while preserving existing sort logic
+      const sortedServices = servicesWithCreators.sort((a, b) => {
+        // First sort by tier priority (Pro → Mid/Plus → Basic)
+        const tierDiff = getTierPriority(a.creator_tier) - getTierPriority(b.creator_tier);
+        if (tierDiff !== 0) return tierDiff;
+
+        // Within same tier, apply the user's selected sort option
+        switch (sortBy) {
+          case 'price_low':
+            return a.price_usdc - b.price_usdc;
+          case 'price_high':
+            return b.price_usdc - a.price_usdc;
+          case 'delivery_fast':
+            return a.delivery_days - b.delivery_days;
+          case 'rating':
+            return (b.creator?.rating || 0) - (a.creator?.rating || 0);
+          case 'newest':
+          default:
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+      });
       
-      return servicesWithCreators;
+      return sortedServices;
     }
   });
 
