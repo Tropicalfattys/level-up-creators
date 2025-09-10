@@ -26,6 +26,8 @@ export const ReferralSuccessful = () => {
     queryFn: async () => {
       if (!user) return [];
 
+      console.log('Fetching referrals for user:', user.id);
+
       const { data, error } = await supabase
         .from('referral_credits_awarded')
         .select(`
@@ -39,17 +41,27 @@ export const ReferralSuccessful = () => {
         .eq('referrer_id', user.id)
         .order('awarded_at', { ascending: false });
 
+      console.log('Raw Supabase response:', { data, error });
+
       if (error) {
         console.error('Error fetching successful referrals:', error);
         return [];
       }
 
-      return (data || []).map(item => ({
-        id: item.id,
-        referred_user_handle: item.users?.handle || 'Unknown User',
-        awarded_at: item.awarded_at,
-        credit_amount: item.credit_amount
-      }));
+      const mappedData = (data || []).map(item => {
+        console.log('Processing item:', item);
+        const result = {
+          id: item.id,
+          referred_user_handle: item.users?.handle || 'Unknown User',
+          awarded_at: item.awarded_at,
+          credit_amount: item.credit_amount
+        };
+        console.log('Mapped result:', result);
+        return result;
+      });
+
+      console.log('Final mapped data:', mappedData);
+      return mappedData;
     },
     enabled: !!user
   });
