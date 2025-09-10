@@ -143,7 +143,7 @@ const Terms = () => {
                 <section className="space-y-4">
                   <h2 className="text-2xl font-semibold text-foreground">13. Governing Law</h2>
                   <div className="pl-6 space-y-2">
-                    <p className="leading-relaxed">These Terms are governed by the laws of [Insert Jurisdiction].</p>
+                    <p className="leading-relaxed">These Terms are governed by the laws of United States, EU, & Australia.</p>
                     <p className="leading-relaxed">Any disputes shall be resolved through binding arbitration in [Insert Location].</p>
                   </div>
                 </section>
