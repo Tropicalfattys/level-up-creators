@@ -164,6 +164,49 @@ const Terms = () => {
                     <p>Website: https://ruleveledup.live</p>
                   </div>
                 </section>
+
+                <section className="space-y-4">
+                  <h2 className="text-2xl font-semibold text-foreground">Secure Payment Protection</h2>
+                  <div className="pl-6 space-y-2">
+                    <p className="leading-relaxed">
+                      LeveledUp provides a secure payment protection system to safeguard both Clients and Creators. When a Client purchases a service or content through the Platform, the payment is held in a temporary holding wallet managed by LeveledUp.
+                    </p>
+                    
+                    <p className="leading-relaxed font-medium">Funds are released to the Creator only after:</p>
+                    <ul className="ml-6 space-y-1 list-disc">
+                      <li className="leading-relaxed">The service or content has been delivered, and</li>
+                      <li className="leading-relaxed">The Client has confirmed completion, or any disputes have been resolved through LeveledUp's internal dispute process.</li>
+                    </ul>
+                    
+                    <p className="leading-relaxed">
+                      LeveledUp is not a bank, money transmitter, or licensed escrow company. The payment protection system is a feature of the marketplace designed solely to ensure fair transactions between Clients and Creators. Users acknowledge and agree that LeveledUp does not provide regulated financial services and that all transactions are conducted in cryptocurrency at the user's own risk.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <h2 className="text-2xl font-semibold text-foreground">16. Creator Verification System ("Social-KYC")</h2>
+                  <div className="pl-6 space-y-2">
+                    <h3 className="text-lg font-semibold">Creator Verification</h3>
+                    <p className="leading-relaxed">
+                      To promote trust and safety on the Platform, Creators may apply for verification. Verification is optional and is provided at no additional cost for Pro plan members.
+                    </p>
+                    
+                    <p className="leading-relaxed font-medium">Verification requires Creators to:</p>
+                    <ol className="ml-6 space-y-1 list-decimal">
+                      <li className="leading-relaxed">Post their unique LeveledUp referral link to at least one social networking platform (e.g., X/Twitter, Facebook, or Instagram), and</li>
+                      <li className="leading-relaxed">Post the same link to a second public platform of their choice (e.g., YouTube, Discord server, personal website, forum, etc.).</li>
+                    </ol>
+                    
+                    <p className="leading-relaxed">
+                      This process confirms that the Creator controls the linked accounts and provides a degree of authenticity for Clients. Verified Creators are designated with a verification check mark on their profile.
+                    </p>
+                    
+                    <p className="leading-relaxed">
+                      LeveledUp's verification process is not a government-issued identity check or KYC (Know Your Customer) process as required by financial institutions. It is intended solely to enhance platform integrity and protect the community from fraudulent activity.
+                    </p>
+                  </div>
+                </section>
               </div>
             </CardContent>
           </Card>
