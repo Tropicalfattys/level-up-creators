@@ -133,16 +133,50 @@ export default function Settings() {
 
       const file = event.target.files[0];
       
-      // Create a data URL for the image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setProfileData(prev => ({ ...prev, avatar_url: dataUrl }));
-        toast.success('Profile picture updated! Click Save Changes to apply.');
-      };
-      reader.readAsDataURL(file);
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select an image file.');
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('File size must be less than 5MB.');
+      }
+      
+      if (!userProfile?.id) {
+        throw new Error('User profile not found.');
+      }
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userProfile.id}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      if (urlData?.publicUrl) {
+        setProfileData(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
+        toast.success('Profile picture uploaded! Click Save Changes to apply.');
+      } else {
+        throw new Error('Failed to get public URL for uploaded image.');
+      }
       
     } catch (error: any) {
+      console.error('Avatar upload error:', error);
       toast.error('Error uploading avatar: ' + error.message);
     } finally {
       setUploading(false);
