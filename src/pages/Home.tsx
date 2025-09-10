@@ -136,7 +136,7 @@ export default function Home() {
         // Step 3: Fetch service titles via bookings
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
-          .select('id, services(title)')
+          .select('id, services:service_id(title)')
           .in('id', bookingIds);
 
         if (bookingsError) {
