@@ -526,7 +526,8 @@ export const AdminPayments = () => {
   const tabOptions = [
     { value: "payment-management", label: "Payment Management" },
     { value: "payouts", label: "Payouts" },
-    { value: "escrow", label: "Escrow" }
+    { value: "escrow", label: "Escrow" },
+    { value: "subscriptions", label: "Subscriptions" }
   ];
 
   return (
@@ -547,10 +548,11 @@ export const AdminPayments = () => {
           </Select>
         </div>
       ) : (
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="payment-management">Payment Management</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="escrow">Escrow</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
         </TabsList>
       )}
 
@@ -564,6 +566,18 @@ export const AdminPayments = () => {
 
       <TabsContent value="escrow">
         <AdminEscrow />
+      </TabsContent>
+
+      <TabsContent value="subscriptions">
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscriptions</CardTitle>
+            <CardDescription>Manage subscription settings and billing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Subscription management functionality will be added here.</p>
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );
