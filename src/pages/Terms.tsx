@@ -91,7 +91,7 @@ const Terms = () => {
                     <p className="leading-relaxed">Use the Services for unlawful purposes or in violation of applicable laws.</p>
                     <p className="leading-relaxed">Harass, abuse, or exploit Creators or Users.</p>
                     <p className="leading-relaxed">Upload, share, or promote offensive, obscene, or harmful content.</p>
-                    <p className="leading-relaxed">Attempt to bypass or interfere with our escrow or payment system.</p>
+                    <p className="leading-relaxed">Attempt to bypass or interfere with our payment protection system or payment system.</p>
                     <p className="leading-relaxed">Misrepresent your identity or impersonate others.</p>
                   </div>
                 </section>
