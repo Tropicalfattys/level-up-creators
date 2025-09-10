@@ -119,16 +119,19 @@ export default function Home() {
         const reviewerIds = reviewsData.map(r => r.reviewer_id);
         const bookingIds = reviewsData.map(r => r.booking_id);
 
-        // Step 2: Fetch reviewer handles
-        const { data: usersData, error: usersError } = await supabase
-          .from('users')
-          .select('id, handle')
-          .in('id', reviewerIds);
+        // Step 2: Fetch reviewer handles using get_public_profile function
+        const usersDataPromises = reviewerIds.map(async (userId) => {
+          const { data, error } = await supabase.rpc('get_public_profile', {
+            user_id_param: userId
+          });
+          if (error || !data || data.length === 0) {
+            console.error(`Error fetching profile for user ${userId}:`, error);
+            return { id: userId, handle: 'Unknown' };
+          }
+          return { id: userId, handle: data[0].handle };
+        });
 
-        if (usersError) {
-          console.error('Users query error:', usersError);
-          throw usersError;
-        }
+        const usersData = await Promise.all(usersDataPromises);
 
         // Step 3: Fetch service titles via bookings
         const { data: bookingsData, error: bookingsError } = await supabase
