@@ -69,7 +69,7 @@ const Terms = () => {
                   <h2 className="text-2xl font-semibold text-foreground">5. Payment Protection System</h2>
                   <div className="pl-6 space-y-2">
                     <p className="leading-relaxed">Payments are processed exclusively in supported cryptocurrencies (see current list in the app).</p>
-                    <p className="leading-relaxed">User funds are held in escrow until the Creator delivers the agreed-upon service.</p>
+                    <p className="leading-relaxed">User funds are held in our Payment Protect System until the Creator delivers the agreed-upon service.</p>
                     <p className="leading-relaxed">Once a service is marked as delivered and accepted, funds are released to the Creator.</p>
                     <p className="leading-relaxed">Disputes will be handled via LeveledUp's dispute resolution process (see Section 10).</p>
                   </div>
