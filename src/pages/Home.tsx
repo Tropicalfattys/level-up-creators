@@ -349,7 +349,7 @@ export default function Home() {
             <Card className="bg-card border-border w-[120%] -mx-[10%] md:w-auto md:mx-0">
               <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-18 w-18 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-4">Escrow & Security</h3>
+                <h3 className="text-xl font-semibold mb-4">Payment Protection</h3>
                 <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
               </CardContent>
             </Card>
