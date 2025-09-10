@@ -167,13 +167,13 @@ const Terms = () => {
 
                 <section className="space-y-4">
                   <h2 className="text-2xl font-semibold text-foreground">Secure Payment Protection</h2>
-                  <div className="pl-6 space-y-2">
+                  <div className="space-y-2">
                     <p className="leading-relaxed">
                       LeveledUp provides a secure payment protection system to safeguard both Clients and Creators. When a Client purchases a service or content through the Platform, the payment is held in a temporary holding wallet managed by LeveledUp.
                     </p>
                     
                     <p className="leading-relaxed font-medium">Funds are released to the Creator only after:</p>
-                    <ul className="ml-6 space-y-1">
+                    <ul className="ml-6 space-y-1 list-none">
                       <li className="leading-relaxed">The service or content has been delivered, and</li>
                       <li className="leading-relaxed">The Client has confirmed completion, or any disputes have been resolved through LeveledUp's internal dispute process.</li>
                     </ul>
