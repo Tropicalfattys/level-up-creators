@@ -350,7 +350,7 @@ export default function Home() {
               <CardContent className="p-6 md:p-8 text-center">
                 <img src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/Blockchain/Escrow___Security-removebg-preview.png" alt="Escrow & Security" className="h-18 w-18 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">Payment Protection</h3>
-                <p className="text-muted-foreground">Your payment stays safe in escrow until the work is delivered and approved, backed by our dispute resolution system.</p>
+                <p className="text-muted-foreground">Payments are securely held by LeveledUp until the order is completed or resolved through our dispute protection system.</p>
               </CardContent>
             </Card>
             
