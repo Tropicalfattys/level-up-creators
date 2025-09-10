@@ -10,7 +10,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Star, MessageSquare, Video, FileText, Megaphone, Instagram, Facebook, Zap, Hash, Palette, Trophy, Target } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { UserHandle } from '@/components/ui/user-handle';
 import {
   Carousel,
   CarouselContent,
@@ -518,7 +517,7 @@ export default function Home() {
                       <h3 className="font-semibold mb-2">{testimonial.bookings?.services?.title}</h3>
                       <p className="text-sm text-muted-foreground mb-4 flex-grow">"{testimonial.comment}"</p>
                       <Link to={`/creator/${testimonial.users?.handle}`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                        <UserHandle handle={testimonial.users?.handle} className="text-xs" />
+                        @{testimonial.users?.handle}
                       </Link>
                     </CardContent>
                   </Card>
