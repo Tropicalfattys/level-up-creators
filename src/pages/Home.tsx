@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { VerificationBadge } from '@/components/ui/verification-badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
@@ -75,7 +76,8 @@ export default function Home() {
             serviceCount: count || 0,
             users: {
               handle: creator.handle,
-              avatar_url: creator.avatar_url
+              avatar_url: creator.avatar_url,
+              verified: creator.verified
             }
           };
         })
@@ -420,7 +422,10 @@ export default function Home() {
                                     </Avatar>
                                   </div>
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                  <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
+                                  <div className="flex items-center">
+                                    <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
+                                    <VerificationBadge verified={creator.users.verified} />
+                                  </div>
                                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
                                     Pro
                                   </Badge>
