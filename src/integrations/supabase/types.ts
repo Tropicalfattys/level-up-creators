@@ -1067,6 +1067,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_referral_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_name: string
+          details: string
+          status: string
+        }[]
+      }
       cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
