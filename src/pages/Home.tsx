@@ -117,7 +117,6 @@ export default function Home() {
 
         // Extract IDs for additional queries
         const reviewerIds = reviewsData.map(r => r.reviewer_id);
-        const bookingIds = reviewsData.map(r => r.booking_id);
 
         // Step 2: Fetch reviewer handles using get_public_profile function
         const usersDataPromises = reviewerIds.map(async (userId) => {
@@ -133,29 +132,27 @@ export default function Home() {
 
         const usersData = await Promise.all(usersDataPromises);
 
-        // Step 3: Fetch service titles via bookings
-        const { data: bookingsData, error: bookingsError } = await supabase
-          .from('bookings')
-          .select('id, services:service_id(title)')
-          .in('id', bookingIds);
+        // Step 3: Fetch service titles using the secure function
+        const reviewIds = reviewsData.map(r => r.id);
+        const { data: serviceTitlesData, error: serviceTitlesError } = await supabase.rpc('get_service_titles_for_reviews', {
+          review_ids: reviewIds
+        });
 
-        if (bookingsError) {
-          console.error('Bookings query error:', bookingsError);
-          throw bookingsError;
+        if (serviceTitlesError) {
+          console.error('Service titles query error:', serviceTitlesError);
+          throw serviceTitlesError;
         }
 
         // Step 4: Combine data client-side to match expected structure
         const combinedTestimonials = reviewsData.map(review => {
           const user = usersData?.find(u => u.id === review.reviewer_id);
-          const booking = bookingsData?.find(b => b.id === review.booking_id);
+          const serviceTitle = serviceTitlesData?.find(st => st.review_id === review.id);
           
           return {
             ...review,
             users: user ? { handle: user.handle } : { handle: 'Unknown' },
-            bookings: booking?.services ? { 
-              services: { title: booking.services.title } 
-            } : { 
-              services: { title: 'Service' } 
+            bookings: { 
+              services: { title: serviceTitle?.service_title || 'Service' } 
             }
           };
         });

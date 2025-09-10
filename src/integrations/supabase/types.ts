@@ -1126,6 +1126,13 @@ export type Database = {
           verified: boolean
         }[]
       }
+      get_service_titles_for_reviews: {
+        Args: { review_ids: string[] }
+        Returns: {
+          review_id: string
+          service_title: string
+        }[]
+      }
       submit_job_application: {
         Args: {
           application_email: string
