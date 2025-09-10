@@ -636,18 +636,17 @@ export default function Settings() {
                         <DialogTitle>Social Media Links Disclaimer</DialogTitle>
                       </DialogHeader>
                       <ScrollArea className="flex-1 px-4 max-h-[70vh]">
-                        <div className="text-sm space-y-4 py-4">
-                            <ul className="list-disc list-inside space-y-2">
-                              <li>All social media links you add here will be publicly visible on your profile.</li>
-                              <li>If you are applying to become a Pro Creator (verified status), your social links will be reviewed as part of the verification process.</li>
-                            </ul>
+                          <div className="text-sm space-y-4 py-4">
+                            <p>All social media links you add here will be publicly visible on your profile.</p>
+                            <p>If you become a Pro Creator and want to apply for verified status, your social links will be reviewed as part of the verification process.</p>
                             
                             <div>
-                              <h5 className="font-semibold mb-2">Verification Requirements:</h5>
+                              <h5 className="font-semibold mb-2">Verification Requirements for Verification Badge:</h5>
                               <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>You must connect at least two active social media accounts (e.g., Twitter + YouTube, Instagram + LinkedIn).</li>
                                 <li>On each of these accounts, you are required to post your unique referral link (found in your dashboard's referral section).</li>
-                                <li>Our team will verify that the referral link is live and visible on your accounts before your application can be approved.</li>
+                                <li>Our team will verify that the referral link is live and visible on your accounts before you can receive the blue verification badge for your profile.</li>
+                                <li>Once you have posted your unique referral links on your social media accounts, paste the links to those post below in the: "Verify Social Media Accounts For Pro Creators" for the Leveled up team to verify.</li>
                               </ul>
                             </div>
 
@@ -671,17 +670,16 @@ export default function Settings() {
                         <h4 className="font-semibold text-lg mb-3">Social Media Links Disclaimer</h4>
                         <ScrollArea className="h-96">
                           <div className="text-sm space-y-4 pr-4">
-                            <ul className="list-disc list-inside space-y-2">
-                              <li>All social media links you add here will be publicly visible on your profile.</li>
-                              <li>If you are applying to become a Pro Creator (verified status), your social links will be reviewed as part of the verification process.</li>
-                            </ul>
+                            <p>All social media links you add here will be publicly visible on your profile.</p>
+                            <p>If you become a Pro Creator and want to apply for verified status, your social links will be reviewed as part of the verification process.</p>
                             
                             <div>
-                              <h5 className="font-semibold mb-2">Verification Requirements:</h5>
+                              <h5 className="font-semibold mb-2">Verification Requirements for Verification Badge:</h5>
                               <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>You must connect at least two active social media accounts (e.g., Twitter + YouTube, Instagram + LinkedIn).</li>
                                 <li>On each of these accounts, you are required to post your unique referral link (found in your dashboard's referral section).</li>
-                                <li>Our team will verify that the referral link is live and visible on your accounts before your application can be approved.</li>
+                                <li>Our team will verify that the referral link is live and visible on your accounts before you can receive the blue verification badge for your profile.</li>
+                                <li>Once you have posted your unique referral links on your social media accounts, paste the links to those post below in the: "Verify Social Media Accounts For Pro Creators" for the Leveled up team to verify.</li>
                               </ul>
                             </div>
 
