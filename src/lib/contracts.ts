@@ -66,6 +66,50 @@ export const getPlatformWallet = async (network: string): Promise<string> => {
   return wallets[network] || PLATFORM_WALLETS[network as keyof typeof PLATFORM_WALLETS] || '';
 };
 
+// Dynamic subscription wallet fetcher (separate from escrow wallets)
+let cachedSubscriptionWallets: { [key: string]: string } | null = null;
+let subscriptionCacheTimestamp: number = 0;
+
+export const getSubscriptionWallets = async (): Promise<{ [key: string]: string }> => {
+  const now = Date.now();
+  
+  // Return cached wallets if cache is still valid
+  if (cachedSubscriptionWallets && (now - subscriptionCacheTimestamp) < CACHE_DURATION) {
+    return cachedSubscriptionWallets;
+  }
+  
+  try {
+    const { data: wallets, error } = await supabase
+      .from('subscription_wallets')
+      .select('network, wallet_address')
+      .eq('active', true);
+    
+    if (error) throw error;
+    
+    // Convert to object format
+    const walletsObject: { [key: string]: string } = {};
+    wallets?.forEach(wallet => {
+      walletsObject[wallet.network] = wallet.wallet_address;
+    });
+    
+    // Update cache
+    cachedSubscriptionWallets = walletsObject;
+    subscriptionCacheTimestamp = now;
+    
+    return walletsObject;
+  } catch (error) {
+    console.error('Failed to fetch subscription wallets, using fallback:', error);
+    // Return hardcoded fallback on error
+    return { ...PLATFORM_WALLETS };
+  }
+};
+
+// Helper function to get a specific subscription wallet address
+export const getSubscriptionWallet = async (network: string): Promise<string> => {
+  const wallets = await getSubscriptionWallets();
+  return wallets[network] || PLATFORM_WALLETS[network as keyof typeof PLATFORM_WALLETS] || '';
+};
+
 // Payment Method Options
 export const PAYMENT_METHODS = {
   ethereum_usdc: { 

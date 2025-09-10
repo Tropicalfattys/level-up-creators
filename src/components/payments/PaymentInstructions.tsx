@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getPlatformWallet, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
+import { getPlatformWallet, getSubscriptionWallet, PAYMENT_METHODS, NETWORK_CONFIG } from '@/lib/contracts';
 
 interface PaymentInstructionsProps {
   paymentMethod: string;
@@ -45,10 +45,12 @@ export const PaymentInstructions = ({
   const paymentConfig = PAYMENT_METHODS[paymentMethod as keyof typeof PAYMENT_METHODS];
   const networkConfig = NETWORK_CONFIG[paymentConfig.network as keyof typeof NETWORK_CONFIG];
   
-  // Fetch dynamic platform wallet address
+  // Fetch dynamic wallet address (subscription or platform based on payment type)
   const { data: adminWallet, isLoading: walletLoading, error: walletError } = useQuery({
-    queryKey: ['platform-wallet', paymentConfig.network],
-    queryFn: () => getPlatformWallet(paymentConfig.network),
+    queryKey: [paymentType === 'creator_tier' ? 'subscription-wallet' : 'platform-wallet', paymentConfig.network],
+    queryFn: () => paymentType === 'creator_tier' 
+      ? getSubscriptionWallet(paymentConfig.network)
+      : getPlatformWallet(paymentConfig.network),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 1
   });

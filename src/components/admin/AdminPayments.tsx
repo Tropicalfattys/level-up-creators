@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPayouts } from "./AdminPayouts";
 import { AdminEscrow } from "./AdminEscrow";
+import { AdminSubscriptionWallets } from "./AdminSubscriptionWallets";
 
 export const AdminPayments = () => {
   const [selectedTab, setSelectedTab] = useState("payment-management");
@@ -569,15 +570,7 @@ export const AdminPayments = () => {
       </TabsContent>
 
       <TabsContent value="subscriptions">
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscriptions</CardTitle>
-            <CardDescription>Manage subscription settings and billing</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Subscription management functionality will be added here.</p>
-          </CardContent>
-        </Card>
+        <AdminSubscriptionWallets />
       </TabsContent>
     </Tabs>
   );
