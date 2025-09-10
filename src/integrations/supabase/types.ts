@@ -1133,6 +1133,31 @@ export type Database = {
           service_title: string
         }[]
       }
+      get_services_with_creators: {
+        Args: {
+          category_filter?: string
+          max_price?: number
+          min_price?: number
+          search_query?: string
+          sort_option?: string
+        }
+        Returns: {
+          category: string
+          created_at: string
+          creator_avatar_url: string
+          creator_handle: string
+          creator_id: string
+          creator_rating: number
+          creator_review_count: number
+          creator_verified: boolean
+          delivery_days: number
+          description: string
+          payment_method: string
+          price_usdc: number
+          service_id: string
+          title: string
+        }[]
+      }
       submit_job_application: {
         Args: {
           application_email: string

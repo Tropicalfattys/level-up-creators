@@ -24,95 +24,14 @@ export default function Services() {
     queryFn: async () => {
       console.log('Fetching services with filters:', { selectedCategory, sortBy, searchQuery, priceRange });
       
-      // Get current user's handle for availability filtering
-      const { data: { user } } = await supabase.auth.getUser();
-      let userHandle = null;
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('handle')
-          .eq('id', user.id)
-          .single();
-        userHandle = userData?.handle;
-      }
-      
-      // First get services with basic filtering
-      let servicesQuery = supabase
-        .from('services')
-        .select(`
-          id,
-          title,
-          description,
-          price_usdc,
-          delivery_days,
-          category,
-          payment_method,
-          active,
-          created_at,
-          creator_id,
-          availability_type,
-          target_username
-        `)
-        .eq('active', true);
-
-      // Apply availability filter - show services that are either:
-      // 1. Available to everyone, OR
-      // 2. Available to select user AND current user matches target username
-      if (userHandle) {
-        servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
-      } else {
-        // If user not logged in, only show services available to everyone
-        servicesQuery = servicesQuery.eq('availability_type', 'everyone');
-      }
-
-      // Apply category filter
-      if (selectedCategory) {
-        servicesQuery = servicesQuery.eq('category', selectedCategory);
-      }
-
-      // Apply search query
-      if (searchQuery) {
-        // Create comprehensive search conditions
-        const searchConditions = [
-          `title.ilike.%${searchQuery}%`,
-          `description.ilike.%${searchQuery}%`,
-          `category.ilike.%${searchQuery}%`,
-          `payment_method.ilike.%${searchQuery}%`
-        ];
-
-        // Check if search query matches blockchain terms and add specific payment method searches
-        const blockchainTerms = ['ethereum', 'cardano', 'bsc', 'sui', 'solana'];
-        const lowerSearchQuery = searchQuery.toLowerCase();
-        
-        blockchainTerms.forEach(blockchain => {
-          if (lowerSearchQuery.includes(blockchain)) {
-            // Add search for payment methods containing this blockchain
-            searchConditions.push(`payment_method.ilike.%${blockchain}_%`);
-          }
-        });
-
-        servicesQuery = servicesQuery.or(searchConditions.join(', '));
-      }
-
-      // Apply price range filter
-      servicesQuery = servicesQuery.gte('price_usdc', priceRange[0]).lte('price_usdc', priceRange[1]);
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'price-low':
-          servicesQuery = servicesQuery.order('price_usdc', { ascending: true });
-          break;
-        case 'price-high':
-          servicesQuery = servicesQuery.order('price_usdc', { ascending: false });
-          break;
-        case 'delivery':
-          servicesQuery = servicesQuery.order('delivery_days', { ascending: true });
-          break;
-        default:
-          servicesQuery = servicesQuery.order('created_at', { ascending: false });
-      }
-
-      const { data: servicesData, error: servicesError } = await servicesQuery;
+      // Use the simplified database function for better performance and reliability
+      const { data: servicesData, error: servicesError } = await supabase.rpc('get_services_with_creators', {
+        category_filter: selectedCategory === 'all' ? null : selectedCategory,
+        search_query: searchQuery || null,
+        min_price: priceRange[0],
+        max_price: priceRange[1],
+        sort_option: sortBy
+      });
       
       if (servicesError) {
         console.error('Services query error:', servicesError);
@@ -123,80 +42,29 @@ export default function Services() {
         return [];
       }
 
-      // Get unique creator IDs
-      const creatorIds = [...new Set(servicesData.map(service => service.creator_id).filter(Boolean))];
-      
-      if (creatorIds.length === 0) {
-        return servicesData.map(service => ({
-          ...service,
-          creator: {
-            id: '',
-            user_id: service.creator_id || '',
-            rating: 0,
-            review_count: 0,
-            users: {
-              handle: 'Unknown',
-              avatar_url: '',
-            }
+      // Transform the data to match the expected structure
+      const servicesWithCreators = servicesData.map(service => ({
+        id: service.service_id,
+        title: service.title,
+        description: service.description,
+        price_usdc: service.price_usdc,
+        delivery_days: service.delivery_days,
+        category: service.category,
+        payment_method: service.payment_method,
+        created_at: service.created_at,
+        creator_id: service.creator_id,
+        creator: {
+          id: service.creator_id,
+          user_id: service.creator_id,
+          rating: service.creator_rating || 0,
+          review_count: service.creator_review_count || 0,
+          users: {
+            handle: service.creator_handle || 'Unknown',
+            avatar_url: service.creator_avatar_url || '',
+            verified: service.creator_verified || false,
           }
-        }));
-      }
-
-      // Get creators data
-      const { data: creatorsData, error: creatorsError } = await supabase
-        .from('creators')
-        .select(`
-          id,
-          user_id,
-          rating,
-          review_count
-        `)
-        .in('user_id', creatorIds);
-
-      if (creatorsError) {
-        console.error('Creators query error:', creatorsError);
-      }
-
-      // Get users data for the creators
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          handle,
-          avatar_url,
-          verified
-        `)
-        .in('id', creatorIds);
-
-      if (usersError) {
-        console.error('Users query error:', usersError);
-      }
-
-      // Combine the data with the correct structure
-      const servicesWithCreators = servicesData.map(service => {
-        const creator = creatorsData?.find(c => c.user_id === service.creator_id);
-        const user = usersData?.find(u => u.id === service.creator_id);
-        
-        return {
-          ...service,
-          creator: {
-            id: creator?.id || '',
-            user_id: creator?.user_id || service.creator_id || '',
-            rating: creator?.rating || 0,
-            review_count: creator?.review_count || 0,
-            users: {
-              handle: user?.handle || 'Unknown',
-              avatar_url: user?.avatar_url || '',
-              verified: user?.verified || false,
-            }
-          }
-        };
-      });
-
-      // Apply rating sort if needed (after we have the rating data)
-      if (sortBy === 'rating') {
-        servicesWithCreators.sort((a, b) => (b.creator.rating || 0) - (a.creator.rating || 0));
-      }
+        }
+      }));
       
       return servicesWithCreators;
     }

@@ -97,35 +97,14 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
         return [];
       }
 
-      // For each creator, get their services data
+      // For each creator, get their services data (simplified query without complex filtering)
       const creatorsWithServices = await Promise.all(
         creatorsData.map(async (creator) => {
-          // Get current user's handle for availability filtering
-          const { data: { user } } = await supabase.auth.getUser();
-          let userHandle = null;
-          if (user) {
-            const { data: userData } = await supabase
-              .from('users')
-              .select('handle')
-              .eq('id', user.id)
-              .single();
-            userHandle = userData?.handle;
-          }
-
-          let servicesQuery = supabase
+          const { data: services, error: servicesError } = await supabase
             .from('services')
             .select('price_usdc, delivery_days, title, description, category')
             .eq('creator_id', creator.user_id)
             .eq('active', true);
-
-          // Apply availability filter
-          if (userHandle) {
-            servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${userHandle})`);
-          } else {
-            servicesQuery = servicesQuery.eq('availability_type', 'everyone');
-          }
-
-          const { data: services, error: servicesError } = await servicesQuery;
 
           if (servicesError) {
             console.error('Error fetching services for creator:', creator.user_id, servicesError);
@@ -165,7 +144,7 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             id: creator.id,
             user_id: creator.user_id,
             handle: creator.handle || 'unknown',
-            avatar_url: creator.avatar_url, // Now included since database functions return avatar_url
+            avatar_url: creator.avatar_url,
             verified: creator.verified,
             headline: creator.headline,
             category: creator.category,
