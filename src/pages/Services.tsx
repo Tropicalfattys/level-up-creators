@@ -26,7 +26,7 @@ export default function Services() {
       
       // Use the simplified database function for better performance and reliability
       const { data: servicesData, error: servicesError } = await supabase.rpc('get_services_with_creators', {
-        category_filter: selectedCategory === 'all' ? null : selectedCategory,
+        category_filter: (selectedCategory === 'all' || selectedCategory === '') ? null : selectedCategory,
         search_query: searchQuery || null,
         min_price: priceRange[0],
         max_price: priceRange[1],
