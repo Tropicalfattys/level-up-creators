@@ -79,6 +79,9 @@ export const AdminCreators = () => {
 
   const updateCreatorStatus = async (creatorId: string, approved: boolean) => {
     try {
+      // Find the creator to get the user_id for query invalidation
+      const creator = creators?.find(c => c.id === creatorId);
+      
       const { error } = await supabase
         .from('creators')
         .update({ 
@@ -90,7 +93,15 @@ export const AdminCreators = () => {
       if (error) throw error;
 
       toast.success(`Creator ${approved ? 'approved' : 'rejected'} successfully`);
+      
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] });
+      
+      // Invalidate user-specific queries that the dashboard uses
+      if (creator?.user_id) {
+        queryClient.invalidateQueries({ queryKey: ['creator-profile', creator.user_id] });
+        queryClient.invalidateQueries({ queryKey: ['user-profile', creator.user_id] });
+      }
     } catch (error: any) {
       toast.error('Failed to update creator status: ' + error.message);
     }
