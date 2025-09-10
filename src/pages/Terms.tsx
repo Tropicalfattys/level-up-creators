@@ -175,7 +175,7 @@ const Terms = () => {
                     <p className="leading-relaxed font-medium">Funds are released to the Creator only after:</p>
                     <ul className="ml-6 space-y-1 list-none">
                       <li className="leading-relaxed">The service or content has been delivered, and</li>
-                      <li className="leading-relaxed">The Client has confirmed completion, or any disputes have been resolved through LeveledUp's internal dispute process.</li>
+                      <li className="leading-relaxed text-center">The Client has confirmed completion, or any disputes have been resolved through LeveledUp's internal dispute process.</li>
                     </ul>
                     
                     <p className="leading-relaxed">
