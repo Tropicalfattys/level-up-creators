@@ -118,7 +118,7 @@ const Terms = () => {
                   <h2 className="text-2xl font-semibold text-foreground">10. Dispute Resolution</h2>
                   <div className="pl-6 space-y-2">
                     <p className="leading-relaxed">If a User disputes a Creator's delivery, the matter will first be reviewed by LeveledUp's internal team.</p>
-                    <p className="leading-relaxed">Our decision is final with respect to escrow releases and refunds.</p>
+                    <p className="leading-relaxed">Our decision is final with respect to our payment protection system releases and refunds.</p>
                     <p className="leading-relaxed">Further disputes may be subject to arbitration (see Governing Law below).</p>
                   </div>
                 </section>
