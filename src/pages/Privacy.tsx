@@ -134,7 +134,7 @@ const Privacy = () => {
                   <h2 className="text-2xl font-semibold text-foreground">7. Data Security</h2>
                   <div className="pl-6 space-y-2">
                     <p className="leading-relaxed">• All sensitive information (wallet addresses, transactions) is encrypted at rest and in transit.</p>
-                    <p className="leading-relaxed">• Escrow services follow industry-standard security best practices.</p>
+                    <p className="leading-relaxed">• Secure Payment Protection Services follow industry-standard security best practices.</p>
                     <p className="leading-relaxed">• We regularly monitor and audit our systems for vulnerabilities.</p>
                   </div>
                 </section>
