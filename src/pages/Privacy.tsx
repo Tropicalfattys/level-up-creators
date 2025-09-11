@@ -76,7 +76,7 @@ const Privacy = () => {
                   <p className="leading-relaxed">We use collected data to:</p>
                   <div className="pl-6 space-y-2">
                     <p className="leading-relaxed">1. Provide, operate, and improve our services.</p>
-                    <p className="leading-relaxed">2. Process secure payments and escrow transactions.</p>
+                    <p className="leading-relaxed">2. Process secure payments and transactions.</p>
                     <p className="leading-relaxed">3. Track and analyze usage patterns to enhance user experience.</p>
                     <p className="leading-relaxed">4. Protect against fraud, abuse, and violations of law.</p>
                     <p className="leading-relaxed">5. Comply with KYC/AML (Know Your Customer / Anti-Money Laundering) obligations if required by law enforcement.</p>
