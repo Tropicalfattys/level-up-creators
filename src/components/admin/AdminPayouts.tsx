@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -502,7 +503,7 @@ export const AdminPayouts = () => {
           </div>
 
           <div>
-            <span className="text-muted-foreground text-sm">Refund Address:</span>
+            <span className="text-muted-foreground text-sm">Client Refund Address:</span>
             <div className="font-mono text-sm bg-muted p-2 rounded break-all">
               {getRefundAddress(refund.client_user, refund.network)}
             </div>
@@ -566,6 +567,120 @@ export const AdminPayouts = () => {
     </Card>
   );
 };
+
+  // New component for refunded services showing client information
+  const RefundedServiceCard = ({ payout }: { payout: PayoutRecord }) => {
+    // We need to get client info from the booking
+    const [clientInfo, setClientInfo] = useState<any>(null);
+    
+    // Fetch client info when component mounts
+    React.useEffect(() => {
+      const fetchClientInfo = async () => {
+        if (!payout.booking_id) return;
+        
+        const { data } = await supabase
+          .from('bookings')
+          .select(`
+            client_id,
+            tx_hash,
+            users:users!bookings_client_id_fkey (
+              handle,
+              email,
+              payout_address_eth,
+              payout_address_sol,
+              payout_address_bsc,
+              payout_address_cardano,
+              payout_address_sui
+            )
+          `)
+          .eq('id', payout.booking_id)
+          .single();
+          
+        if (data) {
+          setClientInfo(data);
+        }
+      };
+      
+      fetchClientInfo();
+    }, [payout.booking_id]);
+
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-red-500" />
+                <span className="font-semibold">
+                  {clientInfo?.users?.handle || clientInfo?.users?.email || 'Unknown Client'}
+                </span>
+              </div>
+              <Badge variant="destructive">
+                Refunded
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Service:</span>
+                <div className="font-medium">{payout.services?.title || 'Unknown Service'}</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Original Amount:</span>
+                <div className="font-medium">${payout.amount} USDC</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Network:</span>
+                <div className="capitalize">{payout.network}</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Refund Amount:</span>
+                <div className="font-semibold text-red-600">${formatRefundAmount(payout.amount)} USDC</div>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Payment Date:</span>
+                <div>{new Date(payout.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div>
+                <span className="text-muted-foreground text-sm">Client Refund Address:</span>
+                <div className="font-mono text-sm bg-muted p-2 rounded break-all">
+                  {clientInfo ? getRefundAddress(clientInfo.users, payout.network) : 'Loading...'}
+                </div>
+              </div>
+              
+              <div>
+                <span className="text-muted-foreground text-sm">Creator Payout Address:</span>
+                <div className="font-mono text-sm bg-muted p-2 rounded break-all">
+                  {getPayoutAddress(payout.creator_user, payout.network)}
+                </div>
+              </div>
+            </div>
+
+            {/* Show original payment transaction hash */}
+            {clientInfo?.tx_hash && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Original Payment Hash:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(getExplorerUrl(payout.network, clientInfo.tx_hash), '_blank')}
+                  className="flex items-center gap-1"
+                >
+                  <span className="font-mono text-xs">
+                    {clientInfo.tx_hash.slice(0, 10)}...{clientInfo.tx_hash.slice(-8)}
+                  </span>
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -646,7 +761,7 @@ export const AdminPayouts = () => {
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-4">Refunded Services</h4>
                       {refundedPayments.map((payout) => (
-                        <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                        <RefundedServiceCard key={payout.id} payout={payout} />
                       ))}
                     </div>
                   )}
