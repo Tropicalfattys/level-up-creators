@@ -381,7 +381,7 @@ export default function HowItWorks() {
             <Card className="text-center">
               <CardHeader>
                 <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle className="text-lg">Secure Escrow</CardTitle>
+                <CardTitle className="text-lg">Payment Protection</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
