@@ -168,14 +168,14 @@ export const CreatorServices = () => {
                 <CardDescription className="text-black line-clamp-2">
                   {service.description}
                 </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 mt-auto">
                 <Badge 
                   variant={service.active ? "default" : "secondary"}
-                  className={service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}
+                  className={`mb-2 ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
                 >
                   {service.active ? "Active" : "Paused"}
                 </Badge>
-              </CardHeader>
-              <CardContent className="space-y-4 mt-auto">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-black">Price:</span>
