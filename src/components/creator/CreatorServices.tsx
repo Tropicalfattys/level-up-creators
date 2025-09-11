@@ -172,7 +172,7 @@ export const CreatorServices = () => {
               <CardContent className="space-y-4 mt-auto">
                 <Badge 
                   variant={service.active ? "default" : "secondary"}
-                  className={`mb-2 ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
+                  className={`mb-2 self-start ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
                 >
                   {service.active ? "Active" : "Paused"}
                 </Badge>
