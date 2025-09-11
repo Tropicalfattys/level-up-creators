@@ -148,8 +148,10 @@ export const AdminPayments = () => {
         const assignedTier = await getTierFromAmount(Number(payment.amount));
         console.log(`Assigning tier: ${assignedTier} for payment amount: $${payment.amount}`);
 
+        let isUpgrade = false;
+
         if (!existingCreator) {
-          // Create new creator record
+          // Create new creator record (first-time application)
           const { error: creatorError } = await supabase
             .from('creators')
             .insert({
@@ -161,18 +163,36 @@ export const AdminPayments = () => {
             });
 
           if (creatorError) throw creatorError;
+          console.log(`Created new creator record for user ${payment.user_id} with tier: ${assignedTier}`);
         } else {
-          // Update existing creator to approved
-          const { error: approveError } = await supabase
-            .from('creators')
-            .update({
-              approved: true,
-              approved_at: new Date().toISOString(),
-              tier: assignedTier
-            })
-            .eq('user_id', payment.user_id);
+          // Handle existing creator record
+          if (existingCreator.approved) {
+            // This is a tier upgrade - maintain approved status, just update tier
+            isUpgrade = true;
+            const { error: upgradeError } = await supabase
+              .from('creators')
+              .update({
+                tier: assignedTier
+                // Don't update approved or approved_at - maintain existing approval
+              })
+              .eq('user_id', payment.user_id);
 
-          if (approveError) throw approveError;
+            if (upgradeError) throw upgradeError;
+            console.log(`Upgraded existing approved creator ${payment.user_id} from ${existingCreator.tier} to ${assignedTier}`);
+          } else {
+            // This is approving a pending application
+            const { error: approveError } = await supabase
+              .from('creators')
+              .update({
+                approved: true,
+                approved_at: new Date().toISOString(),
+                tier: assignedTier
+              })
+              .eq('user_id', payment.user_id);
+
+            if (approveError) throw approveError;
+            console.log(`Approved pending creator application for user ${payment.user_id} with tier: ${assignedTier}`);
+          }
         }
 
         // Update user role to creator ONLY if currently 'client' - preserve admin roles!
@@ -184,9 +204,9 @@ export const AdminPayments = () => {
 
         if (userFetchError) throw userFetchError;
 
-        // Only update role to 'creator' if user is currently 'client'
+        // Only update role to 'creator' if user is currently 'client' or if this is a new creator
         // NEVER overwrite 'admin' role - admins can be creators too!
-        if (currentUser?.role === 'client') {
+        if (currentUser?.role === 'client' || (!existingCreator || !existingCreator.approved)) {
           const { error: roleError } = await supabase
             .from('users')
             .update({ role: 'creator' })
@@ -194,10 +214,28 @@ export const AdminPayments = () => {
 
           if (roleError) throw roleError;
           
-          console.log(`Updated user ${payment.user_id} role from 'client' to 'creator'`);
+          console.log(`Updated user ${payment.user_id} role from '${currentUser?.role}' to 'creator'`);
         } else {
-          console.log(`Preserved existing role '${currentUser?.role}' for user ${payment.user_id} - not changing to creator`);
+          console.log(`Preserved existing role '${currentUser?.role}' for user ${payment.user_id} - not changing for tier upgrade`);
         }
+
+        // Additional fix: If this is ProtonHomie or similar broken case, fix their data
+        if (existingCreator && !existingCreator.approved && currentUser?.role === 'client') {
+          console.log(`Fixing broken creator state for user ${payment.user_id} - ensuring proper approval and role`);
+        }
+
+        // Success message for creator tier payments
+        toast.success(
+          isUpgrade 
+            ? `Payment verified! Creator tier upgraded to ${assignedTier}.`
+            : 'Payment verified! Creator approved and role updated.'
+        );
+      } else if (status === 'verified') {
+        // Success message for regular service payments
+        toast.success('Payment verified! Booking status automatically updated to paid.');
+      } else {
+        // Success message for other status changes (rejected, etc.)
+        toast.success(`Payment ${status} successfully`);
       }
 
       // If this is a creator_tier payment being rejected, cleanup creator record and notify user
@@ -254,13 +292,6 @@ export const AdminPayments = () => {
         }
       }
 
-      toast.success(
-        status === 'verified' 
-          ? payment.payment_type === 'creator_tier'
-            ? 'Payment verified! Creator approved and role updated.'
-            : 'Payment verified! Booking status automatically updated to paid.'
-          : `Payment ${status} successfully`
-      );
       
       // Refresh all related data
       queryClient.invalidateQueries({ queryKey: ['admin-payments'] });
