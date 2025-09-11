@@ -299,8 +299,13 @@ export const AdminPayouts = () => {
   // Using centralized explorer URL utility
 
   const getWorkStatus = (payout: PayoutRecord) => {
+    // Check if the booking is refunded
+    if (payout.booking_status === 'refunded') {
+      return { status: 'refunded', label: 'Refunded', variant: 'destructive' as const };
+    }
+    
     if (payout.has_open_dispute) {
-      return { status: 'disputed', label: 'Work Disputed', variant: 'destructive' as const };
+      return { status: 'disputed', label: 'Disputed', variant: 'destructive' as const };
     }
     
     if (payout.booking_status === 'accepted' || payout.booking_status === 'released') {
@@ -314,8 +319,8 @@ export const AdminPayouts = () => {
     return { status: 'in_progress', label: 'Work In Progress', variant: 'secondary' as const };
   };
 
-  // Filter based on whether payout_tx_hash exists instead of payout_status
-  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash) || [];
+  // Filter based on whether payout_tx_hash exists and exclude refunded bookings from pending
+  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash && p.booking_status !== 'refunded') || [];
   const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
   const pendingRefunds = refunds?.filter(r => !r.refund_tx_hash) || [];
   const completedRefunds = refunds?.filter(r => r.refund_tx_hash) || [];

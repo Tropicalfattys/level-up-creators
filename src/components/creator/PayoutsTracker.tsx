@@ -18,8 +18,12 @@ interface PayoutRecord {
   created_at: string;
   paid_out_at: string | null;
   service_id: string;
+  booking_id: string | null;
   services: {
     title: string;
+  } | null;
+  bookings: {
+    status: string;
   } | null;
 }
 
@@ -42,8 +46,12 @@ export const PayoutsTracker = () => {
           created_at,
           paid_out_at,
           service_id,
+          booking_id,
           services:services!payments_service_id_fkey (
             title
+          ),
+          bookings:bookings!payments_booking_id_fkey (
+            status
           )
         `)
         .eq('creator_id', user.id)
@@ -61,9 +69,12 @@ export const PayoutsTracker = () => {
     enabled: !!user?.id
   });
 
-  // Filter based on whether payout_tx_hash exists instead of payout_status
-  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash) || [];
-  const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
+  // Filter out refunded bookings and separate by completion status
+  const activePayouts = payouts?.filter(p => p.bookings?.status !== 'refunded') || [];
+  const refundedPayouts = payouts?.filter(p => p.bookings?.status === 'refunded') || [];
+  
+  const pendingPayouts = activePayouts.filter(p => !p.payout_tx_hash);
+  const completedPayouts = activePayouts.filter(p => p.payout_tx_hash);
 
   const formatAmount = (amount: number) => {
     // Calculate 85% of the original amount (platform takes 15%)
@@ -73,12 +84,14 @@ export const PayoutsTracker = () => {
 
   // Using centralized explorer URL utility
 
-  const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => (
+  const PayoutCard = ({ payout, isPending, isRefunded }: { payout: PayoutRecord; isPending: boolean; isRefunded?: boolean }) => (
     <Card className="mb-4">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {isPending ? (
+            {isRefunded ? (
+              <DollarSign className="h-4 w-4 text-red-500" />
+            ) : isPending ? (
               <Clock className="h-4 w-4 text-orange-500" />
             ) : (
               <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -87,8 +100,8 @@ export const PayoutsTracker = () => {
               {payout.services?.title || 'Service'}
             </span>
           </div>
-          <Badge variant={isPending ? "secondary" : "default"}>
-            {isPending ? 'Pending' : 'Paid Out'}
+          <Badge variant={isRefunded ? "destructive" : isPending ? "secondary" : "default"}>
+            {isRefunded ? 'Refunded' : isPending ? 'Pending' : 'Paid Out'}
           </Badge>
         </div>
         
@@ -197,6 +210,18 @@ export const PayoutsTracker = () => {
                 </SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Show refunded items if any exist */}
+            {refundedPayouts.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Refunded Services</h4>
+                <div>
+                  {refundedPayouts.map((payout) => (
+                    <PayoutCard key={payout.id} payout={payout} isPending={false} isRefunded={true} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedView === "pending" && (
               <>
