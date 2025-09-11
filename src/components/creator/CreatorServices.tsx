@@ -176,7 +176,7 @@ export const CreatorServices = () => {
                 </CardDescription>
                 <Badge 
                   variant={service.active ? "default" : "secondary"}
-                  className={`mt-2 self-start ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
+                  className={`mt-2 mx-auto ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
                 >
                   {service.active ? "Active" : "Paused"}
                 </Badge>
