@@ -32,7 +32,7 @@ const Terms = () => {
                   <div className="pl-6 space-y-2">
                     <p className="leading-relaxed">Browse and purchase Creator services (video shoutouts, live calls, social media engagements, etc.).</p>
                     <p className="leading-relaxed">Pay for services using supported cryptocurrency.</p>
-                    <p className="leading-relaxed">Use our integrated escrow system for secure transactions.</p>
+                    <p className="leading-relaxed">Use our integrated secure payment protection system for secure transactions.</p>
                     <p className="leading-relaxed">Interact with Creators primarily via social media channels (Twitter/X, Instagram, YouTube, TikTok, and others).</p>
                   </div>
                 </section>
