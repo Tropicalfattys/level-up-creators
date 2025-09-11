@@ -200,6 +200,60 @@ export const AdminPayments = () => {
         }
       }
 
+      // If this is a creator_tier payment being rejected, cleanup creator record and notify user
+      if (status === 'rejected' && payment.payment_type === 'creator_tier') {
+        // Remove creator record if it exists (cleanup application)
+        const { error: deleteCreatorError } = await supabase
+          .from('creators')
+          .delete()
+          .eq('user_id', payment.user_id)
+          .eq('approved', false); // Only delete unapproved records to be safe
+
+        if (deleteCreatorError) {
+          console.warn('Error deleting creator record:', deleteCreatorError);
+          // Don't throw - this might just mean no record exists, which is fine
+        }
+
+        // Revert user role back to 'client' if it was changed to 'creator' 
+        // (Only if not admin - preserve admin roles!)
+        const { data: currentUser, error: userFetchError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', payment.user_id)
+          .single();
+
+        if (userFetchError) {
+          console.warn('Error fetching user role:', userFetchError);
+        } else if (currentUser?.role === 'creator') {
+          // Only revert to 'client' if currently 'creator' - preserve 'admin' role
+          const { error: roleError } = await supabase
+            .from('users')
+            .update({ role: 'client' })
+            .eq('id', payment.user_id);
+
+          if (roleError) {
+            console.warn('Error reverting user role:', roleError);
+          } else {
+            console.log(`Reverted user ${payment.user_id} role from 'creator' back to 'client'`);
+          }
+        }
+
+        // Send notification to user about payment rejection and refund
+        const { error: notificationError } = await supabase
+          .rpc('create_notification', {
+            p_user_id: payment.user_id,
+            p_type: 'payment_rejected_subscription',
+            p_title: 'Creator Subscription Payment Rejected',
+            p_message: 'Your payment for creator subscription services has been rejected. If a payment was made, it will be refunded to your wallet address on file. You can apply to become a creator again at any time.',
+            p_payment_id: paymentId
+          });
+
+        if (notificationError) {
+          console.warn('Error sending rejection notification:', notificationError);
+          // Don't throw - notification failure shouldn't break the payment update
+        }
+      }
+
       toast.success(
         status === 'verified' 
           ? payment.payment_type === 'creator_tier'
