@@ -118,7 +118,7 @@ export default function HowItWorks() {
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
                       <Shield className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <div className="flex-1 text-left">Escrow protection — funds are only released when you approve the work</div>
+                      <div className="flex-1 text-left">Secure Payment Protection System— funds are only released when you approve the work</div>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
