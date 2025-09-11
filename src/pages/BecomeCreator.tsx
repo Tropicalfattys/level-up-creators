@@ -85,12 +85,25 @@ export default function BecomeCreator() {
         .maybeSingle();
 
       if (existingCreator) {
+        // Check if user has existing verified creator_tier payments
+        const { data: verifiedPayments } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('payment_type', 'creator_tier')
+          .eq('status', 'verified')
+          .limit(1);
+
+        const hasVerifiedPayments = verifiedPayments && verifiedPayments.length > 0;
+        
         // If user is already a creator, update their tier (tier upgrade)
         const { data, error } = await supabase
           .from('creators')
           .update({
             tier: tier,
-            approved: false, // Reset approval status for tier upgrade review
+            // Preserve approval status if user has verified payments (tier upgrade)
+            // Only reset to false for genuine new applications
+            approved: hasVerifiedPayments ? existingCreator.approved : false,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id)
