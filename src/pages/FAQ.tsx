@@ -30,7 +30,7 @@ const FAQ = () => {
     },
     {
       question: "What happens if there's a dispute?",
-      answer: "If a client or creator raises a dispute, our admin team will step in to review the details. Both parties will have the opportunity to provide evidence. The funds will only be released once a final ruling is made. The platform keeps the 15% fee no matter which way the dispute is ruled. So if the dispute is ruled in favor of the client and a refund is granted, they will only receive back 85% of the funds in question."
+      answer: "If a client or creator raises a dispute, our dispute resolution system will step in to review the details. All supporting evidence and deliverables, and conversations are reviewed. The funds will only be released once a final ruling is made. The platform keeps the 15% fee no matter which way the dispute is ruled. So if the dispute is ruled in favor of the client and a refund is granted, they will only receive back 85% of the funds in question."
     },
     {
       question: "How quickly do creators get paid?",
