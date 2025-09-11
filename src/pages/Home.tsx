@@ -200,6 +200,15 @@ export default function Home() {
       {/* Hero Section */}
       <section className={isMobile ? "py-20 px-0" : "py-20 px-4"}>
         <div className={isMobile ? "w-full text-center px-4" : "container mx-auto text-center"}>
+          {/* Hero Image */}
+          <div className="mb-8">
+            <img 
+              src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/hero.png" 
+              alt="LeveledUP Hero" 
+              className="mx-auto w-full max-w-2xl h-auto"
+            />
+          </div>
+          
           <h1 className="text-2xl md:text-6xl font-bold mb-6">
             <div className="mb-2">
               Hire the right Content Creator for your budget & Amplify Your Project.
