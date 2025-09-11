@@ -408,9 +408,9 @@ export default function HowItWorks() {
                 <CardTitle className="text-lg">Dispute Resolution</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  If something goes wrong, we step in. Our team provides fair dispute resolution, protecting both clients and creators so no one gets left behind.
-                </CardDescription>
+                 <CardDescription>
+                   If something goes wrong, our dispute resolution system kicks in. Our system provides fair dispute resolution, protecting both clients and creators so no one gets left behind.
+                 </CardDescription>
               </CardContent>
             </Card>
 
