@@ -26,7 +26,7 @@ const FAQ = () => {
     },
     {
       question: "How secure is Leveled Up?",
-      answer: "Security is a top priority. All funds are managed through encrypted escrow smart contracts, and all communication between clients and creators is fully secured. We never share or sell your data."
+      answer: "Security is a top priority. All funds are managed through our encrypted platform, and all communication between clients and creators is fully secured. We never share or sell your data."
     },
     {
       question: "What happens if there's a dispute?",
