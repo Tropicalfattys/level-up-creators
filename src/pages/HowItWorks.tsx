@@ -259,10 +259,10 @@ export default function HowItWorks() {
                   <CardTitle>Apply & Get Approved</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription>
-                    Create your profile and join the marketplace.
-                    Sign up, add your socials, and tell us what you offer. Once approved, your profile is live and ready to attract clients.
-                  </CardDescription>
+                   <CardDescription>
+                     Create your profile and join the marketplace.
+                     Sign up, add your socials, and fill out your profile. Once approved, your profile is live and ready to attract clients.
+                   </CardDescription>
                   
                   <div className="space-y-6 mt-6">
                     <div className="flex items-start gap-2">
