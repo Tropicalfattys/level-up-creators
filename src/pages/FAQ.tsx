@@ -10,7 +10,7 @@ const FAQ = () => {
     },
     {
       question: "What are the platform fees?",
-      answer: "Leveled Up charges a flat 15% platform fee. This covers escrow management, blockchain transaction costs, and secure payouts to creators.\n\nCreators keep 85% of their earnings.\nThere are no additional fees for clients booking services or creators listing services."
+      answer: "Leveled Up charges a flat 15% platform fee. This covers the payment protection and dispute resolution service and management, blockchain transaction costs, and secure payouts to creators.\n\nCreators keep 85% of their earnings.\nThere are no additional fees for clients booking services or creators listing services."
     },
     {
       question: "Is messaging free on Leveled Up?",
