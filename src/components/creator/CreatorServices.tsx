@@ -174,14 +174,14 @@ export const CreatorServices = () => {
                 <CardDescription className="!text-white line-clamp-2" style={{ color: 'white' }}>
                   {service.description}
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 mt-auto">
                 <Badge 
                   variant={service.active ? "default" : "secondary"}
-                  className={`mb-2 self-start ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
+                  className={`mt-2 self-start ${service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}
                 >
                   {service.active ? "Active" : "Paused"}
                 </Badge>
+              </CardHeader>
+              <CardContent className="space-y-4 mt-auto">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-black">Price:</span>
