@@ -396,9 +396,9 @@ export default function HowItWorks() {
                 <CardTitle className="text-lg">Verified Creators</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  No fakes. No guesswork. Every creator is reviewed before going live, and Pro Creators must verify their socials through referral links for added authenticity.
-                </CardDescription>
+                 <CardDescription>
+                   No fakes. No guesswork. Every creator is reviewed before going live, & Pro Creators can verify their socials through referral links for added authenticity.
+                 </CardDescription>
               </CardContent>
             </Card>
 
