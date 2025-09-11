@@ -82,15 +82,71 @@ export const AdminCreators = () => {
       // Find the creator to get the user_id for query invalidation
       const creator = creators?.find(c => c.id === creatorId);
       
-      const { error } = await supabase
-        .from('creators')
-        .update({ 
-          approved,
-          approved_at: approved ? new Date().toISOString() : null
-        })
-        .eq('id', creatorId);
+      if (!creator) {
+        throw new Error('Creator not found');
+      }
 
-      if (error) throw error;
+      if (approved) {
+        // Approve the creator
+        const { error } = await supabase
+          .from('creators')
+          .update({ 
+            approved: true,
+            approved_at: new Date().toISOString()
+          })
+          .eq('id', creatorId);
+
+        if (error) throw error;
+      } else {
+        // Reject the creator - delete the record entirely and cleanup
+        
+        // First, delete the creator record
+        const { error: deleteError } = await supabase
+          .from('creators')
+          .delete()
+          .eq('id', creatorId)
+          .eq('approved', false); // Safety: Only delete unapproved records
+
+        if (deleteError) throw deleteError;
+
+        // Revert user role back to 'client' if it was changed to 'creator'
+        // (Only if not admin - preserve admin roles!)
+        const { data: currentUser, error: userFetchError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', creator.user_id)
+          .single();
+
+        if (userFetchError) {
+          console.warn('Error fetching user role:', userFetchError);
+        } else if (currentUser?.role === 'creator') {
+          // Only revert to 'client' if currently 'creator' - preserve 'admin' role
+          const { error: roleError } = await supabase
+            .from('users')
+            .update({ role: 'client' })
+            .eq('id', creator.user_id);
+
+          if (roleError) {
+            console.warn('Error reverting user role:', roleError);
+          } else {
+            console.log(`Reverted user ${creator.user_id} role from 'creator' back to 'client'`);
+          }
+        }
+
+        // Send notification to user about rejection
+        const { error: notificationError } = await supabase
+          .rpc('create_notification', {
+            p_user_id: creator.user_id,
+            p_type: 'creator_application_rejected',
+            p_title: 'Creator Application Rejected',
+            p_message: 'Your creator application has been rejected. You can apply to become a creator again at any time with updated information.'
+          });
+
+        if (notificationError) {
+          console.warn('Error sending rejection notification:', notificationError);
+          // Don't throw - notification failure shouldn't break the rejection
+        }
+      }
 
       toast.success(`Creator ${approved ? 'approved' : 'rejected'} successfully`);
       
@@ -103,6 +159,7 @@ export const AdminCreators = () => {
         queryClient.invalidateQueries({ queryKey: ['user-profile', creator.user_id] });
       }
     } catch (error: any) {
+      console.error('Error updating creator status:', error);
       toast.error('Failed to update creator status: ' + error.message);
     }
   };
