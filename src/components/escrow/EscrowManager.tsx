@@ -248,7 +248,7 @@ export const EscrowManager = ({ bookingId, isClient = false }: EscrowManagerProp
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          Escrow Protection
+          Payment Protection Service
         </CardTitle>
         <CardDescription>
           Secure payment held until delivery is complete
