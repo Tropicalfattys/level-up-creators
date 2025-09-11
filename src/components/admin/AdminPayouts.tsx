@@ -50,6 +50,11 @@ interface RefundRecord {
   client_user: {
     handle: string | null;
     email: string | null;
+    payout_address_eth: string | null;
+    payout_address_sol: string | null;
+    payout_address_bsc: string | null;
+    payout_address_cardano: string | null;
+    payout_address_sui: string | null;
   } | null;
   bookings: {
     services: {
@@ -155,7 +160,12 @@ export const AdminPayouts = () => {
             ),
             client_user:users!bookings_client_id_fkey (
               handle,
-              email
+              email,
+              payout_address_eth,
+              payout_address_sol,
+              payout_address_bsc,
+              payout_address_cardano,
+              payout_address_sui
             )
           )
         `)
@@ -279,6 +289,27 @@ export const AdminPayouts = () => {
         return creator.payout_address_cardano || 'No ADA address';
       case 'sui':
         return creator.payout_address_sui || 'No SUI address';
+      default:
+        return 'Unknown network';
+    }
+  };
+
+  const getRefundAddress = (client: RefundRecord['client_user'], network: string) => {
+    if (!client) return 'No address';
+    
+    switch (network.toLowerCase()) {
+      case 'ethereum':
+        return client.payout_address_eth || 'No ETH address';
+      case 'base':
+        return client.payout_address_eth || 'No ETH address';
+      case 'solana':
+        return client.payout_address_sol || 'No SOL address';
+      case 'bsc':
+        return client.payout_address_bsc || 'No BSC address';
+      case 'cardano':
+        return client.payout_address_cardano || 'No ADA address';
+      case 'sui':
+        return client.payout_address_sui || 'No SUI address';
       default:
         return 'Unknown network';
     }
@@ -464,6 +495,13 @@ export const AdminPayouts = () => {
             <div className="col-span-2">
               <span className="text-muted-foreground">Dispute Date:</span>
               <div>{new Date(refund.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-muted-foreground text-sm">Refund Address:</span>
+            <div className="font-mono text-sm bg-muted p-2 rounded break-all">
+              {getRefundAddress(refund.client_user, refund.network)}
             </div>
           </div>
 
