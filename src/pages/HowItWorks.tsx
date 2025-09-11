@@ -57,10 +57,10 @@ export default function HowItWorks() {
                     </div>
                     <CardTitle className="text-2xl">Browse & Select</CardTitle>
                   </div>
-                  <CardDescription className="text-lg mb-6">
-                    Find the right creator for your project.
-                    Scroll through a wide range of verified crypto creators across categories like trading, DeFi, SocialFi, NFTs, gaming, music, memes, and more.
-                  </CardDescription>
+                   <CardDescription className="text-lg mb-6">
+                     Find the right creator for your project.
+                     Scroll through a wide range of verified crypto creators across categories like Twitter, TikTok, Facebook, Instagram Post & Videos, NFTs, gaming, music, memes, & more.
+                   </CardDescription>
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
                       <Search className="h-5 w-5 text-primary flex-shrink-0" />
