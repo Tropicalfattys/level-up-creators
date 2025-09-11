@@ -163,9 +163,9 @@ export const CreatorServices = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors flex flex-col h-full">
-              <CardHeader className="border-4 border-black rounded-lg !bg-gradient-to-r !from-purple-200 !to-purple-300">
-                <CardTitle className="text-xl text-black">{service.title}</CardTitle>
-                <CardDescription className="text-black line-clamp-2">
+              <CardHeader className="border-4 border-black rounded-lg !bg-gradient-to-r !from-blue-500 !to-gray-600">
+                <CardTitle className="text-xl text-white">{service.title}</CardTitle>
+                <CardDescription className="text-white line-clamp-2">
                   {service.description}
                 </CardDescription>
               </CardHeader>
