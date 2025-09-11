@@ -294,8 +294,9 @@ export const AdminPayouts = () => {
     }
   };
 
-  const getRefundAddress = (client: RefundRecord['client_user'], network: string) => {
+  const getRefundAddress = (client: RefundRecord['client_user'], network: string | null) => {
     if (!client) return 'No address';
+    if (!network) return client.payout_address_eth || client.payout_address_sol || 'No address available';
     
     switch (network.toLowerCase()) {
       case 'ethereum':
@@ -456,16 +457,6 @@ export const AdminPayouts = () => {
   };
 
   const RefundCard = ({ refund, isPending }: { refund: RefundRecord; isPending: boolean }) => {
-    // Debug logging to check what data we're receiving
-    console.log('RefundCard - Debug Data:', {
-      isPending,
-      refundId: refund.id,
-      refundTxHash: refund.refund_tx_hash,
-      network: refund.network,
-      clientHandle: refund.client_user?.handle,
-      hasRefundTxHash: !!refund.refund_tx_hash,
-      refundTxHashLength: refund.refund_tx_hash?.length
-    });
 
     return (
       <Card className="mb-4">
