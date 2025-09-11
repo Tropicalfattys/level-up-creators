@@ -12,6 +12,8 @@ export function getExplorerUrl(network: string, txHash: string): string {
     case 'ethereum':
     case 'eth':
       return `https://etherscan.io/tx/${txHash}`;
+    case 'base':
+      return `https://basescan.org/tx/${txHash}`;
     case 'bsc':
     case 'binance':
       return `https://bscscan.com/tx/${txHash}`;

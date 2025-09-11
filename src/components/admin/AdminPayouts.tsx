@@ -455,25 +455,37 @@ export const AdminPayouts = () => {
     );
   };
 
-  const RefundCard = ({ refund, isPending }: { refund: RefundRecord; isPending: boolean }) => (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isPending ? (
-                <RefreshCw className="h-4 w-4 text-orange-500" />
-              ) : (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              )}
-              <span className="font-semibold">
-                {refund.client_user?.handle || refund.client_user?.email || 'Unknown Client'}
-              </span>
+  const RefundCard = ({ refund, isPending }: { refund: RefundRecord; isPending: boolean }) => {
+    // Debug logging to check what data we're receiving
+    console.log('RefundCard - Debug Data:', {
+      isPending,
+      refundId: refund.id,
+      refundTxHash: refund.refund_tx_hash,
+      network: refund.network,
+      clientHandle: refund.client_user?.handle,
+      hasRefundTxHash: !!refund.refund_tx_hash,
+      refundTxHashLength: refund.refund_tx_hash?.length
+    });
+
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isPending ? (
+                  <RefreshCw className="h-4 w-4 text-orange-500" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                )}
+                <span className="font-semibold">
+                  {refund.client_user?.handle || refund.client_user?.email || 'Unknown Client'}
+                </span>
+              </div>
+              <Badge variant={isPending ? "secondary" : "default"}>
+                {isPending ? 'Refund Pending' : 'Refund Processed'}
+              </Badge>
             </div>
-            <Badge variant={isPending ? "secondary" : "default"}>
-              {isPending ? 'Refund Pending' : 'Refund Processed'}
-            </Badge>
-          </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -521,27 +533,48 @@ export const AdminPayouts = () => {
               </Button>
             </div>
           ) : (
-            refund.refund_tx_hash && (
+            // Always show transaction hash section for completed refunds
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Refund Transaction Hash:</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(getExplorerUrl(refund.network, refund.refund_tx_hash!), '_blank')}
-                  className="flex items-center gap-1"
-                >
-                  <span className="font-mono text-xs">
-                    {refund.refund_tx_hash.slice(0, 10)}...{refund.refund_tx_hash.slice(-8)}
-                  </span>
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
+                {refund.refund_tx_hash ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                      {refund.refund_tx_hash.slice(0, 10)}...{refund.refund_tx_hash.slice(-8)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        try {
+                          const explorerUrl = getExplorerUrl(refund.network, refund.refund_tx_hash!);
+                          window.open(explorerUrl, '_blank');
+                        } catch (error) {
+                          console.error('Failed to open explorer URL:', error);
+                        }
+                      }}
+                      className="flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground italic">No transaction hash recorded</span>
+                )}
               </div>
-            )
+              {refund.refund_tx_hash && (
+                <div className="text-xs text-muted-foreground">
+                  Full Hash: <span className="font-mono break-all">{refund.refund_tx_hash}</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </CardContent>
     </Card>
   );
+};
 
   return (
     <div className="space-y-6">
