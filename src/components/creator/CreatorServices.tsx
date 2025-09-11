@@ -164,18 +164,16 @@ export const CreatorServices = () => {
           {services.map((service) => (
             <Card key={service.id} className="bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 hover:border-cyan-400 transition-colors flex flex-col h-full">
               <CardHeader className="border-4 border-black rounded-lg !bg-gradient-to-r !from-purple-200 !to-purple-300">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-black">{service.title}</CardTitle>
-                  <Badge 
-                    variant={service.active ? "default" : "secondary"}
-                    className={service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}
-                  >
-                    {service.active ? "Active" : "Paused"}
-                  </Badge>
-                </div>
+                <CardTitle className="text-xl text-black">{service.title}</CardTitle>
                 <CardDescription className="text-black line-clamp-2">
                   {service.description}
                 </CardDescription>
+                <Badge 
+                  variant={service.active ? "default" : "secondary"}
+                  className={service.active ? "bg-green-600 text-white" : "bg-red-600 text-white"}
+                >
+                  {service.active ? "Active" : "Paused"}
+                </Badge>
               </CardHeader>
               <CardContent className="space-y-4 mt-auto">
                 <div className="space-y-2">
