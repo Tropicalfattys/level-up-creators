@@ -571,7 +571,7 @@ export const AdminPayouts = () => {
             <TabsContent value="refunds">
               {refundsLoading ? (
                 <div className="text-center py-8">Loading refunds...</div>
-              ) : pendingRefunds.length === 0 && refundedPayments.length === 0 ? (
+              ) : pendingRefunds.length === 0 && completedRefunds.length === 0 && refundedPayments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No pending refunds</p>
@@ -589,12 +589,22 @@ export const AdminPayouts = () => {
                     </div>
                   )}
                   
-                  {/* Show dispute-based refunds */}
+                  {/* Show pending dispute-based refunds */}
                   {pendingRefunds.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Dispute Refunds</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Pending Dispute Refunds</h4>
                       {pendingRefunds.map((refund) => (
                         <RefundCard key={refund.id} refund={refund} isPending={true} />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Show completed dispute-based refunds */}
+                  {completedRefunds.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Completed Dispute Refunds</h4>
+                      {completedRefunds.map((refund) => (
+                        <RefundCard key={refund.id} refund={refund} isPending={false} />
                       ))}
                     </div>
                   )}
@@ -605,31 +615,18 @@ export const AdminPayouts = () => {
             <TabsContent value="completed">
               {isLoading ? (
                 <div className="text-center py-8">Loading completed payouts...</div>
-              ) : completedPayouts.length === 0 && completedRefunds.length === 0 ? (
+              ) : completedPayouts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No completed transactions</p>
-                  <p className="text-sm">Completed payouts and refunds will appear here.</p>
+                  <p>No completed payouts</p>
+                  <p className="text-sm">Completed payouts will appear here after successful service deliveries.</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {completedPayouts.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Completed Payouts</h3>
-                      {completedPayouts.map((payout) => (
-                        <PayoutCard key={payout.id} payout={payout} isPending={false} />
-                      ))}
-                    </div>
-                  )}
-                  
-                  {completedRefunds.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Completed Refunds</h3>
-                      {completedRefunds.map((refund) => (
-                        <RefundCard key={refund.id} refund={refund} isPending={false} />
-                      ))}
-                    </div>
-                  )}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Completed Payouts</h3>
+                  {completedPayouts.map((payout) => (
+                    <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                  ))}
                 </div>
               )}
             </TabsContent>
