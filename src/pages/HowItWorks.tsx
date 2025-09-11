@@ -111,10 +111,10 @@ export default function HowItWorks() {
                     </div>
                     <CardTitle className="text-2xl">Pay with Crypto</CardTitle>
                   </div>
-                  <CardDescription className="text-lg mb-6">
-                    Book instantly with secure escrow payments.
-                    We specialize in stablecoin payments across Ethereum, Solana, BSC, Cardano, and SUI. Your funds are always protected until you're satisfied.
-                  </CardDescription>
+                   <CardDescription className="text-lg mb-6">
+                     Book instantly with our secure payments system.
+                     We specialize in stablecoin payments across Ethereum, Solana, BSC, Cardano, and SUI. Your funds are always protected until you're satisfied.
+                   </CardDescription>
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
                       <Shield className="h-5 w-5 text-green-600 flex-shrink-0" />
