@@ -58,7 +58,7 @@ const Privacy = () => {
                     <div>
                       <p className="leading-relaxed font-semibold">Device & Technical Data</p>
                       <div className="pl-4 space-y-1">
-                        <p className="leading-relaxed">• IP address, browser type, operating system.</p>
+                        <p className="leading-relaxed">• Browser type & operating system.</p>
                         <p className="leading-relaxed">• Log files and cookies for security, analytics, and optimization.</p>
                       </div>
                     </div>
