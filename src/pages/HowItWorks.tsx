@@ -331,10 +331,10 @@ export default function HowItWorks() {
                   <CardTitle>Deliver & Earn</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription>
-                    Get paid fast with secure escrow.
-                    Chat directly with clients in your dedicated project chat, deliver files and links, and once the client approves, funds are released instantly.
-                  </CardDescription>
+                   <CardDescription>
+                     Get paid fast with secure crypto payments.
+                     Chat directly with clients in your dedicated project chat, deliver files and links, and once the client approves, funds are released instantly.
+                   </CardDescription>
                   
                   <div className="space-y-6 mt-6">
                     <div className="flex items-start gap-2">
