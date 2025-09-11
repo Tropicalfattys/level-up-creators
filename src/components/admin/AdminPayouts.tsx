@@ -322,6 +322,10 @@ export const AdminPayouts = () => {
   // Filter based on whether payout_tx_hash exists and exclude refunded bookings from pending
   const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash && p.booking_status !== 'refunded') || [];
   const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
+  
+  // Get refunded payment records to show in refunds tab
+  const refundedPayments = payouts?.filter(p => p.booking_status === 'refunded') || [];
+  
   const pendingRefunds = refunds?.filter(r => !r.refund_tx_hash) || [];
   const completedRefunds = refunds?.filter(r => r.refund_tx_hash) || [];
 
@@ -522,7 +526,7 @@ export const AdminPayouts = () => {
                     Pending ({pendingPayouts.length})
                   </SelectItem>
                   <SelectItem value="refunds">
-                    Refunds ({pendingRefunds.length})
+                    Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length})
                   </SelectItem>
                   <SelectItem value="completed">
                     Completed ({completedPayouts.length})
@@ -537,7 +541,7 @@ export const AdminPayouts = () => {
                 </TabsTrigger>
                 <TabsTrigger value="refunds" className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4" />
-                  Refunds ({pendingRefunds.length})
+                  Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length})
                 </TabsTrigger>
                 <TabsTrigger value="completed" className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
@@ -567,17 +571,33 @@ export const AdminPayouts = () => {
             <TabsContent value="refunds">
               {refundsLoading ? (
                 <div className="text-center py-8">Loading refunds...</div>
-              ) : pendingRefunds.length === 0 ? (
+              ) : pendingRefunds.length === 0 && refundedPayments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No pending refunds</p>
                   <p className="text-sm">Refunds will appear here when disputes are resolved in favor of clients.</p>
                 </div>
               ) : (
-                <div>
-                  {pendingRefunds.map((refund) => (
-                    <RefundCard key={refund.id} refund={refund} isPending={true} />
-                  ))}
+                <div className="space-y-6">
+                  {/* Show refunded payment records */}
+                  {refundedPayments.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Refunded Services</h4>
+                      {refundedPayments.map((payout) => (
+                        <PayoutCard key={payout.id} payout={payout} isPending={false} />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Show dispute-based refunds */}
+                  {pendingRefunds.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Dispute Refunds</h4>
+                      {pendingRefunds.map((refund) => (
+                        <RefundCard key={refund.id} refund={refund} isPending={true} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
