@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 const FAQ = () => {
   const faqItems = [
     {
-      question: "How does payment and escrow work?",
+      question: "How does secure payment protection work?",
       answer: "All payments are securely held in escrow until services are rendered. Once the creator delivers the service, funds are automatically released within 3 days unless a dispute is raised.\n\nIf a dispute is submitted, our admin team will review the case and make a fair ruling. There is currently no fee for dispute resolution during our beta launch."
     },
     {
