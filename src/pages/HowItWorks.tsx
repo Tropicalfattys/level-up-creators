@@ -384,9 +384,9 @@ export default function HowItWorks() {
                 <CardTitle className="text-lg">Payment Protection</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  Every booking is backed by escrow. Payments are locked until you approve delivery, so creators only get paid when you're satisfied.
-                </CardDescription>
+                 <CardDescription>
+                   Every booking is backed by our secure payment protection system. Payments are locked until you approve delivery, so creators get paid when you're satisfied.
+                 </CardDescription>
               </CardContent>
             </Card>
 
