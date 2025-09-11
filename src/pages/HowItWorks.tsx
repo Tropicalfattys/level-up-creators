@@ -205,10 +205,10 @@ export default function HowItWorks() {
                     </div>
                     <CardTitle className="text-2xl">Receive & Review</CardTitle>
                   </div>
-                  <CardDescription className="text-lg mb-6">
-                    Get your custom content delivered & celebrate the results.
-                    When your creator delivers, you'll have 3 days to review before escrow releases payment.
-                  </CardDescription>
+                   <CardDescription className="text-lg mb-6">
+                     Get your custom content delivered & celebrate the results.
+                     When your creator delivers, you'll have 3 days to review before S.P.P.S. releases payment.
+                   </CardDescription>
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
                       <Upload className="h-5 w-5 text-purple-600 flex-shrink-0" />
