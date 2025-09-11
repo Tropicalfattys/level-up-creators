@@ -207,7 +207,7 @@ export default function HowItWorks() {
                   </div>
                    <CardDescription className="text-lg mb-6">
                      Get your custom content delivered & celebrate the results.
-                     When your creator delivers, you'll have 3 days to review before S.P.P.S. releases payment.
+                     When your creator delivers, you'll have 3 days to review before our secure payment protection system releases payment.
                    </CardDescription>
                   <div className="space-y-6">
                     <div className="flex items-start gap-2">
