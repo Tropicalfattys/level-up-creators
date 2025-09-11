@@ -42,7 +42,7 @@ const FAQ = () => {
     },
     {
       question: "Who can join Leveled Up?",
-      answer: "Creators: Crypto influencers, experts, and personalities offering shoutouts, AMAs, consultations, or other services.\nClients: Anyone looking to book a creator using cryptocurrency."
+      answer: "Everyone! Whether you're a creator, influencer, consultant, expert, or just someone with a unique talent to share, Leveled Up is built for you. Clients can join completely free, and creators can also start on our free basic tier. While all transactions on the platform are powered by cryptocurrency, you don't have to be a \"crypto influencer\" to join—our marketplace is open to all creators across every niche. We encourage everyone to join, connect, and collaborate\n\nCreators: Crypto influencers, experts, and personalities offering shoutouts, AMAs, consultations, or other services.\nClients: Anyone looking to book a creator using cryptocurrency."
     },
     {
       question: "What is influencer marketing?",
