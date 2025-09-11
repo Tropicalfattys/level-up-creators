@@ -420,9 +420,9 @@ export default function HowItWorks() {
                 <CardTitle className="text-lg">Rating System</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  Real reviews from real clients. Transparent ratings build accountability and help you pick the right creator with confidence.
-                </CardDescription>
+                 <CardDescription>
+                   Real reviews from real clients. Transparent ratings build accountability & helps clients pick the right creator with confidence, while building the creators reputation for continued success.
+                 </CardDescription>
               </CardContent>
             </Card>
           </div>
