@@ -279,13 +279,17 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Search Header */}
-      <div className="p-6">
-        <div className="container mx-auto">
-          {/* Browse Popular Categories Title */}
-          <h2 className="text-xl font-semibold mb-4 text-white">Browse Popular Categories</h2>
-
-          {/* Category Icons */}
-          <div className="overflow-hidden" ref={emblaRef}>
+      {isMobile ? (
+        <>
+          {/* Mobile: Full width category section */}
+          <div className="p-6 pb-0">
+            <div className="container mx-auto">
+              <h2 className="text-xl font-semibold mb-4 text-white">Browse Popular Categories</h2>
+            </div>
+          </div>
+          
+          {/* Mobile: Full width category icons */}
+          <div className="overflow-hidden px-6 pb-6" ref={emblaRef}>
             <div className="flex gap-4 pb-4">
               {categoryIcons.map((cat) => (
                 <div key={cat.category} className="flex-none">
@@ -321,8 +325,54 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
               ))}
             </div>
           </div>
+        </>
+      ) : (
+        /* Desktop: Keep current layout */
+        <div className="p-6">
+          <div className="container mx-auto">
+            {/* Browse Popular Categories Title */}
+            <h2 className="text-xl font-semibold mb-4 text-white">Browse Popular Categories</h2>
+
+            {/* Category Icons */}
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex gap-4 pb-4">
+                {categoryIcons.map((cat) => (
+                  <div key={cat.category} className="flex-none">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setCategoryFilter(cat.category === categoryFilter ? 'all' : cat.category)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-full w-20 h-20 ${
+                        categoryFilter === cat.category 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      {cat.image ? (
+                        <img 
+                          src={cat.image} 
+                          alt={cat.name}
+                          className="w-8 h-8 mb-1 object-contain"
+                          onError={(e) => {
+                            console.log('Image failed to load:', cat.image);
+                            e.currentTarget.style.display = 'none';
+                            const span = document.createElement('span');
+                            span.className = 'text-2xl mb-1';
+                            span.textContent = '📁';
+                            e.currentTarget.parentNode?.appendChild(span);
+                          }}
+                        />
+                      ) : (
+                        <span className="text-2xl mb-1">{cat.icon}</span>
+                      )}
+                      <span className="text-xs text-center font-medium leading-tight">{cat.name}</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filters Card */}
       <div className="container mx-auto px-6 pb-6">
