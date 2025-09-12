@@ -203,7 +203,7 @@ export default function Home() {
           {/* Hero Image */}
           <div className="mb-8">
             <img 
-              src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/hero.png" 
+              src="https://cpxqkiajkkeizsewhoel.supabase.co/storage/v1/object/public/icons/possible1.PNG" 
               alt="LeveledUP Hero" 
               className="mx-auto w-full max-w-2xl h-auto"
             />
