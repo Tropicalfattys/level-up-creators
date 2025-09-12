@@ -358,7 +358,7 @@ export default function Index() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button variant="outline" className="w-full justify-start" asChild>
-                    <Link to="/browse">
+                    <Link to="/services">
                       <Star className="h-4 w-4 mr-2" />
                       Browse Services
                     </Link>
