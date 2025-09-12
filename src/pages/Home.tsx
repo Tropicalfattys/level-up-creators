@@ -200,6 +200,11 @@ export default function Home() {
       {/* Hero Section */}
       <section className={isMobile ? "py-20 px-0" : "py-20 px-4"}>
         <div className={isMobile ? "w-full text-center px-4" : "container mx-auto text-center"}>
+          {/* Hero Title */}
+          <h2 className="text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] bg-clip-text text-transparent">
+            Level Up Your Influence
+          </h2>
+          
           {/* Hero Image */}
           <div className="mb-8">
             <img 
