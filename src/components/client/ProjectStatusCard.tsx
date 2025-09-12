@@ -31,13 +31,14 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
+      case 'rejected_by_creator': return 'destructive';
       default: return 'secondary';
     }
   };
 
   const getStatusProgress = (status: string, workStarted: boolean = false) => {
     // 4-step process: paid -> work started -> delivered -> accepted/released
-    if (status === 'pending' || status === 'payment_rejected') return 0;
+    if (status === 'pending' || status === 'payment_rejected' || status === 'rejected_by_creator') return 0;
     if (status === 'paid') return workStarted ? 2 : 1;
     if (status === 'delivered') return 3;
     if (status === 'accepted' || status === 'released') return 4;
@@ -88,6 +89,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
               {booking.status === 'accepted' && 'You accepted the delivery'}
               {booking.status === 'released' && 'Project completed successfully'}
+              {booking.status === 'rejected_by_creator' && 'Creator rejected this work - you will receive a refund'}
             </p>
           </div>
           <Clock className="h-4 w-4 text-muted-foreground" />
@@ -246,6 +248,18 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
           </div>
         )}
         
+        {booking.status === 'rejected_by_creator' && (
+          <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-200">
+            <div>
+              <p className="text-sm font-medium text-red-800">Work Rejected by Creator</p>
+              <p className="text-xs text-red-600">
+                The creator has rejected your booking. You will receive a 95% refund (5% platform fee applies).
+              </p>
+            </div>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+
         {(booking.status === 'accepted' || booking.status === 'released') && (
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">

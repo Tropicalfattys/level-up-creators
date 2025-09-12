@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight, AlertCircle, HelpCircle } from 'lucide-react';
+import { Clock, MessageSquare, Upload, DollarSign, User, CheckCircle, ExternalLink, Hash, Copy, Play, Package, ArrowRight, AlertCircle, HelpCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -298,6 +299,59 @@ export const BookingManagement = () => {
     }
   };
 
+  const handleRejectWork = async (bookingId: string) => {
+    try {
+      // Get booking details for notifications
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('client_id, creator_id, usdc_amount, chain')
+        .eq('id', bookingId)
+        .single();
+
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
+      // Update booking status to rejected_by_creator
+      await updateBookingStatus.mutateAsync({
+        bookingId,
+        status: 'rejected_by_creator'
+      });
+
+      // Send notifications to client and admin
+      if (booking.client_id) {
+        await supabase.rpc('create_notification', {
+          p_user_id: booking.client_id,
+          p_type: 'booking_rejected',
+          p_title: 'Creator Rejected Work',
+          p_message: 'The creator has rejected your booking. You will receive a refund with a 5% platform fee.'
+        });
+      }
+
+      // Notify admin
+      const { data: adminUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1)
+        .single();
+
+      if (adminUser) {
+        await supabase.rpc('create_notification', {
+          p_user_id: adminUser.id,
+          p_type: 'admin_booking_rejected',
+          p_title: 'Creator Rejected Booking',
+          p_message: 'A creator has rejected a booking. This booking requires a refund with 5% platform fee.'
+        });
+      }
+
+      toast.success('Work rejected successfully. Client will be notified.');
+    } catch (error) {
+      console.error('Reject work failed:', error);
+      toast.error('Failed to reject work');
+    }
+  };
+
   const handleProofSubmission = async (bookingId: string, proofData: { links: Array<{ url: string; label: string }>; files: File[]; notes: string }) => {
     try {
       let proofFileUrl = null;
@@ -359,6 +413,7 @@ export const BookingManagement = () => {
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
+      case 'rejected_by_creator': return 'destructive';
       default: return 'secondary';
     }
   };
@@ -382,7 +437,7 @@ export const BookingManagement = () => {
       all: safeBookings.length,
       new: safeBookings.filter(b => b.status === 'pending' || b.status === 'payment_rejected' || (b.status === 'paid' && !b.work_started_at)).length,
       active: safeBookings.filter(b => (b.status === 'paid' && b.work_started_at) || b.status === 'delivered').length,
-      completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
+      completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released' || b.status === 'rejected_by_creator').length,
     };
   };
 
@@ -399,7 +454,7 @@ export const BookingManagement = () => {
       return safeBookings.filter(booking => (booking.status === 'paid' && booking.work_started_at) || booking.status === 'delivered');
     }
     if (status === 'completed') {
-      return safeBookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
+      return safeBookings.filter(booking => booking.status === 'accepted' || booking.status === 'released' || booking.status === 'rejected_by_creator');
     }
     
     return safeBookings.filter(booking => booking.status === status);
@@ -776,7 +831,8 @@ export const BookingManagement = () => {
                       <div className="space-y-4">
                         {(booking.status === 'pending' || (booking.status === 'paid' && !isWorkStarted)) && (
                           <div className="space-y-3">
-                            <p className="text-sm text-muted-foreground">Click to start working on this project:</p>
+                            <p className="text-sm text-muted-foreground">Choose an action for this project:</p>
+                            
                             <Button 
                               size="sm" 
                               onClick={() => {
@@ -794,6 +850,38 @@ export const BookingManagement = () => {
                               {updateBookingStatus.isPending ? 'Starting...' : 'Start Work'}
                               <ArrowRight className="h-3 w-3 ml-2" />
                             </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  className="w-full"
+                                  disabled={updateBookingStatus.isPending}
+                                >
+                                  <X className="h-3 w-3 mr-2" />
+                                  Reject Work
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reject This Work?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to reject this booking? This action cannot be undone. 
+                                    The client will be refunded 95% of their payment (5% platform fee), and you will not be able to work on this project.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleRejectWork(booking.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Reject Work
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         )}
                         
@@ -893,6 +981,16 @@ export const BookingManagement = () => {
                           </div>
                         )}
                         
+                        {booking.status === 'rejected_by_creator' && (
+                          <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-200">
+                            <div>
+                              <p className="text-sm font-medium text-red-800">Work Rejected</p>
+                              <p className="text-xs text-red-600">You rejected this booking. Client will receive a refund.</p>
+                            </div>
+                            <X className="h-4 w-4 text-red-600" />
+                          </div>
+                        )}
+
                         {(booking.status === 'accepted' || booking.status === 'released') && (
                           <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">

@@ -48,6 +48,7 @@ interface RefundRecord {
   created_at: string;
   refund_tx_hash: string | null;
   refunded_at: string | null;
+  refund_type?: 'dispute' | 'rejection';
   client_user: {
     handle: string | null;
     email: string | null;
@@ -142,20 +143,52 @@ export const AdminPayouts = () => {
   const { data: refunds, isLoading: refundsLoading } = useQuery({
     queryKey: ['admin-refunds'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('disputes')
-        .select(`
-          id,
-          booking_id,
-          created_at,
-          refund_tx_hash,
-          refunded_at,
-          bookings!inner (
+      // Get both disputed refunds and rejected bookings
+      const [disputeRefunds, rejectedBookings] = await Promise.all([
+        // Existing dispute refunds
+        supabase
+          .from('disputes')
+          .select(`
+            id,
+            booking_id,
+            created_at,
+            refund_tx_hash,
+            refunded_at,
+            bookings!inner (
+              id,
+              usdc_amount,
+              chain,
+              status,
+              client_id,
+              services (
+                title
+              ),
+              client_user:users!bookings_client_id_fkey (
+                handle,
+                email,
+                payout_address_eth,
+                payout_address_sol,
+                payout_address_bsc,
+                payout_address_cardano,
+                payout_address_sui
+              )
+            )
+          `)
+          .eq('status', 'resolved')
+          .eq('bookings.status', 'refunded')
+          .order('created_at', { ascending: false }),
+        
+        // Rejected bookings
+        supabase
+          .from('bookings')
+          .select(`
             id,
             usdc_amount,
             chain,
             status,
             client_id,
+            created_at,
+            updated_at,
             services (
               title
             ),
@@ -168,19 +201,24 @@ export const AdminPayouts = () => {
               payout_address_cardano,
               payout_address_sui
             )
-          )
-        `)
-        .eq('status', 'resolved')
-        .eq('bookings.status', 'refunded')
-        .order('created_at', { ascending: false });
+          `)
+          .eq('status', 'rejected_by_creator')
+          .order('created_at', { ascending: false })
+      ]);
 
-      if (error) {
-        console.error('Error fetching refunds:', error);
-        throw error;
+      if (disputeRefunds.error) {
+        console.error('Error fetching dispute refunds:', disputeRefunds.error);
+        throw disputeRefunds.error;
       }
+
+      if (rejectedBookings.error) {
+        console.error('Error fetching rejected bookings:', rejectedBookings.error);
+        throw rejectedBookings.error;
+      }
+
       
-      // Transform the data to match our RefundRecord interface
-      const transformedData = data.map(item => ({
+      // Transform dispute refunds
+      const transformedDisputeRefunds = disputeRefunds.data.map(item => ({
         id: item.id,
         booking_id: item.booking_id,
         amount: item.bookings.usdc_amount,
@@ -191,10 +229,31 @@ export const AdminPayouts = () => {
         client_user: item.bookings.client_user,
         bookings: {
           services: item.bookings.services
-        }
+        },
+        refund_type: 'dispute' as const
+      }));
+
+      // Transform rejected bookings
+      const transformedRejectedBookings = rejectedBookings.data.map(item => ({
+        id: `rejected_${item.id}`, // Unique ID for rejected bookings
+        booking_id: item.id,
+        amount: item.usdc_amount,
+        network: item.chain,
+        created_at: item.updated_at || item.created_at, // Use updated_at for rejection time
+        refund_tx_hash: null,
+        refunded_at: null,
+        client_user: item.client_user,
+        bookings: {
+          services: item.services
+        },
+        refund_type: 'rejection' as const
       }));
       
-      return transformedData as RefundRecord[];
+      // Combine and sort by creation date
+      const allRefunds = [...transformedDisputeRefunds, ...transformedRejectedBookings]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      return allRefunds as RefundRecord[];
     }
   });
 
@@ -323,9 +382,10 @@ export const AdminPayouts = () => {
     return payoutAmount.toFixed(2);
   };
 
-  const formatRefundAmount = (amount: number) => {
-    // For refunds, we refund 85% (client loses the 15% platform fee)
-    const refundAmount = amount * 0.85;
+  const formatRefundAmount = (amount: number, refundType?: 'dispute' | 'rejection') => {
+    // For creator rejections, only 5% platform fee (95% refund)
+    // For disputes, normal 15% platform fee (85% refund)
+    const refundAmount = refundType === 'rejection' ? amount * 0.95 : amount * 0.85;
     return refundAmount.toFixed(2);
   };
 
@@ -458,6 +518,7 @@ export const AdminPayouts = () => {
   };
 
   const RefundCard = ({ refund, isPending }: { refund: RefundRecord; isPending: boolean }) => {
+    const isRejection = refund.refund_type === 'rejection';
 
     return (
       <Card className="mb-4">
@@ -474,9 +535,16 @@ export const AdminPayouts = () => {
                   {refund.client_user?.handle || refund.client_user?.email || 'Unknown Client'}
                 </span>
               </div>
-              <Badge variant={isPending ? "secondary" : "default"}>
-                {isPending ? 'Refund Pending' : 'Refund Processed'}
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <Badge variant={isPending ? "secondary" : "default"}>
+                  {isPending ? 'Refund Pending' : 'Refund Processed'}
+                </Badge>
+                {isRejection && (
+                  <Badge variant="destructive" className="text-xs">
+                    Rejected By Creator
+                  </Badge>
+                )}
+              </div>
             </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -494,10 +562,14 @@ export const AdminPayouts = () => {
             </div>
             <div>
               <span className="text-muted-foreground">Refund Amount:</span>
-              <div className="font-semibold text-red-600">${formatRefundAmount(refund.amount)} USDC</div>
+              <div className="font-semibold text-red-600">
+                ${formatRefundAmount(refund.amount, refund.refund_type)} USDC
+                {isRejection && <span className="text-xs text-muted-foreground ml-1">(5% fee)</span>}
+                {!isRejection && <span className="text-xs text-muted-foreground ml-1">(15% fee)</span>}
+              </div>
             </div>
             <div className="col-span-2">
-              <span className="text-muted-foreground">Dispute Date:</span>
+              <span className="text-muted-foreground">{isRejection ? 'Rejection Date:' : 'Dispute Date:'}</span>
               <div>{new Date(refund.created_at).toLocaleDateString()}</div>
             </div>
           </div>
