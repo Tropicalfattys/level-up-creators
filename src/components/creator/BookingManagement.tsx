@@ -453,7 +453,7 @@ export const BookingManagement = () => {
           <div className="font-medium mb-1">1. Payment Verification</div>
           <div className="text-xs space-y-1 ml-2">
             <div>• Each new booking shows a status: Pending or Paid.</div>
-            <div>• Work cannot begin until the booking is marked Paid. Our escrow team verifies funds before approving.</div>
+            <div>• Work cannot begin until the booking is marked Paid. Our 'payment Protection Service' verifies funds before approving.</div>
           </div>
         </div>
 
@@ -481,7 +481,7 @@ export const BookingManagement = () => {
           <div className="text-xs space-y-1 ml-2">
             <div>• After you submit proof, the client may either:</div>
             <div>• Accept Work → Funds are released within 72 hours (85% to you, 15% to the platform).</div>
-            <div>• File a Dispute → Both parties can provide evidence via chat. Admins review and make a final decision.</div>
+            <div>• File a Dispute → In the event of a dispute our 'Dispute Resolution System' reviews all materials and makes a final decision.</div>
           </div>
         </div>
 
@@ -495,7 +495,7 @@ export const BookingManagement = () => {
 
         <div className="border-t pt-2 mt-3">
           <div className="font-medium text-orange-600 mb-1">⚠️ Important:</div>
-          <div className="text-xs">Keep all communication and file transfers within the platform. This ensures proper dispute resolution if needed. Off-platform agreements are not protected by escrow.</div>
+          <div className="text-xs">Keep all communication and file transfers within the platform. This ensures proper dispute resolution if needed. Off-platform agreements are not protected by Payment Protect Service.</div>
         </div>
 
         <div className="border-t pt-2 mt-3">
