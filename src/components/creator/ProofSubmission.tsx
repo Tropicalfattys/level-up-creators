@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,8 @@ export const ProofSubmission = ({
   onSubmitProof, 
   isSubmitting 
 }: ProofSubmissionProps) => {
+  const isMobile = useIsMobile();
+  
   // Initialize with current proof links or default structure
   const initialLinks = currentProof?.links || (currentProof?.link ? [{ url: currentProof.link, label: 'Social Proof' }] : [{ url: '', label: '' }]);
   
@@ -177,7 +180,7 @@ export const ProofSubmission = ({
 
         {/* Multiple Proof Links */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className={isMobile ? "flex flex-col gap-2" : "flex items-center justify-between"}>
             <Label className="flex items-center gap-2">
               <Link className="h-4 w-4" />
               Proof Links
@@ -242,7 +245,7 @@ export const ProofSubmission = ({
 
         {/* Multiple File Upload */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className={isMobile ? "flex flex-col gap-2" : "flex items-center justify-between"}>
             <Label className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Upload Files (Screenshots, Documents, etc.)
