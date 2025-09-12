@@ -22,6 +22,8 @@ interface Service {
   delivery_days: number;
   category: string;
   payment_method: string;
+  availability_type?: string;
+  target_username?: string;
   creator_id?: string; // Make this optional since it might come from creator structure
   creator?: {
     id: string;
@@ -59,6 +61,27 @@ export const BookingModal = ({ service, creator, isOpen, onClose, onBookingCompl
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // CRITICAL: Add availability validation to BookingModal
+  if (service.availability_type === 'select_user' && service.target_username !== userProfile?.handle) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className={isMobile ? "max-w-[95vw] max-h-[90vh] overflow-y-auto" : "max-w-2xl"}>
+          <DialogHeader>
+            <DialogTitle>Service Not Available</DialogTitle>
+            <DialogDescription>
+              This service is only available to a specific user and you don't have access to it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={onClose} variant="outline">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
   // Check if user is banned - prevent booking
   if (userProfile?.banned) {
     return (

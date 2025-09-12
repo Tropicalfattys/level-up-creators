@@ -18,6 +18,8 @@ interface Service {
   category: string;
   payment_method?: string;
   creator_id?: string;
+  availability_type?: string;
+  target_username?: string;
   creator?: {
     id: string;
     user_id: string;
@@ -37,7 +39,7 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailModalProps) => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const isMobile = useIsMobile();
   const [showBookingModal, setShowBookingModal] = useState(false);
   
@@ -48,6 +50,13 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
       // Redirect to auth page or show login modal
       return;
     }
+    
+    // CRITICAL: Check availability restrictions before allowing booking
+    if (service.availability_type === 'select_user' && service.target_username !== userProfile?.handle) {
+      // Don't show booking modal for unauthorized users
+      return;
+    }
+    
     setShowBookingModal(true);
   };
 
@@ -146,12 +155,23 @@ export const ServiceDetailModal = ({ service, isOpen, onClose }: ServiceDetailMo
 
             <div className={isMobile ? "flex flex-col gap-3 pt-4" : "flex gap-3 pt-4"}>
               {user ? (
-              <Button 
-                onClick={handleBookNow}
-                className="flex-1"
-              >
-                Continue Booking Service
-              </Button>
+                // Check if user has access to this service
+                service.availability_type === 'select_user' && service.target_username !== userProfile?.handle ? (
+                  <Button 
+                    disabled
+                    className="flex-1"
+                    variant="secondary"
+                  >
+                    Service Not Available
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleBookNow}
+                    className="flex-1"
+                  >
+                    Continue Booking Service
+                  </Button>
+                )
               ) : (
                 <Button asChild className="flex-1">
                   <a href="/auth">Sign In to Book</a>

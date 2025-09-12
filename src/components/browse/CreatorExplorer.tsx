@@ -14,6 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign, Package, Filter, Search, Heart, MessageCircle, User } from 'lucide-react';
 import { useUserFollows } from '@/hooks/useUserFollows';
+import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreatorData {
@@ -42,7 +43,12 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const navigate = useNavigate();
   const { addFollow, removeFollow, isFollowing } = useUserFollows();
+  const { user } = useAuth();
+  const { userProfile } = useAuth();
   const isMobile = useIsMobile();
+  
+  // Get current user's handle for availability filtering
+  const currentUserHandle = userProfile?.handle;
   
   // Embla carousel for category icons
   const [emblaRef] = useEmblaCarousel({
@@ -97,14 +103,23 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
         return [];
       }
 
-      // For each creator, get their services data (simplified query without complex filtering)
+      // For each creator, get their services data with availability filtering
       const creatorsWithServices = await Promise.all(
         creatorsData.map(async (creator) => {
-          const { data: services, error: servicesError } = await supabase
+          let servicesQuery = supabase
             .from('services')
             .select('price_usdc, delivery_days, title, description, category')
             .eq('creator_id', creator.user_id)
             .eq('active', true);
+
+          // Apply availability filter - show everyone services or select_user services for current user
+          if (currentUserHandle) {
+            servicesQuery = servicesQuery.or(`availability_type.eq.everyone,and(availability_type.eq.select_user,target_username.eq.${currentUserHandle})`);
+          } else {
+            servicesQuery = servicesQuery.eq('availability_type', 'everyone');
+          }
+
+          const { data: services, error: servicesError } = await servicesQuery;
 
           if (servicesError) {
             console.error('Error fetching services for creator:', creator.user_id, servicesError);
