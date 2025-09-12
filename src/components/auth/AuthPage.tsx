@@ -226,15 +226,16 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <Card className="w-full max-w-md bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 p-[2px] rounded-lg">
+        <div className="bg-card rounded-lg">
+          <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Welcome to LeveledUp</CardTitle>
           <CardDescription className="text-center">
             Connect with content creators for any niche and grow your project!
           </CardDescription>
-        </CardHeader>
-        <CardContent>
+         </CardHeader>
+          <CardContent>
           {isPasswordReset ? (
             <div className="space-y-4">
               <div className="text-center">
@@ -556,7 +557,8 @@ export const AuthPage = () => {
               </div>
             </>
           )}
-        </CardContent>
+          </CardContent>
+        </div>
       </Card>
     </div>
   );
