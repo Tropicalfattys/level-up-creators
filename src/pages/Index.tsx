@@ -257,8 +257,8 @@ export default function Index() {
       {!hasCreatorProfile && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className={`flex items-center ${isMobile ? 'flex-col gap-4' : 'justify-between'}`}>
+              <div className={isMobile ? 'text-center' : ''}>
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-primary" />
                   Become a Creator
@@ -267,7 +267,7 @@ export default function Index() {
                   Start earning by offering your expertise to the crypto community
                 </CardDescription>
               </div>
-              <Button asChild>
+              <Button asChild className={isMobile ? 'w-full' : ''}>
                 <Link to="/become-creator">
                   <Plus className="h-4 w-4 mr-2" />
                   Apply Now
