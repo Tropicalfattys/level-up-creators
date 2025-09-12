@@ -230,8 +230,9 @@ export const ClientBookings = () => {
                     <div className="font-medium mb-1">1. Booking a Service</div>
                     <div className="text-xs space-y-1 ml-2">
                       <div>• Browse creator profiles and select a service</div>
-                      <div>• Choose payment method (MetaMask for EVM or Phantom for Solana)</div>
-                      <div>• Pay the exact USDC amount to our escrow wallet</div>
+                      <div>• Select "Book Now"</div>
+                      <div>• Pay the exact USDC or USDM to the address provided</div>
+                      <div>• Paste your TX hash in the payment window to complete booking</div>
                       <div>• Your payment is held safely until delivery is complete</div>
                     </div>
                   </div>
@@ -269,7 +270,7 @@ export const ClientBookings = () => {
                   <div>
                     <div className="font-medium mb-1">5. Payment Release</div>
                     <div className="text-xs space-y-1 ml-2">
-                      <div>• Upon acceptance or auto-release, escrow funds are sent to creator</div>
+                      <div>• Upon acceptance or auto-release, funds are sent to creator</div>
                       <div>• Transaction is recorded with payout details</div>
                       <div>• Both parties can leave reviews for each other</div>
                       <div>• Service is marked as completed</div>
@@ -279,9 +280,9 @@ export const ClientBookings = () => {
                   <div>
                     <div className="font-medium mb-1">🛡️ Protection & Security</div>
                     <div className="text-xs space-y-1 ml-2">
-                      <div>• <span className="font-medium">Escrow Protection:</span> Funds held until delivery confirmed</div>
-                      <div>• <span className="font-medium">Dispute Resolution:</span> Admin team reviews any conflicts</div>
-                      <div>• <span className="font-medium">Secure Payments:</span> Direct wallet-to-wallet USDC transactions</div>
+                      <div>• <span className="font-medium">Payment Protection:</span> Funds held until delivery confirmed</div>
+                      <div>• <span className="font-medium">Dispute Resolution:</span> Dispute Resolution Service reviews any conflicts</div>
+                      <div>• <span className="font-medium">Secure Payments:</span> Direct wallet-to-wallet USDC & USDM transactions</div>
                       <div>• <span className="font-medium">Chat History:</span> All communications saved for reference</div>
                     </div>
                   </div>
