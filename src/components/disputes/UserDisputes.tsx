@@ -19,6 +19,7 @@ interface BookingForDispute {
   status: string;
   created_at: string;
   delivered_at?: string;
+  chain?: string;
   services: {
     title: string;
   };
@@ -120,12 +121,13 @@ export const UserDisputes = () => {
           resolution_note,
           refund_tx_hash,
           refunded_at,
-          bookings (
+           bookings (
             id,
             usdc_amount,
             status,
             created_at,
             delivered_at,
+            chain,
             services (title),
             client:users!bookings_client_id_fkey (handle),
             creator:users!bookings_creator_id_fkey (handle)
@@ -344,12 +346,12 @@ export const UserDisputes = () => {
                             {outcome.winner === 'client' && dispute.refund_tx_hash && (
                               <div className="flex items-center gap-1 ml-2">
                                 <span className="text-xs text-muted-foreground">Refund TX:</span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-auto p-1 text-xs"
-                                  onClick={() => window.open(getExplorerUrl('ethereum', dispute.refund_tx_hash!), '_blank')}
-                                >
+                                 <Button
+                                   size="sm"
+                                   variant="ghost"
+                                   className="h-auto p-1 text-xs"
+                                   onClick={() => window.open(getExplorerUrl(dispute.bookings.chain || 'ethereum', dispute.refund_tx_hash!), '_blank')}
+                                 >
                                   <code className="text-xs bg-muted px-1 py-0.5 rounded">
                                     {dispute.refund_tx_hash.slice(0, 6)}...{dispute.refund_tx_hash.slice(-6)}
                                   </code>
