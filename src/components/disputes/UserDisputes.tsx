@@ -1,17 +1,11 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Plus, Clock, Shield, CheckCircle, XCircle, User, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
-import { format, differenceInHours } from 'date-fns';
+import { AlertTriangle, Shield, CheckCircle, User, ExternalLink } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface BookingForDispute {
   id: string;
@@ -48,45 +42,6 @@ interface ExistingDispute {
 
 export const UserDisputes = () => {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
-  const [selectedBooking, setSelectedBooking] = useState<string>('');
-  const [disputeReason, setDisputeReason] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  // Fetch user's bookings that are eligible for disputes
-  const { data: eligibleBookings } = useQuery({
-    queryKey: ['eligible-bookings-for-disputes', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          usdc_amount,
-          status,
-          created_at,
-          delivered_at,
-          services (title),
-          client:users!bookings_client_id_fkey (handle),
-          creator:users!bookings_creator_id_fkey (handle)
-        `)
-        .or(`client_id.eq.${user.id},creator_id.eq.${user.id}`)
-        .in('status', ['paid', 'in_progress', 'delivered'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Filter bookings that are within 48 hours of delivery or payment
-      return (data || []).filter(booking => {
-        const relevantDate = booking.delivered_at || booking.created_at;
-        const hoursElapsed = differenceInHours(new Date(), new Date(relevantDate));
-        return hoursElapsed <= 48;
-      });
-    },
-    enabled: !!user
-  });
 
   // Fetch existing disputes
   const { data: existingDisputes } = useQuery({
@@ -142,52 +97,6 @@ export const UserDisputes = () => {
     enabled: !!user
   });
 
-  // Create dispute mutation
-  const createDispute = useMutation({
-    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason: string }) => {
-      if (!user) throw new Error('User not authenticated');
-
-      // Determine if user is client or creator for this booking
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .select('client_id, creator_id')
-        .eq('id', bookingId)
-        .single();
-
-      if (bookingError || !booking) throw new Error('Booking not found');
-
-      const openedBy = booking.client_id === user.id ? 'client' : 'creator';
-
-      const { error } = await supabase
-        .from('disputes')
-        .insert({
-          booking_id: bookingId,
-          reason,
-          opened_by: openedBy
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-disputes'] });
-      queryClient.invalidateQueries({ queryKey: ['eligible-bookings-for-disputes'] });
-      setIsDialogOpen(false);
-      setSelectedBooking('');
-      setDisputeReason('');
-      toast.success('Dispute created successfully');
-    },
-    onError: () => {
-      toast.error('Failed to create dispute');
-    }
-  });
-
-  const handleCreateDispute = () => {
-    if (!selectedBooking || !disputeReason.trim()) {
-      toast.error('Please select a booking and provide a reason for the dispute');
-      return;
-    }
-    createDispute.mutate({ bookingId: selectedBooking, reason: disputeReason });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -226,69 +135,13 @@ export const UserDisputes = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className={isMobile ? 'flex flex-col space-y-3' : 'flex justify-between items-center'}>
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Disputes
-              </CardTitle>
-              <CardDescription>
-                Create disputes for services within 48 hours of payment or delivery
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Dispute
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Dispute</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Select Booking</label>
-                    <Select value={selectedBooking} onValueChange={setSelectedBooking}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a booking to dispute" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {eligibleBookings?.map((booking) => (
-                          <SelectItem key={booking.id} value={booking.id}>
-                            {booking.services.title} - ${booking.usdc_amount} USDC
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Only bookings from the last 48 hours are eligible for disputes
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Reason for Dispute</label>
-                    <Textarea
-                      placeholder="Explain the reason for this dispute..."
-                      value={disputeReason}
-                      onChange={(e) => setDisputeReason(e.target.value)}
-                      rows={4}
-                      className="text-gray-900 bg-white placeholder-gray-500"
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={handleCreateDispute}
-                    disabled={!selectedBooking || !disputeReason.trim() || createDispute.isPending}
-                    className="w-full"
-                  >
-                    {createDispute.isPending ? 'Creating...' : 'Create Dispute'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Disputes
+          </CardTitle>
+          <CardDescription>
+            View and manage your dispute history
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {existingDisputes && existingDisputes.length > 0 ? (
@@ -398,16 +251,6 @@ export const UserDisputes = () => {
             </div>
           )}
 
-          {eligibleBookings && eligibleBookings.length === 0 && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <p className="text-sm text-blue-800">
-                  No bookings are currently eligible for disputes. Disputes can only be created within 48 hours of payment or delivery.
-                </p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
