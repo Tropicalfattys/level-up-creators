@@ -1168,6 +1168,7 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          role: string
           verified: boolean
         }[]
       }
@@ -1179,6 +1180,7 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          role: string
           verified: boolean
         }[]
       }

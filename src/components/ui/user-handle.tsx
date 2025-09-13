@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { VerificationBadge } from './verification-badge';
+import { AdminBadge } from './admin-badge';
 
 interface UserHandleProps {
   handle?: string;
@@ -17,7 +18,7 @@ export const UserHandle = ({
 }: UserHandleProps) => {
   const { data: user, isLoading } = useQuery({
     queryKey: ['user-verification', handle || userId],
-    queryFn: async (): Promise<{ handle: string; verified: boolean }> => {
+    queryFn: async (): Promise<{ handle: string; verified: boolean; role: string }> => {
       if (!handle && !userId) {
         throw new Error('Either handle or userId must be provided');
       }
@@ -38,7 +39,7 @@ export const UserHandle = ({
       }
       
       if (!result) throw new Error('User not found');
-      return { handle: result.handle, verified: result.verified };
+      return { handle: result.handle, verified: result.verified, role: result.role };
     },
     enabled: !!(handle || userId),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -65,6 +66,7 @@ export const UserHandle = ({
     <span className={`inline-flex items-center ${className}`}>
       {showAt && '@'}{user.handle}
       <VerificationBadge verified={user.verified} />
+      <AdminBadge role={user.role} />
     </span>
   );
 };
