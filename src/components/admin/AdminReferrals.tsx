@@ -252,15 +252,17 @@ export const AdminReferrals = () => {
               <SelectItem value="credits">Credits</SelectItem>
               <SelectItem value="activity">Activity</SelectItem>
               <SelectItem value="analytics">Analytics</SelectItem>
+              <SelectItem value="cashout">Cash Out</SelectItem>
             </SelectContent>
           </Select>
         ) : (
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="relationships">Relationships</TabsTrigger>
             <TabsTrigger value="credits">Credits</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="cashout">Cash Out</TabsTrigger>
           </TabsList>
         )}
 
@@ -669,6 +671,22 @@ export const AdminReferrals = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="cashout" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cash Out Management</CardTitle>
+              <CardDescription>
+                Manage referral credit cash-out requests and payouts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Cash out functionality coming soon...</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
