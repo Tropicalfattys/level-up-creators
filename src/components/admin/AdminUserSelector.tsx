@@ -130,7 +130,7 @@ export const AdminUserSelector = ({ selectedUserId, onUserSelect, placeholder = 
               </div>
             ) : users.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                {searchQuery ? 'No users found' : 'Start typing to search users'}
+                No users found
               </div>
             ) : (
               <div className="p-2">
