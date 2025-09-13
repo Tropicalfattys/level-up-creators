@@ -27,26 +27,29 @@ export const AdminUserSelector = ({ selectedUserId, onUserSelect, placeholder = 
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Fetch all users with search functionality
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['admin-all-users', searchQuery, showDropdown],
+  // Fetch all users for client-side filtering
+  const { data: allUsers = [], isLoading } = useQuery({
+    queryKey: ['admin-all-users'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('users')
         .select('id, handle, email, role, referral_credits, verified, banned')
-        .order('handle');
-
-      if (searchQuery.trim()) {
-        const cleanQuery = searchQuery.trim().replace('@', '');
-        query = query.or(`handle.ilike.%${cleanQuery}%,email.ilike.%${cleanQuery}%,id.eq.${searchQuery}`);
-      }
-
-      const { data, error } = await query.limit(100);
+        .order('handle')
+        .limit(200);
       if (error) throw error;
       return data as User[];
     },
-    enabled: showDropdown,
   });
+
+  // Filter users client-side based on search query
+  const users = searchQuery.trim() 
+    ? allUsers.filter(user => {
+        const cleanQuery = searchQuery.trim().replace('@', '').toLowerCase();
+        return user.handle.toLowerCase().includes(cleanQuery) || 
+               user.email.toLowerCase().includes(cleanQuery) ||
+               user.id === searchQuery;
+      })
+    : allUsers;
 
   // Get selected user details
   const { data: selectedUser } = useQuery({
