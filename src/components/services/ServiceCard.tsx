@@ -22,6 +22,7 @@ interface ServiceCardProps {
         handle: string;
         avatar_url?: string;
         verified?: boolean;
+        role?: string;
       };
       rating?: number;
     };
@@ -63,7 +64,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
               >
                 @{service.creator.users.handle}
               </Link>
-              <VerificationBadge verified={service.creator.users.verified} />
+              <VerificationBadge verified={service.creator.users.verified} role={service.creator.users.role} />
             </span>
             {service.creator.rating && (
               <div className="flex items-center gap-1">

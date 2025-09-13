@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AdminBadge } from '@/components/ui/admin-badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
@@ -71,13 +72,21 @@ export default function Home() {
 
           const { count } = await countQuery;
 
+          // Get role information separately
+          const { data: roleData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', creator.user_id)
+            .single();
+
           return {
             ...creator,
             serviceCount: count || 0,
             users: {
               handle: creator.handle,
               avatar_url: creator.avatar_url,
-              verified: creator.verified
+              verified: creator.verified,
+              role: roleData?.role || 'client'
             }
           };
         })
@@ -437,8 +446,9 @@ export default function Home() {
                                   </div>
                                 <div className="flex items-center justify-center gap-2 mb-2">
                                   <div className="flex items-center">
-                                    <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
-                                    <VerificationBadge verified={creator.users.verified} />
+                                     <h3 className="text-base md:text-lg font-semibold">@{creator.users.handle}</h3>
+                                     <VerificationBadge verified={creator.users.verified} role={creator.users.role} />
+                                     <AdminBadge role={creator.users.role} />
                                   </div>
                                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-0 text-xs px-2 py-1">
                                     Pro

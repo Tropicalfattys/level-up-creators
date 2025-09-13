@@ -65,7 +65,7 @@ export const UserHandle = ({
   return (
     <span className={`inline-flex items-center ${className}`}>
       {showAt && '@'}{user.handle}
-      <VerificationBadge verified={user.verified} />
+      <VerificationBadge verified={user.verified} role={user.role} />
       <AdminBadge role={user.role} />
     </span>
   );

@@ -18,6 +18,7 @@ interface CreatorCardProps {
       handle: string;
       avatar_url?: string;
       verified?: boolean;
+      role?: string;
     };
   };
 }
@@ -40,7 +41,7 @@ export const CreatorCard = ({ creator }: CreatorCardProps) => {
             <div className="space-y-2">
               <div className="flex items-center justify-center gap-1">
                 <h3 className="font-semibold text-lg">@{creator.users.handle}</h3>
-                <VerificationBadge verified={creator.users.verified} />
+                <VerificationBadge verified={creator.users.verified} role={creator.users.role} />
               </div>
               <p className="text-muted-foreground text-sm">{creator.headline}</p>
             </div>

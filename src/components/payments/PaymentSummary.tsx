@@ -9,6 +9,7 @@ interface PaymentSummaryProps {
   serviceTitle: string;
   creatorHandle: string;
   verified?: boolean;
+  role?: string;
   amount: number;
   currency: string;
   deliveryDays?: number;
@@ -19,6 +20,7 @@ export const PaymentSummary = ({
   serviceTitle,
   creatorHandle,
   verified,
+  role,
   amount,
   currency,
   deliveryDays,
@@ -43,7 +45,7 @@ export const PaymentSummary = ({
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
                   <span>@{creatorHandle}</span>
-                  <VerificationBadge verified={verified} />
+                  <VerificationBadge verified={verified} role={role} />
                 </div>
                 {deliveryDays && (
                   <div className="flex items-center gap-1">

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AdminBadge } from '@/components/ui/admin-badge';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ interface CreatorData {
   min_price: number;
   service_count: number;
   verified?: boolean;
+  role?: string;
 }
 
 interface CreatorExplorerProps {
@@ -155,12 +157,20 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
             return null;
           }
 
+          // Get role information separately since get_public_creators doesn't include it
+          const { data: roleData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', creator.user_id)
+            .single();
+
           return {
             id: creator.id,
             user_id: creator.user_id,
             handle: creator.handle || 'unknown',
             avatar_url: creator.avatar_url,
             verified: creator.verified,
+            role: roleData?.role || 'client',
             headline: creator.headline,
             category: creator.category,
             tier: creator.tier,
@@ -501,7 +511,8 @@ export const CreatorExplorer = ({ selectedCategory }: CreatorExplorerProps) => {
                         
                         <h3 className="font-semibold text-lg mb-1 flex items-center">
                           @{creator.handle}
-                          <VerificationBadge verified={creator.verified} />
+                          <VerificationBadge verified={creator.verified} role={creator.role} />
+                          <AdminBadge role={creator.role} />
                         </h3>
                         <Badge variant="outline" className="border-blue-500 text-blue-400 mb-2">
                           {getTierDisplayName(creator.tier)}
