@@ -66,6 +66,8 @@ export type Database = {
           proof_file_url: string | null
           proof_link: string | null
           proof_links: Json | null
+          refund_tx_hash: string | null
+          refunded_at: string | null
           release_at: string | null
           service_id: string | null
           status: string | null
@@ -86,6 +88,8 @@ export type Database = {
           proof_file_url?: string | null
           proof_link?: string | null
           proof_links?: Json | null
+          refund_tx_hash?: string | null
+          refunded_at?: string | null
           release_at?: string | null
           service_id?: string | null
           status?: string | null
@@ -106,6 +110,8 @@ export type Database = {
           proof_file_url?: string | null
           proof_link?: string | null
           proof_links?: Json | null
+          refund_tx_hash?: string | null
+          refunded_at?: string | null
           release_at?: string | null
           service_id?: string | null
           status?: string | null

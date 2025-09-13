@@ -178,7 +178,7 @@ export const AdminPayouts = () => {
           .eq('bookings.status', 'refunded')
           .order('created_at', { ascending: false }),
         
-        // Rejected bookings
+        // Rejected bookings  
         supabase
           .from('bookings')
           .select(`
@@ -189,6 +189,8 @@ export const AdminPayouts = () => {
             client_id,
             created_at,
             updated_at,
+            refund_tx_hash,
+            refunded_at,
             services (
               title
             ),
@@ -240,8 +242,8 @@ export const AdminPayouts = () => {
         amount: item.usdc_amount,
         network: item.chain,
         created_at: item.updated_at || item.created_at, // Use updated_at for rejection time
-        refund_tx_hash: null,
-        refunded_at: null,
+        refund_tx_hash: item.refund_tx_hash,
+        refunded_at: item.refunded_at,
         client_user: item.client_user,
         bookings: {
           services: item.services
@@ -287,22 +289,41 @@ export const AdminPayouts = () => {
   });
 
   const refundMutation = useMutation({
-    mutationFn: async ({ disputeId, txHash }: { disputeId: string; txHash: string }) => {
-      const { data, error } = await supabase
-        .from('disputes')
-        .update({
-          refund_tx_hash: txHash,
-          refunded_at: new Date().toISOString()
-        })
-        .eq('id', disputeId)
-        .select();
-
-      if (error) {
-        console.error('Refund update error:', error);
-        throw error;
+    mutationFn: async ({ refundId, txHash, refundType }: { refundId: string; txHash: string; refundType: 'dispute' | 'rejection' }) => {
+      if (refundType === 'dispute') {
+        // Handle dispute refunds
+        const { data, error } = await supabase
+          .from('disputes')
+          .update({
+            refund_tx_hash: txHash,
+            refunded_at: new Date().toISOString()
+          })
+          .eq('id', refundId)
+          .select();
+        
+        if (error) {
+          console.error('Dispute refund update error:', error);
+          throw error;
+        }
+        return data;
+      } else {
+        // Handle rejection refunds - update the booking directly
+        const bookingId = refundId.replace('rejected_', ''); // Extract booking ID
+        const { data, error } = await supabase
+          .from('bookings')
+          .update({
+            refund_tx_hash: txHash,
+            refunded_at: new Date().toISOString()
+          })
+          .eq('id', bookingId)
+          .select();
+        
+        if (error) {
+          console.error('Booking refund update error:', error);
+          throw error;
+        }
+        return data;
       }
-      
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-refunds'] });
@@ -324,13 +345,13 @@ export const AdminPayouts = () => {
     payoutMutation.mutate({ paymentId, txHash });
   };
 
-  const handleRefund = (disputeId: string) => {
-    const txHash = refundTxHashes[disputeId]?.trim();
+  const handleRefund = (refundId: string, refundType: 'dispute' | 'rejection' = 'dispute') => {
+    const txHash = refundTxHashes[refundId]?.trim();
     if (!txHash) {
       toast.error('Please enter a transaction hash');
       return;
     }
-    refundMutation.mutate({ disputeId, txHash });
+    refundMutation.mutate({ refundId, txHash, refundType });
   };
 
   const getPayoutAddress = (creator: PayoutRecord['creator_user'], network: string) => {
@@ -590,7 +611,7 @@ export const AdminPayouts = () => {
                 className="flex-1"
               />
               <Button 
-                onClick={() => handleRefund(refund.id)}
+                onClick={() => handleRefund(refund.id, refund.refund_type)}
                 disabled={refundMutation.isPending || !refundTxHashes[refund.id]?.trim()}
               >
                 {refundMutation.isPending ? 'Recording...' : 'Record Refund'}
