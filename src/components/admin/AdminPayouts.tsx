@@ -819,7 +819,7 @@ export const AdminPayouts = () => {
                     Pending ({pendingPayouts.length})
                   </SelectItem>
                   <SelectItem value="refunds">
-                    Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length})
+                    Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length + pendingRejectedBookings.length + completedRejectedBookings.length})
                   </SelectItem>
                   <SelectItem value="completed">
                     Completed ({completedPayouts.length})
@@ -834,7 +834,7 @@ export const AdminPayouts = () => {
                 </TabsTrigger>
                 <TabsTrigger value="refunds" className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4" />
-                  Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length})
+                  Refunds ({pendingRefunds.length + completedRefunds.length + refundedPayments.length + pendingRejectedBookings.length + completedRejectedBookings.length})
                 </TabsTrigger>
                 <TabsTrigger value="completed" className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
@@ -864,7 +864,7 @@ export const AdminPayouts = () => {
             <TabsContent value="refunds">
               {refundsLoading ? (
                 <div className="text-center py-8">Loading refunds...</div>
-              ) : pendingRefunds.length === 0 && completedRefunds.length === 0 && refundedPayments.length === 0 ? (
+              ) : pendingRefunds.length === 0 && completedRefunds.length === 0 && refundedPayments.length === 0 && pendingRejectedBookings.length === 0 && completedRejectedBookings.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No pending refunds</p>
