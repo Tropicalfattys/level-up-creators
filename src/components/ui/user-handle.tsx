@@ -16,40 +16,87 @@ export const UserHandle = ({
   className = "", 
   showAt = true 
 }: UserHandleProps) => {
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['user-verification', handle || userId],
+  const { data: user, isLoading, error, refetch } = useQuery({
+    queryKey: ['user-verification-v2', handle || userId, 'with-role'],
     queryFn: async (): Promise<{ handle: string; verified: boolean; role: string }> => {
       if (!handle && !userId) {
         throw new Error('Either handle or userId must be provided');
       }
 
+      console.log('🔍 UserHandle: Fetching user data for', handle || userId);
+      
       let result;
       if (handle) {
         const { data, error } = await supabase.rpc('get_public_profile_by_handle', { 
           handle_param: handle 
         });
-        if (error) throw error;
+        if (error) {
+          console.error('❌ UserHandle: Error fetching by handle:', error);
+          throw error;
+        }
         result = data?.[0];
       } else {
         const { data, error } = await supabase.rpc('get_public_profile', { 
           user_id_param: userId 
         });
-        if (error) throw error;
+        if (error) {
+          console.error('❌ UserHandle: Error fetching by userId:', error);
+          throw error;
+        }
         result = data?.[0];
       }
       
-      if (!result) throw new Error('User not found');
-      return { handle: result.handle, verified: result.verified, role: result.role };
+      if (!result) {
+        console.warn('⚠️ UserHandle: User not found for', handle || userId);
+        throw new Error('User not found');
+      }
+      
+      console.log('✅ UserHandle: Fetched user data:', { 
+        handle: result.handle, 
+        verified: result.verified, 
+        role: result.role 
+      });
+      
+      // Ensure we have role data - retry if missing
+      if (!result.role) {
+        console.warn('⚠️ UserHandle: Missing role data, retrying...');
+        throw new Error('Missing role data - retrying');
+      }
+      
+      return { 
+        handle: result.handle || handle || 'Unknown', 
+        verified: Boolean(result.verified), 
+        role: result.role || 'client' 
+      };
     },
     enabled: !!(handle || userId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes (shorter for better updates)
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Retry up to 2 times for missing role data
+      if (error?.message?.includes('Missing role data') && failureCount < 2) {
+        console.log('🔄 UserHandle: Retrying due to missing role data, attempt', failureCount + 1);
+        return true;
+      }
+      return failureCount < 1;
+    },
+    retryDelay: 1000, // 1 second delay between retries
   });
 
   if (isLoading) {
     return (
       <span className={`inline-flex items-center ${className}`}>
         {showAt && '@'}{handle || '...'}
+        <div className="inline-block w-5 h-5 ml-1 bg-muted animate-pulse rounded" />
+      </span>
+    );
+  }
+
+  if (error) {
+    console.error('❌ UserHandle: Error loading user:', error);
+    return (
+      <span className={`inline-flex items-center ${className}`}>
+        {showAt && '@'}{handle || 'Unknown'}
       </span>
     );
   }
@@ -65,8 +112,11 @@ export const UserHandle = ({
   return (
     <span className={`inline-flex items-center ${className}`}>
       {showAt && '@'}{user.handle}
-      <VerificationBadge verified={user.verified} role={user.role} />
-      <AdminBadge role={user.role} />
+      {user.role === 'admin' ? (
+        <AdminBadge role={user.role} />
+      ) : (
+        <VerificationBadge verified={user.verified} role={user.role} />
+      )}
     </span>
   );
 };
