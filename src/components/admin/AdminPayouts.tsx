@@ -440,6 +440,16 @@ export const AdminPayouts = () => {
   // Get refunded payment records to show in refunds tab
   const refundedPayments = payouts?.filter(p => p.booking_status === 'refunded') || [];
   
+  // Separate dispute refunds from rejected bookings
+  const disputeRefunds = refunds?.filter(r => r.refund_type === 'dispute') || [];
+  const rejectedBookings = refunds?.filter(r => r.refund_type === 'rejection') || [];
+  
+  const pendingDisputeRefunds = disputeRefunds.filter(r => !r.refund_tx_hash);
+  const completedDisputeRefunds = disputeRefunds.filter(r => r.refund_tx_hash);
+  const pendingRejectedBookings = rejectedBookings.filter(r => !r.refund_tx_hash);
+  const completedRejectedBookings = rejectedBookings.filter(r => r.refund_tx_hash);
+  
+  // Keep legacy variables for compatibility
   const pendingRefunds = refunds?.filter(r => !r.refund_tx_hash) || [];
   const completedRefunds = refunds?.filter(r => r.refund_tx_hash) || [];
 
@@ -859,21 +869,41 @@ export const AdminPayouts = () => {
                     </div>
                   )}
                   
+                  {/* Show pending rejected bookings */}
+                  {pendingRejectedBookings.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Pending Creator Rejections (Need Refund)</h4>
+                      {pendingRejectedBookings.map((refund) => (
+                        <RefundCard key={refund.id} refund={refund} isPending={true} />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Show completed rejected bookings */}
+                  {completedRejectedBookings.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Completed Creator Rejection Refunds</h4>
+                      {completedRejectedBookings.map((refund) => (
+                        <RefundCard key={refund.id} refund={refund} isPending={false} />
+                      ))}
+                    </div>
+                  )}
+                  
                   {/* Show pending dispute-based refunds */}
-                  {pendingRefunds.length > 0 && (
+                  {pendingDisputeRefunds.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-4">Pending Dispute Refunds</h4>
-                      {pendingRefunds.map((refund) => (
+                      {pendingDisputeRefunds.map((refund) => (
                         <RefundCard key={refund.id} refund={refund} isPending={true} />
                       ))}
                     </div>
                   )}
                   
                   {/* Show completed dispute-based refunds */}
-                  {completedRefunds.length > 0 && (
+                  {completedDisputeRefunds.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-4">Completed Dispute Refunds</h4>
-                      {completedRefunds.map((refund) => (
+                      {completedDisputeRefunds.map((refund) => (
                         <RefundCard key={refund.id} refund={refund} isPending={false} />
                       ))}
                     </div>
