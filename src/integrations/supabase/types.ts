@@ -765,6 +765,54 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_cashouts: {
+        Row: {
+          created_at: string
+          credit_amount: number
+          id: string
+          payout_address: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          selected_currency: string
+          selected_network: string
+          status: string
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_amount?: number
+          id?: string
+          payout_address: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          selected_currency: string
+          selected_network: string
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_amount?: number
+          id?: string
+          payout_address?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          selected_currency?: string
+          selected_network?: string
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       referral_credits_awarded: {
         Row: {
           awarded_at: string

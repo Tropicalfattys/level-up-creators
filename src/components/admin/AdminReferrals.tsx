@@ -15,6 +15,7 @@ import { TrendingUp, Users, DollarSign, Target, Search, Plus, Minus, Eye } from 
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminUserSelector } from './AdminUserSelector';
+import { CashOutManagement } from './CashOutManagement';
 
 interface ReferralRelationship {
   id: string;
@@ -668,19 +669,8 @@ export const AdminReferrals = () => {
         </TabsContent>
 
         <TabsContent value="cashout" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cash Out Management</CardTitle>
-              <CardDescription>
-                Manage referral credit cash-out requests and payouts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Cash out functionality coming soon...</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Cash Out Requests Management */}
+          <CashOutManagement />
         </TabsContent>
       </Tabs>
     </div>

@@ -14,11 +14,13 @@ import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gif
 import { toast } from 'sonner';
 import { ReferralStats } from './ReferralStats';
 import { ReferralSuccessful } from './ReferralSuccessful';
+import { CashOutModal } from './CashOutModal';
 
 export const ReferralSystem = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+  const [isCashOutModalOpen, setIsCashOutModalOpen] = useState(false);
   const { user, userProfile } = useAuth();
   const isMobile = useIsMobile();
 
@@ -279,18 +281,30 @@ export const ReferralSystem = () => {
               
               <div className="text-xs text-muted-foreground text-left space-y-1">
                 <p>• Credits will be available for cash out after beta</p>
-                <p>• Minimum cash out: $5.00</p>
+                <p>• Minimum cash out: $10.00</p>
                 <p>• Processing time: 3-5 business days</p>
-                <p>• Cash out via PayPal or bank transfer</p>
+                <p>• Cash out via USDC or USDM</p>
               </div>
             </div>
             
-            <Button disabled className="w-full" variant="outline">
-              Cash Out Coming Soon
+            <Button 
+              onClick={() => setIsCashOutModalOpen(true)}
+              disabled={(userProfile?.referral_credits || 0) < 10}
+              className="w-full" 
+              variant="outline"
+            >
+              {(userProfile?.referral_credits || 0) >= 10 ? 'Cash Out Now' : 'Cash Out (Min $10)'}
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Cash Out Modal */}
+      <CashOutModal 
+        open={isCashOutModalOpen}
+        onOpenChange={setIsCashOutModalOpen}
+        availableCredits={userProfile?.referral_credits || 0}
+      />
     </div>
   );
 };
