@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { TrendingUp, Users, DollarSign, Target, Search, Plus, Minus, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AdminUserSelector } from './AdminUserSelector';
 
 interface ReferralRelationship {
   id: string;
@@ -444,18 +445,11 @@ export const AdminReferrals = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="user-select">Select User</Label>
-                  <Select value={selectedUser} onValueChange={setSelectedUser}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a user..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {topReferrers?.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          @{user.handle} (${user.referral_credits} credits)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <AdminUserSelector
+                    selectedUserId={selectedUser}
+                    onUserSelect={setSelectedUser}
+                    placeholder="Search by username, email, or user ID..."
+                  />
                 </div>
 
                 <div className="space-y-2">
