@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { TrendingUp, Users, DollarSign, Target, Search, Plus, Minus, Eye } from 'lucide-react';
 import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ReferralRelationship {
   id: string;
@@ -31,7 +32,9 @@ export const AdminReferrals = () => {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [creditAdjustment, setCreditAdjustment] = useState<number>(0);
   const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // Get referral performance overview
   const { data: referralStats } = useQuery({
@@ -237,14 +240,29 @@ export const AdminReferrals = () => {
         <p className="text-muted-foreground">Monitor and manage the referral program</p>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="relationships">Relationships</TabsTrigger>
-          <TabsTrigger value="credits">Credits</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select section..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">Overview</SelectItem>
+              <SelectItem value="relationships">Relationships</SelectItem>
+              <SelectItem value="credits">Credits</SelectItem>
+              <SelectItem value="activity">Activity</SelectItem>
+              <SelectItem value="analytics">Analytics</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="relationships">Relationships</TabsTrigger>
+            <TabsTrigger value="credits">Credits</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="overview" className="space-y-6">
           {/* Performance Overview Cards */}
@@ -337,43 +355,78 @@ export const AdminReferrals = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Referred User</TableHead>
-                    <TableHead>Referred By</TableHead>
-                    <TableHead>Credits Earned</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                <div className="space-y-4">
                   {referralRelationships?.map((relationship) => (
-                    <TableRow key={relationship.id}>
-                      <TableCell>
-                        <div className="font-medium">@{relationship.handle}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">@{relationship.referrer?.handle || 'Unknown'}</div>
-                        <div className="text-sm text-muted-foreground">
-                          ${relationship.referrer?.referral_credits || 0} total credits
+                    <Card key={relationship.id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">@{relationship.handle}</div>
+                          <Badge variant={relationship.referral_credits > 0 ? 'default' : 'secondary'}>
+                            {relationship.referral_credits > 0 ? 'Converted' : 'Pending'}
+                          </Badge>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">${relationship.referral_credits}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(relationship.created_at), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={relationship.referral_credits > 0 ? 'default' : 'secondary'}>
-                          {relationship.referral_credits > 0 ? 'Converted' : 'Pending'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Referred by:</span>
+                            <span className="font-medium">@{relationship.referrer?.handle || 'Unknown'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Credits earned:</span>
+                            <Badge variant="outline">${relationship.referral_credits}</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Join date:</span>
+                            <span>{format(new Date(relationship.created_at), 'MMM dd, yyyy')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Referrer total credits:</span>
+                            <span>${relationship.referrer?.referral_credits || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Referred User</TableHead>
+                      <TableHead>Referred By</TableHead>
+                      <TableHead>Credits Earned</TableHead>
+                      <TableHead>Join Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {referralRelationships?.map((relationship) => (
+                      <TableRow key={relationship.id}>
+                        <TableCell>
+                          <div className="font-medium">@{relationship.handle}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">@{relationship.referrer?.handle || 'Unknown'}</div>
+                          <div className="text-sm text-muted-foreground">
+                            ${relationship.referrer?.referral_credits || 0} total credits
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">${relationship.referral_credits}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(relationship.created_at), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={relationship.referral_credits > 0 ? 'default' : 'secondary'}>
+                            {relationship.referral_credits > 0 ? 'Converted' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -491,41 +544,78 @@ export const AdminReferrals = () => {
               <CardDescription>Latest bookings from referred users</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Booking Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Credit Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                <div className="space-y-4">
                   {recentActivity?.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div className="font-medium">@{booking.client?.handle}</div>
-                        <Badge variant="outline" className="text-xs">Referred User</Badge>
-                      </TableCell>
-                      <TableCell>${booking.usdc_amount}</TableCell>
-                      <TableCell>
-                        <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
-                          {booking.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(booking.created_at), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
-                          {booking.status === 'accepted' ? 'Credit Awarded' : 'Pending'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
+                    <Card key={booking.id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">@{booking.client?.handle}</div>
+                          <Badge variant="outline" className="text-xs">Referred User</Badge>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Booking amount:</span>
+                            <span className="font-medium">${booking.usdc_amount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
+                              {booking.status}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Date:</span>
+                            <span>{format(new Date(booking.created_at), 'MMM dd, yyyy')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Credit status:</span>
+                            <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
+                              {booking.status === 'accepted' ? 'Credit Awarded' : 'Pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Booking Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Credit Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentActivity?.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
+                          <div className="font-medium">@{booking.client?.handle}</div>
+                          <Badge variant="outline" className="text-xs">Referred User</Badge>
+                        </TableCell>
+                        <TableCell>${booking.usdc_amount}</TableCell>
+                        <TableCell>
+                          <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(booking.created_at), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
+                            {booking.status === 'accepted' ? 'Credit Awarded' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
