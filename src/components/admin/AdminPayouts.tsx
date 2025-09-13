@@ -178,7 +178,7 @@ export const AdminPayouts = () => {
           .eq('bookings.status', 'refunded')
           .order('created_at', { ascending: false }),
         
-        // Rejected bookings  
+        // Rejected bookings - simplified query to avoid PostgREST foreign key issues
         supabase
           .from('bookings')
           .select(`
@@ -193,15 +193,6 @@ export const AdminPayouts = () => {
             refunded_at,
             services (
               title
-            ),
-            client_user:users!bookings_client_id_fkey (
-              handle,
-              email,
-              payout_address_eth,
-              payout_address_sol,
-              payout_address_bsc,
-              payout_address_cardano,
-              payout_address_sui
             )
           `)
           .eq('status', 'rejected_by_creator')
@@ -235,21 +226,43 @@ export const AdminPayouts = () => {
         refund_type: 'dispute' as const
       }));
 
-      // Transform rejected bookings
-      const transformedRejectedBookings = rejectedBookings.data.map(item => ({
-        id: `rejected_${item.id}`, // Unique ID for rejected bookings
-        booking_id: item.id,
-        amount: item.usdc_amount,
-        network: item.chain,
-        created_at: item.updated_at || item.created_at, // Use updated_at for rejection time
-        refund_tx_hash: item.refund_tx_hash,
-        refunded_at: item.refunded_at,
-        client_user: item.client_user,
-        bookings: {
-          services: item.services
-        },
-        refund_type: 'rejection' as const
-      }));
+      // Get client user data separately for rejected bookings
+      const clientIds = rejectedBookings.data.map(booking => booking.client_id);
+      const { data: clientUsers } = await supabase
+        .from('users')
+        .select(`
+          id,
+          handle,
+          email,
+          payout_address_eth,
+          payout_address_sol,
+          payout_address_bsc,
+          payout_address_cardano,
+          payout_address_sui
+        `)
+        .in('id', clientIds);
+
+      console.log('Rejected bookings found:', rejectedBookings.data.length);
+      console.log('Client users found:', clientUsers?.length || 0);
+
+      // Transform rejected bookings with proper client user data
+      const transformedRejectedBookings = rejectedBookings.data.map(item => {
+        const clientUser = clientUsers?.find(user => user.id === item.client_id);
+        return {
+          id: `rejected_${item.id}`, // Unique ID for rejected bookings
+          booking_id: item.id,
+          amount: item.usdc_amount,
+          network: item.chain,
+          created_at: item.updated_at || item.created_at, // Use updated_at for rejection time
+          refund_tx_hash: item.refund_tx_hash,
+          refunded_at: item.refunded_at,
+          client_user: clientUser,
+          bookings: {
+            services: item.services
+          },
+          refund_type: 'rejection' as const
+        };
+      });
       
       // Combine and sort by creation date
       const allRefunds = [...transformedDisputeRefunds, ...transformedRejectedBookings]
