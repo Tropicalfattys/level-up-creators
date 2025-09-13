@@ -28,6 +28,8 @@ interface BookingWithDetails {
   accepted_at?: string;
   release_at?: string;
   tx_hash?: string;
+  refund_tx_hash?: string;
+  refunded_at?: string;
   proof_link?: string;
   proof_file_url?: string;
   proof_links?: Array<{ url: string; label: string }>;
@@ -138,7 +140,7 @@ export const ClientBookings = () => {
   });
 
   const getTabCounts = () => {
-    if (!bookings) return { all: 0, active: 0, delivered: 0, completed: 0 };
+    if (!bookings) return { all: 0, active: 0, delivered: 0, completed: 0, refunded: 0 };
     
     const safeBookings = bookings as BookingWithDetails[];
     
@@ -147,6 +149,7 @@ export const ClientBookings = () => {
       active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected').length,
       delivered: safeBookings.filter(b => b.status === 'delivered').length,
       completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
+      refunded: safeBookings.filter(b => b.status === 'rejected_by_creator' || b.status === 'refunded').length,
     };
   };
 
@@ -165,6 +168,9 @@ export const ClientBookings = () => {
     if (status === 'completed') {
       return safeBookings.filter(booking => booking.status === 'accepted' || booking.status === 'released');
     }
+    if (status === 'refunded') {
+      return safeBookings.filter(booking => booking.status === 'rejected_by_creator' || booking.status === 'refunded');
+    }
     
     return safeBookings.filter(booking => booking.status === status);
   };
@@ -177,6 +183,8 @@ export const ClientBookings = () => {
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
+      case 'rejected_by_creator': return 'destructive';
+      case 'refunded': return 'destructive';
       default: return 'secondary';
     }
   };
@@ -313,6 +321,7 @@ export const ClientBookings = () => {
                 <SelectItem value="active">Active ({tabCounts.active})</SelectItem>
                 <SelectItem value="delivered">Delivered ({tabCounts.delivered})</SelectItem>
                 <SelectItem value="completed">Completed ({tabCounts.completed})</SelectItem>
+                <SelectItem value="refunded">Refunded ({tabCounts.refunded})</SelectItem>
               </SelectContent>
             </Select>
           ) : (
@@ -321,6 +330,7 @@ export const ClientBookings = () => {
               <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
               <TabsTrigger value="delivered">Delivered ({tabCounts.delivered})</TabsTrigger>
               <TabsTrigger value="completed">Completed ({tabCounts.completed})</TabsTrigger>
+              <TabsTrigger value="refunded">Refunded ({tabCounts.refunded})</TabsTrigger>
             </TabsList>
           )}
 
@@ -621,6 +631,88 @@ export const ClientBookings = () => {
                               <p className="text-sm text-green-800 bg-green-100 p-2 rounded border">
                                 {booking.deliveryNote}
                               </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Refund Information - Show for rejected bookings */}
+                    {booking.status === 'rejected_by_creator' && (
+                      <div className="border rounded-lg p-4 bg-red-50">
+                        <h4 className="font-medium mb-3 text-red-800">Service Refund Information</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            <span className="text-sm text-red-700">
+                              This service was rejected by the creator. You are eligible for a refund (95% of paid amount).
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="flex justify-between items-center p-2 bg-red-100 rounded">
+                              <span className="text-sm font-medium text-red-700">Original Payment:</span>
+                              <span className="text-sm text-red-800">${booking.usdc_amount.toFixed(2)} USDC</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 bg-red-100 rounded">
+                              <span className="text-sm font-medium text-red-700">Refund Amount (95%):</span>
+                              <span className="text-sm text-red-800">${(booking.usdc_amount * 0.95).toFixed(2)} USDC</span>
+                            </div>
+                          </div>
+
+                          {booking.refund_tx_hash ? (
+                            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-700">Refund Processed</span>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-green-600">Transaction Hash:</span>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => copyTxHash(booking.refund_tx_hash!)}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      <Copy className="h-3 w-3 mr-1" />
+                                      Copy
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const explorerUrl = booking.tx_hash?.startsWith('0x') 
+                                          ? `https://etherscan.io/tx/${booking.refund_tx_hash}`
+                                          : `https://solscan.io/tx/${booking.refund_tx_hash}`;
+                                        window.open(explorerUrl, '_blank');
+                                      }}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      <ExternalLink className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-green-600 font-mono bg-green-100 p-2 rounded break-all">
+                                  {booking.refund_tx_hash}
+                                </div>
+                                {booking.refunded_at && (
+                                  <div className="text-xs text-green-600">
+                                    Processed on {format(new Date(booking.refunded_at), 'MMM d, yyyy')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                              <div className="flex items-center gap-2">
+                                <RefreshCcw className="h-4 w-4 text-yellow-600" />
+                                <span className="text-sm text-yellow-700">
+                                  Refund processing in progress. You will be notified when the refund transaction is completed.
+                                </span>
+                              </div>
                             </div>
                           )}
                         </div>
