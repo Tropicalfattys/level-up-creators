@@ -11,7 +11,7 @@ import { AdminContacts } from '@/components/admin/AdminContacts';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { AdminAuditLogs } from '@/components/admin/AdminAuditLogs';
 import { AdminPricing } from '@/components/admin/AdminPricing';
-import { ReferralTestPanel } from '@/components/admin/ReferralTestPanel';
+import { AdminReferrals } from '@/components/admin/AdminReferrals';
 import { AdminContactUs } from '@/components/admin/AdminContactUs';
 import { AdminCareers } from '@/components/admin/AdminCareers';
 import { AdminNotifications } from '@/components/admin/AdminNotifications';
@@ -108,7 +108,7 @@ export default function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="referrals">
-          <ReferralTestPanel />
+          <AdminReferrals />
         </TabsContent>
 
         <TabsContent value="contact-us">
