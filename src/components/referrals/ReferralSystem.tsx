@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift } from 'lucide-react';
+import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReferralStats } from './ReferralStats';
 import { ReferralSuccessful } from './ReferralSuccessful';
@@ -62,7 +62,7 @@ export const ReferralSystem = () => {
   if (!user) return null;
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
+    <div className="grid lg:grid-cols-3 gap-6">
       {/* Left Column - Your Referral Program */}
       <Card>
         <CardHeader>
@@ -171,7 +171,7 @@ export const ReferralSystem = () => {
         </CardContent>
       </Card>
 
-      {/* Right Column - How It Works */}
+      {/* Middle Column - How It Works */}
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-col gap-2">
@@ -249,6 +249,46 @@ export const ReferralSystem = () => {
           
           {/* Successful Referrals Section */}
           <ReferralSuccessful />
+        </CardContent>
+      </Card>
+
+      {/* Right Column - Cash Out */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Cash Out
+          </CardTitle>
+          <CardDescription>
+            Convert your referral credits into real value
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="text-center space-y-4">
+            <div className="bg-muted rounded-lg p-6">
+              <div className="text-2xl font-bold text-muted-foreground mb-2">
+                ${userProfile?.referral_credits || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Available Credits</p>
+            </div>
+            
+            <div className="space-y-3">
+              <Badge variant="secondary" className="w-full justify-center py-2">
+                Cash Out Available November 1, 2025
+              </Badge>
+              
+              <div className="text-xs text-muted-foreground text-left space-y-1">
+                <p>• Credits will be available for cash out after beta</p>
+                <p>• Minimum cash out: $5.00</p>
+                <p>• Processing time: 3-5 business days</p>
+                <p>• Cash out via PayPal or bank transfer</p>
+              </div>
+            </div>
+            
+            <Button disabled className="w-full" variant="outline">
+              Cash Out Coming Soon
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
