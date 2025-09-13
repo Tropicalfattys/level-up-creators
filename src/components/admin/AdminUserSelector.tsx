@@ -29,7 +29,7 @@ export const AdminUserSelector = ({ selectedUserId, onUserSelect, placeholder = 
 
   // Fetch all users with search functionality
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ['admin-all-users', searchQuery],
+    queryKey: ['admin-all-users', searchQuery, showDropdown],
     queryFn: async () => {
       let query = supabase
         .from('users')
@@ -37,14 +37,15 @@ export const AdminUserSelector = ({ selectedUserId, onUserSelect, placeholder = 
         .order('handle');
 
       if (searchQuery.trim()) {
-        query = query.or(`handle.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,id.eq.${searchQuery}`);
+        const cleanQuery = searchQuery.trim().replace('@', '');
+        query = query.or(`handle.ilike.%${cleanQuery}%,email.ilike.%${cleanQuery}%,id.eq.${searchQuery}`);
       }
 
-      const { data, error } = await query.limit(50);
+      const { data, error } = await query.limit(100);
       if (error) throw error;
       return data as User[];
     },
-    enabled: showDropdown || searchQuery.length > 0,
+    enabled: showDropdown,
   });
 
   // Get selected user details
