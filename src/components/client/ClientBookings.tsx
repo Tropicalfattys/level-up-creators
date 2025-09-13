@@ -641,45 +641,38 @@ export const ClientBookings = () => {
 
                     {/* Refund Information - Show for rejected bookings */}
                     {booking.status === 'rejected_by_creator' && (
-                      <div className="border rounded-lg p-2 bg-red-50">
-                        <h4 className="font-medium mb-2 text-red-800">Service Refund Information</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-red-600" />
-                            <span className="text-sm text-red-700">
-                              This service was rejected by the creator. You are eligible for a refund (95% of paid amount).
+                      <div className="border rounded-lg p-1 bg-red-50">
+                        <h4 className="font-medium mb-1 text-red-800 text-sm">Service Refund Information</h4>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-700">
+                              Service rejected by creator. 95% refund processed.
                             </span>
                           </div>
                           
-                          <div className="grid grid-cols-1 gap-2">
-                            <div className="flex justify-between items-center p-2 bg-red-100 rounded">
-                              <span className="text-sm font-medium text-red-700">Original Payment:</span>
-                              <span className="text-sm text-red-800">${booking.usdc_amount.toFixed(2)} USDC</span>
-                            </div>
-                            <div className="flex justify-between items-center p-2 bg-red-100 rounded">
-                              <span className="text-sm font-medium text-red-700">Refund Amount (95%):</span>
-                              <span className="text-sm text-red-800">${(booking.usdc_amount * 0.95).toFixed(2)} USDC</span>
-                            </div>
+                          <div className="flex justify-between items-center p-1 bg-red-100 rounded text-xs">
+                            <span className="font-medium text-red-700">Payment: ${booking.usdc_amount.toFixed(2)} USDC</span>
+                            <span className="font-medium text-green-700">→ Refund: ${(booking.usdc_amount * 0.95).toFixed(2)} USDC</span>
                           </div>
 
                           {booking.refund_tx_hash ? (
-                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                              <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-700">Refund Processed</span>
+                            <div className="p-1 bg-green-50 border border-green-200 rounded">
+                              <div className="flex items-center gap-1 mb-1">
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                                <span className="text-xs font-medium text-green-700">Refund Processed</span>
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-green-600">Transaction Hash:</span>
-                                  <div className="flex items-center gap-2">
+                                  <span className="text-xs text-green-600">TX Hash:</span>
+                                  <div className="flex items-center gap-1">
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => copyTxHash(booking.refund_tx_hash!)}
-                                      className="h-6 px-2 text-xs"
+                                      className="h-5 px-1 text-xs"
                                     >
-                                      <Copy className="h-3 w-3 mr-1" />
-                                      Copy
+                                      <Copy className="h-2 w-2" />
                                     </Button>
                                     <Button
                                       size="sm"
@@ -688,29 +681,28 @@ export const ClientBookings = () => {
                                         const explorerUrl = getExplorerUrl(booking.chain || 'ethereum', booking.refund_tx_hash!);
                                         window.open(explorerUrl, '_blank');
                                       }}
-                                      className="h-6 px-2 text-xs"
+                                      className="h-5 px-1 text-xs"
                                     >
-                                      <ExternalLink className="h-3 w-3 mr-1" />
-                                      View
+                                      <ExternalLink className="h-2 w-2" />
                                     </Button>
                                   </div>
                                 </div>
-                                <div className="text-xs text-green-600 font-mono bg-green-100 p-2 rounded break-all">
+                                <div className="text-xs text-green-600 font-mono bg-green-100 p-1 rounded break-all">
                                   {booking.refund_tx_hash}
                                 </div>
                                 {booking.refunded_at && (
                                   <div className="text-xs text-green-600">
-                                    Processed on {format(new Date(booking.refunded_at), 'MMM d, yyyy')}
+                                    {format(new Date(booking.refunded_at), 'MMM d')}
                                   </div>
                                 )}
                               </div>
                             </div>
                           ) : (
-                            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                              <div className="flex items-center gap-2">
-                                <RefreshCcw className="h-4 w-4 text-yellow-600" />
-                                <span className="text-sm text-yellow-700">
-                                  Refund processing in progress. You will be notified when the refund transaction is completed.
+                            <div className="p-1 bg-yellow-50 border border-yellow-200 rounded">
+                              <div className="flex items-center gap-1">
+                                <RefreshCcw className="h-3 w-3 text-yellow-600" />
+                                <span className="text-xs text-yellow-700">
+                                  Refund processing...
                                 </span>
                               </div>
                             </div>
