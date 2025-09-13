@@ -313,37 +313,11 @@ export const BookingManagement = () => {
       }
 
       // Update booking status to rejected_by_creator
+      // Note: Database trigger will automatically send notifications to client and admin
       await updateBookingStatus.mutateAsync({
         bookingId,
         status: 'rejected_by_creator'
       });
-
-      // Send notifications to client and admin
-      if (booking.client_id) {
-        await supabase.rpc('create_notification', {
-          p_user_id: booking.client_id,
-          p_type: 'booking_rejected',
-          p_title: 'Creator Rejected Work',
-          p_message: 'The creator has rejected your booking. You will receive a refund with a 5% platform fee.'
-        });
-      }
-
-      // Notify admin
-      const { data: adminUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('role', 'admin')
-        .limit(1)
-        .single();
-
-      if (adminUser) {
-        await supabase.rpc('create_notification', {
-          p_user_id: adminUser.id,
-          p_type: 'admin_booking_rejected',
-          p_title: 'Creator Rejected Booking',
-          p_message: 'A creator has rejected a booking. This booking requires a refund with 5% platform fee.'
-        });
-      }
 
       toast.success('Work rejected successfully. Client will be notified.');
     } catch (error) {
