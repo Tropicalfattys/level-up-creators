@@ -75,6 +75,14 @@ const FAQ = () => {
     {
       question: "What are the common mistakes to avoid in influencer marketing?",
       answer: "Common mistakes in influencer marketing include failing to define clear campaign objectives and expectations and neglecting to communicate changes in objectives, timelines, and other aspects that affect the outcome of the campaign. Another major downfall to many influencer marketing campaigns is the expectation that every campaign is going to hit your KPIs when in reality, brands should focus on collecting feedback and data so that they can constantly iterate on campaign objectives and angles until they hit their desired KPIs. It is heavily recommended you use the \"FREE\" chat function prior to and while engaging services from ANY creator to ensure your goals are clear!"
+    },
+    {
+      question: "What is the verification process?",
+      answer: "The verification process is available to pro creators only and allows them to verify Their social media platforms and connect them to their user profile inside of the Leveled Up application thus bolstering trust within the application itself. This process is free and only requires the pro creator to post their unique referral link on their social media platforms like Twitter, Facebook or Instagram to be verified by the admin team in order to receive their blue checkmark. The red checkmark is only available to admin and staff of Leveled Up."
+    },
+    {
+      question: "Can creators reject a service from a particular client?",
+      answer: "Yes, creators always have the choice to fulfill a service or reject the service. It is totally at their discretion and will not be held against their profile reputation (reviews or rankings) in the event that they refuse a service. The client who booked the service and is ultimately refused by the creator will receive a refund of 95% of the original amount they paid (minus the 5% that went to the platform for Blockchain fees) and the refund will go to the wallet address they have on file in their profile settings that corresponds with how they made the original payment."
     }
   ];
 
