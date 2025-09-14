@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift, DollarSign } from 'lucide-react';
+import { Copy, Users, Facebook, Twitter, MessageCircle, Linkedin, Instagram, Gift, DollarSign, ExternalLink, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { ReferralStats } from './ReferralStats';
 import { ReferralSuccessful } from './ReferralSuccessful';
 import { CashOutModal } from './CashOutModal';
@@ -23,6 +24,25 @@ export const ReferralSystem = () => {
   const [isCashOutModalOpen, setIsCashOutModalOpen] = useState(false);
   const { user, userProfile } = useAuth();
   const isMobile = useIsMobile();
+
+  // Fetch user's cash-out requests
+  const { data: userCashOutRequests } = useQuery({
+    queryKey: ['user-cashout-requests', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('referral_cashouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('requested_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
 
   const copyReferralCode = () => {
     if (!userProfile?.referral_code) return;
@@ -59,6 +79,16 @@ export const ReferralSystem = () => {
     };
 
     window.open(urls[platform as keyof typeof urls], '_blank');
+  };
+
+  const getExplorerUrl = (network: string, txHash: string) => {
+    const explorers = {
+      ethereum: `https://etherscan.io/tx/${txHash}`,
+      base: `https://basescan.org/tx/${txHash}`,
+      solana: `https://explorer.solana.com/tx/${txHash}`,
+      bsc: `https://bscscan.com/tx/${txHash}`
+    };
+    return explorers[network as keyof typeof explorers];
   };
 
   if (!user) return null;
@@ -296,6 +326,47 @@ export const ReferralSystem = () => {
               {(userProfile?.referral_credits || 0) >= 10 ? 'Cash Out Now' : 'Cash Out (Min $10)'}
             </Button>
           </div>
+
+          {/* Transaction History */}
+          {userCashOutRequests && userCashOutRequests.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Recent Cash-Out Requests</h4>
+              <div className="space-y-2">
+                {userCashOutRequests.map((request) => (
+                  <div key={request.id} className="bg-muted rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={request.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                          {request.status === 'completed' ? (
+                            <><CheckCircle className="h-3 w-3 mr-1" /> Completed</>
+                          ) : (
+                            <><Clock className="h-3 w-3 mr-1" /> Pending</>
+                          )}
+                        </Badge>
+                        <span className="text-sm font-medium">${request.credit_amount}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(request.requested_at), 'MMM dd')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{request.selected_currency} • {request.selected_network}</span>
+                      {request.tx_hash && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => window.open(getExplorerUrl(request.selected_network, request.tx_hash!), '_blank')}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

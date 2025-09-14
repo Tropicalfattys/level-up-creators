@@ -44,31 +44,19 @@ export const CashOutManagement = () => {
   const { data: cashOutRequests, isLoading } = useQuery({
     queryKey: ['admin-cashout-requests', searchTerm],
     queryFn: async () => {
-      let query = supabase
+      let baseQuery = supabase
         .from('referral_cashouts')
         .select(`
-          id,
-          user_id,
-          credit_amount,
-          selected_currency,
-          selected_network,
-          payout_address,
-          status,
-          tx_hash,
-          requested_at,
-          processed_at,
-          processed_by,
-          created_at,
-          updated_at,
-          users!referral_cashouts_user_id_fkey(handle, email)
+          *,
+          users!inner(handle, email)
         `);
 
       if (searchTerm.trim()) {
         // Search by user handle, email, or transaction hash
-        query = query.or(`users.handle.ilike.%${searchTerm}%,users.email.ilike.%${searchTerm}%,tx_hash.ilike.%${searchTerm}%`);
+        baseQuery = baseQuery.or(`users.handle.ilike.%${searchTerm}%,users.email.ilike.%${searchTerm}%,tx_hash.ilike.%${searchTerm}%`);
       }
 
-      const { data, error } = await query
+      const { data, error } = await baseQuery
         .order('requested_at', { ascending: false })
         .limit(50);
 
