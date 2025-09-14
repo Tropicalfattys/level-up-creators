@@ -28,6 +28,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
       case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'payment_rejected': return 'destructive';
+      case 'payment_resubmitted': return 'default';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -38,7 +39,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
 
   const getStatusProgress = (status: string, workStarted: boolean = false) => {
     // 4-step process: paid -> work started -> delivered -> accepted/released
-    if (status === 'pending' || status === 'payment_rejected' || status === 'rejected_by_creator') return 0;
+    if (status === 'pending' || status === 'payment_rejected' || status === 'payment_resubmitted' || status === 'rejected_by_creator') return 0;
     if (status === 'paid') return workStarted ? 2 : 1;
     if (status === 'delivered') return 3;
     if (status === 'accepted' || status === 'released') return 4;
@@ -78,12 +79,15 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
           <div>
             <p className="text-sm font-medium capitalize flex items-center gap-2">
               <Badge variant={getStatusColor(booking.status)}>
-                {booking.status === 'paid' && isWorkStarted ? 'Work Started' : booking.status.replace('_', ' ')}
+                {booking.status === 'paid' && isWorkStarted ? 'Work Started' : 
+                 booking.status === 'payment_resubmitted' ? 'payment resubmitted' :
+                 booking.status.replace('_', ' ')}
               </Badge>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {booking.status === 'pending' && 'Waiting for payment confirmation'}
               {booking.status === 'payment_rejected' && 'Payment was rejected - please try again'}
+              {booking.status === 'payment_resubmitted' && 'Payment re-submitted - waiting for admin verification'}
               {booking.status === 'paid' && !isWorkStarted && 'Creator will start work soon'}
               {booking.status === 'paid' && isWorkStarted && 'Creator is working on your project'}
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
@@ -136,6 +140,16 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                 Retry Payment
               </Button>
             </div>
+          </div>
+        )}
+
+        {booking.status === 'payment_resubmitted' && (
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
+            <div>
+              <p className="text-sm font-medium text-blue-800">Payment Re-submitted</p>
+              <p className="text-xs text-blue-600">Payment re-submitted - waiting for admin verification</p>
+            </div>
+            <Clock className="h-4 w-4 text-blue-600" />
           </div>
         )}
         

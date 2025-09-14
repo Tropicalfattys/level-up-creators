@@ -128,6 +128,34 @@ export const PaymentInstructions = ({
           .single();
 
         if (error) throw error;
+
+        // If this is a payment retry for existing booking, update booking status and notify client
+        if (bookingId && paymentType === 'service_booking') {
+          // Update booking status to payment_resubmitted
+          const { error: bookingUpdateError } = await supabase
+            .from('bookings')
+            .update({ status: 'payment_resubmitted' })
+            .eq('id', bookingId);
+
+          if (bookingUpdateError) {
+            console.error('Failed to update booking status:', bookingUpdateError);
+          }
+
+          // Create notification for client
+          const { error: notificationError } = await supabase
+            .rpc('create_notification', {
+              p_user_id: user.id,
+              p_type: 'payment_resubmitted',
+              p_title: 'Payment Re-submitted',
+              p_message: 'Your payment has been re-submitted successfully! Please wait for admin verification to ensure your payment is processed.',
+              p_booking_id: bookingId
+            });
+
+          if (notificationError) {
+            console.error('Failed to create notification:', notificationError);
+          }
+        }
+
         return { payment: data, booking: null };
       }
     },
