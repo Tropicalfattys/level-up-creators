@@ -176,7 +176,7 @@ export default function CreatorDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
+                    <p className="text-sm font-medium text-muted-foreground">Net Earnings</p>
                     <p className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
                   </div>
                   <DollarSign className="h-8 w-8 text-yellow-500" />
