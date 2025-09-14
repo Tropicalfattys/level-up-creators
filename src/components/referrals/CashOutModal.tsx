@@ -22,6 +22,13 @@ export const CashOutModal = ({ open, onOpenChange, availableCredits }: CashOutMo
   const [selectedCurrency, setSelectedCurrency] = useState<string>('');
   const [selectedNetwork, setSelectedNetwork] = useState<string>('');
   const [selectedWallet, setSelectedWallet] = useState<string>('');
+
+  // Handle currency change and reset network/wallet
+  const handleCurrencyChange = (currency: string) => {
+    setSelectedCurrency(currency);
+    setSelectedNetwork('');
+    setSelectedWallet('');
+  };
   const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
 
@@ -109,8 +116,31 @@ export const CashOutModal = ({ open, onOpenChange, availableCredits }: CashOutMo
     if (selectedNetwork === 'bsc' && userProfile.payout_address_bsc) {
       wallets.push({ label: 'BSC Wallet', value: userProfile.payout_address_bsc });
     }
+    if (selectedNetwork === 'sui' && userProfile.payout_address_sui) {
+      wallets.push({ label: 'SUI Wallet', value: userProfile.payout_address_sui });
+    }
+    if (selectedNetwork === 'cardano' && userProfile.payout_address_cardano) {
+      wallets.push({ label: 'Cardano Wallet', value: userProfile.payout_address_cardano });
+    }
     
     return wallets;
+  };
+
+  // Get available networks based on selected currency
+  const getAvailableNetworks = () => {
+    if (selectedCurrency === 'USDC') {
+      return [
+        { value: 'ethereum', label: 'Ethereum' },
+        { value: 'solana', label: 'Solana' },
+        { value: 'bsc', label: 'BSC (Binance Smart Chain)' },
+        { value: 'sui', label: 'SUI' }
+      ];
+    } else if (selectedCurrency === 'USDM') {
+      return [
+        { value: 'cardano', label: 'Cardano' }
+      ];
+    }
+    return [];
   };
 
   const walletOptions = getWalletOptions();
@@ -154,32 +184,35 @@ export const CashOutModal = ({ open, onOpenChange, availableCredits }: CashOutMo
               {/* Currency Selection */}
               <div className="space-y-2">
                 <Label htmlFor="currency">Select Currency</Label>
-                <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <Select value={selectedCurrency} onValueChange={handleCurrencyChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose USDC or USDM" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="USDC">USDC (USD Coin)</SelectItem>
-                    <SelectItem value="USDM">USDM (Mountain Protocol USD)</SelectItem>
+                    <SelectItem value="USDM">USDM (Cardano)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Network Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="network">Select Network</Label>
-                <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose blockchain network" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ethereum">Ethereum</SelectItem>
-                    <SelectItem value="base">Base</SelectItem>
-                    <SelectItem value="solana">Solana</SelectItem>
-                    <SelectItem value="bsc">BSC (Binance Smart Chain)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {selectedCurrency && (
+                <div className="space-y-2">
+                  <Label htmlFor="network">Select Network</Label>
+                  <Select value={selectedNetwork} onValueChange={(value) => { setSelectedNetwork(value); setSelectedWallet(''); }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose blockchain network" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableNetworks().map((network) => (
+                        <SelectItem key={network.value} value={network.value}>
+                          {network.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Wallet Address Selection */}
               {selectedNetwork && (
