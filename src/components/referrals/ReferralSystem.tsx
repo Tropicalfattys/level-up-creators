@@ -142,7 +142,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('twitter')}
                 className="justify-start"
               >
-                <Twitter className="h-4 w-4 mr-2" />
+                <Twitter className="h-4 w-4" />
                 Twitter
               </Button>
               <Button
@@ -151,7 +151,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('facebook')}
                 className="justify-start"
               >
-                <Facebook className="h-4 w-4 mr-2" />
+                <Facebook className="h-4 w-4" />
                 Facebook
               </Button>
               <Button
@@ -160,7 +160,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('linkedin')}
                 className="justify-start"
               >
-                <Linkedin className="h-4 w-4 mr-2" />
+                <Linkedin className="h-4 w-4" />
                 LinkedIn
               </Button>
               <Button
@@ -169,7 +169,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('telegram')}
                 className="justify-start"
               >
-                <MessageCircle className="h-4 w-4 mr-2" />
+                <MessageCircle className="h-4 w-4" />
                 Telegram
               </Button>
               <Button
@@ -178,7 +178,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('instagram')}
                 className="justify-start"
               >
-                <Instagram className="h-4 w-4 mr-2" />
+                <Instagram className="h-4 w-4" />
                 Instagram
               </Button>
               <Button
@@ -187,7 +187,7 @@ export const ReferralSystem = () => {
                 onClick={() => shareOnSocial('discord')}
                 className="justify-start"
               >
-                <Users className="h-4 w-4 mr-2" />
+                <Users className="h-4 w-4" />
                 Discord
               </Button>
             </div>
