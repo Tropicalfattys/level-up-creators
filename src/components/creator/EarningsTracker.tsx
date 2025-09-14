@@ -229,7 +229,7 @@ export const EarningsTracker = () => {
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1">
               <DollarSign className="h-4 w-4" />
-              Total Earnings
+              Gross Earnings
             </CardDescription>
           </CardHeader>
           <CardContent>
