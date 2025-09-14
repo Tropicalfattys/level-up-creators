@@ -148,13 +148,28 @@ export const CashOutManagement = () => {
   };
 
   const getExplorerUrl = (network: string, txHash: string) => {
-    const explorers = {
-      ethereum: `https://etherscan.io/tx/${txHash}`,
-      base: `https://basescan.org/tx/${txHash}`,
-      solana: `https://explorer.solana.com/tx/${txHash}`,
-      bsc: `https://bscscan.com/tx/${txHash}`
-    };
-    return explorers[network as keyof typeof explorers];
+    const normalizedNetwork = network.toLowerCase();
+    
+    switch (normalizedNetwork) {
+      case 'ethereum':
+      case 'eth':
+        return `https://etherscan.io/tx/${txHash}`;
+      case 'base':
+        return `https://basescan.org/tx/${txHash}`;
+      case 'bsc':
+      case 'binance':
+        return `https://bscscan.com/tx/${txHash}`;
+      case 'solana':
+      case 'sol':
+        return `https://solscan.io/tx/${txHash}`;
+      case 'sui':
+        return `https://suiscan.xyz/mainnet/tx/${txHash}`;
+      case 'cardano':
+      case 'ada':
+        return `https://cardanoscan.io/transaction/${txHash}`;
+      default:
+        return `https://etherscan.io/tx/${txHash}`;
+    }
   };
 
   return (
