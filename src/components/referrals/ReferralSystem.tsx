@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getExplorerUrl } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,15 +82,6 @@ export const ReferralSystem = () => {
     window.open(urls[platform as keyof typeof urls], '_blank');
   };
 
-  const getExplorerUrl = (network: string, txHash: string) => {
-    const explorers = {
-      ethereum: `https://etherscan.io/tx/${txHash}`,
-      base: `https://basescan.org/tx/${txHash}`,
-      solana: `https://explorer.solana.com/tx/${txHash}`,
-      bsc: `https://bscscan.com/tx/${txHash}`
-    };
-    return explorers[network as keyof typeof explorers];
-  };
 
   if (!user) return null;
 
