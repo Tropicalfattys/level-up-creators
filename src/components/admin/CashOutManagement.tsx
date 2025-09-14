@@ -48,7 +48,7 @@ export const CashOutManagement = () => {
         .from('referral_cashouts')
         .select(`
           *,
-          users!referral_cashouts_user_id_fkey(handle, email)
+          users(handle, email)
         `);
 
       if (searchTerm.trim()) {
