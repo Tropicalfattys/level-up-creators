@@ -63,6 +63,7 @@ export default function Services() {
             handle: service.creator_handle || 'Unknown',
             avatar_url: service.creator_avatar_url || '',
             verified: service.creator_verified || false,
+            role: service.creator_role || 'client',
           }
         }
       }));
