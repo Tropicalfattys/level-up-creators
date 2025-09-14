@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AdminBadge } from '@/components/ui/admin-badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Star, Clock, DollarSign } from 'lucide-react';
@@ -65,6 +66,7 @@ export const ServiceCard = ({ service, onSelect }: ServiceCardProps) => {
                 @{service.creator.users.handle}
               </Link>
               <VerificationBadge verified={service.creator.users.verified} role={service.creator.users.role} />
+              <AdminBadge role={service.creator.users.role} />
             </span>
             {service.creator.rating && (
               <div className="flex items-center gap-1">
