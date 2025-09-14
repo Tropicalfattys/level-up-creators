@@ -399,7 +399,7 @@ export const CashOutManagement = () => {
 
       {/* Process Cash-Out Dialog */}
       <Dialog open={isProcessDialogOpen} onOpenChange={setIsProcessDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Process Cash-Out Request</DialogTitle>
             <DialogDescription>
@@ -414,33 +414,40 @@ export const CashOutManagement = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Request Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">User:</span>
-                    <span className="font-medium">@{selectedRequest.user?.handle}</span>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between sm:flex-col sm:items-start">
+                        <span className="text-muted-foreground">User:</span>
+                        <span className="font-medium">@{selectedRequest.user?.handle}</span>
+                      </div>
+                      <div className="flex justify-between sm:flex-col sm:items-start">
+                        <span className="text-muted-foreground">Amount:</span>
+                        <span className="font-medium">${selectedRequest.credit_amount}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between sm:flex-col sm:items-start">
+                        <span className="text-muted-foreground">Currency:</span>
+                        <Badge variant="outline">{selectedRequest.selected_currency}</Badge>
+                      </div>
+                      <div className="flex justify-between sm:flex-col sm:items-start">
+                        <span className="text-muted-foreground">Network:</span>
+                        <Badge variant="outline">{selectedRequest.selected_network}</Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-medium">${selectedRequest.credit_amount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Currency:</span>
-                    <Badge variant="outline">{selectedRequest.selected_currency}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Network:</span>
-                    <Badge variant="outline">{selectedRequest.selected_network}</Badge>
-                  </div>
-                  <div className="grid gap-2">
+                  <div className="space-y-2">
                     <span className="text-muted-foreground">Payout Address:</span>
                     <div className="flex items-center gap-2">
-                      <code className="text-xs bg-muted p-1 rounded flex-1 truncate">
+                      <code className="text-xs bg-muted p-2 rounded flex-1 break-all">
                         {selectedRequest.payout_address}
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => copyToClipboard(selectedRequest.payout_address, 'Wallet address')}
+                        className="shrink-0"
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -467,7 +474,7 @@ export const CashOutManagement = () => {
               </Alert>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <Button
                   onClick={() => processRequestMutation.mutate({ 
                     requestId: selectedRequest.id, 
@@ -485,6 +492,7 @@ export const CashOutManagement = () => {
                     setTxHash('');
                     setSelectedRequest(null);
                   }}
+                  className="flex-1 sm:flex-initial"
                 >
                   Cancel
                 </Button>
