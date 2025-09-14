@@ -40,33 +40,48 @@ export const CashOutManagement = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  // Fetch cash-out requests
+  // Fetch cash-out requests using two-query approach
   const { data: cashOutRequests, isLoading } = useQuery({
     queryKey: ['admin-cashout-requests', searchTerm],
     queryFn: async () => {
-      let baseQuery = supabase
+      // First query: Get all referral_cashouts
+      const { data: cashoutData, error: cashoutError } = await supabase
         .from('referral_cashouts')
-        .select(`
-          *,
-          users(handle, email)
-        `);
-
-      if (searchTerm.trim()) {
-        // Search by user handle, email, or transaction hash
-        baseQuery = baseQuery.or(`users.handle.ilike.%${searchTerm}%,users.email.ilike.%${searchTerm}%,tx_hash.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await baseQuery
+        .select('*')
         .order('requested_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      return (data || []).map((item: any) => ({
-        ...item,
-        user: item.users || null
-      })) as CashOutRequest[];
+      if (cashoutError) throw cashoutError;
+      if (!cashoutData || cashoutData.length === 0) return [];
+
+      // Second query: Get users data for the user_ids
+      const userIds = cashoutData.map(request => request.user_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, handle, email')
+        .in('id', userIds);
+
+      if (usersError) throw usersError;
+
+      // Merge data in JavaScript
+      const requestsWithUsers = cashoutData.map(request => ({
+        ...request,
+        user: usersData?.find(user => user.id === request.user_id) || null
+      }));
+
+      // Apply search filter if needed
+      if (searchTerm.trim()) {
+        return requestsWithUsers.filter(request => {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            request.user?.handle?.toLowerCase().includes(searchLower) ||
+            request.user?.email?.toLowerCase().includes(searchLower) ||
+            request.tx_hash?.toLowerCase().includes(searchLower)
+          );
+        });
+      }
+
+      return requestsWithUsers as CashOutRequest[];
     }
   });
 
