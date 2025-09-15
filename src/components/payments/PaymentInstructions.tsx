@@ -133,10 +133,10 @@ export const PaymentInstructions = ({
         if (bookingId && paymentType === 'service_booking') {
           console.log('Processing payment retry for booking:', bookingId);
           
-          // Update booking status to payment_resubmitted
+          // Update booking status back to pending for retry
           const { error: bookingUpdateError } = await supabase
             .from('bookings')
-            .update({ status: 'payment_resubmitted' })
+            .update({ status: 'pending' })
             .eq('id', bookingId);
 
           if (bookingUpdateError) {
@@ -144,7 +144,7 @@ export const PaymentInstructions = ({
             throw new Error('Failed to update booking status: ' + bookingUpdateError.message);
           }
 
-          console.log('Successfully updated booking status to payment_resubmitted');
+          console.log('Successfully updated booking status to pending for retry');
 
           // Create notification for client
           const { error: notificationError } = await supabase
