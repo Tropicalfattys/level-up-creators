@@ -45,7 +45,6 @@ interface BookingWithDetails {
     handle: string;
     avatar_url?: string;
   } | null;
-  payments?: Array<{ id: string; status: string; created_at: string }>;
 }
 
 export const ClientBookings = () => {
@@ -83,8 +82,7 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creator:users!bookings_creator_id_fkey (id, handle, avatar_url),
-          payments (id, status, created_at)
+          creator:users!bookings_creator_id_fkey (id, handle, avatar_url)
         `)
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
@@ -150,7 +148,7 @@ export const ClientBookings = () => {
     
     return {
       all: safeBookings.length,
-      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected').length,
+      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected' || b.status === 'payment_resubmitted').length,
       delivered: safeBookings.filter(b => b.status === 'delivered').length,
       completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
       refunded: safeBookings.filter(b => b.status === 'rejected_by_creator' || b.status === 'refunded').length,
@@ -164,7 +162,7 @@ export const ClientBookings = () => {
     if (status === 'all') return safeBookings;
     
     if (status === 'active') {
-      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid' || booking.status === 'payment_rejected');
+      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid' || booking.status === 'payment_rejected' || booking.status === 'payment_resubmitted');
     }
     if (status === 'delivered') {
       return safeBookings.filter(booking => booking.status === 'delivered');
@@ -184,6 +182,7 @@ export const ClientBookings = () => {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'payment_rejected': return 'destructive';
+      case 'payment_resubmitted': return 'default';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
