@@ -37,6 +37,7 @@ interface BookingWithDetails {
   proof_links?: Array<{ url: string; label: string }>;
   work_started_at?: string;
   deliveryNote?: string;
+  payment_count?: number;
   services: {
     title: string;
   } | null;
@@ -82,7 +83,8 @@ export const ClientBookings = () => {
         .select(`
           *,
           services (title),
-          creator:users!bookings_creator_id_fkey (id, handle, avatar_url)
+          creator:users!bookings_creator_id_fkey (id, handle, avatar_url),
+          payments (id)
         `)
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
@@ -122,6 +124,7 @@ export const ClientBookings = () => {
         return {
           ...booking,
           deliveryNote,
+          payment_count: Array.isArray(booking.payments) ? booking.payments.length : 0,
           proof_links: Array.isArray(booking.proof_links) 
             ? booking.proof_links.map((link: any) => ({
                 url: typeof link === 'string' ? link : link.url || '',
@@ -148,7 +151,7 @@ export const ClientBookings = () => {
     
     return {
       all: safeBookings.length,
-      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected' || b.status === 'payment_resubmitted').length,
+      active: safeBookings.filter(b => b.status === 'pending' || b.status === 'paid' || b.status === 'payment_rejected').length,
       delivered: safeBookings.filter(b => b.status === 'delivered').length,
       completed: safeBookings.filter(b => b.status === 'accepted' || b.status === 'released').length,
       refunded: safeBookings.filter(b => b.status === 'rejected_by_creator' || b.status === 'refunded').length,
@@ -162,7 +165,7 @@ export const ClientBookings = () => {
     if (status === 'all') return safeBookings;
     
     if (status === 'active') {
-      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid' || booking.status === 'payment_rejected' || booking.status === 'payment_resubmitted');
+      return safeBookings.filter(booking => booking.status === 'pending' || booking.status === 'paid' || booking.status === 'payment_rejected');
     }
     if (status === 'delivered') {
       return safeBookings.filter(booking => booking.status === 'delivered');
@@ -182,7 +185,6 @@ export const ClientBookings = () => {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'payment_rejected': return 'destructive';
-      case 'payment_resubmitted': return 'default';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -483,6 +485,14 @@ export const ClientBookings = () => {
                             </p>
                           </div>
                         )}
+                        {booking.status === 'pending' && (booking.payment_count || 0) > 1 && (
+                          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-200">
+                            <Clock className="h-4 w-4 text-blue-600" />
+                            <p className="text-sm text-blue-800">
+                              Payment re-submitted - waiting for admin verification
+                            </p>
+                          </div>
+                        )}
                         {booking.status === 'payment_rejected' && (
                           <div className="flex items-center gap-2 p-2 bg-red-50 rounded border border-red-200">
                             <AlertCircle className="h-4 w-4 text-red-600" />
@@ -491,14 +501,16 @@ export const ClientBookings = () => {
                                 Payment was rejected - please try again
                               </p>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => setRetryPaymentBookingId(booking.id)}
-                              className="ml-2"
-                            >
-                              <RefreshCcw className="h-3 w-3 mr-1" />
-                              Retry Payment
-                            </Button>
+                            {(booking.payment_count || 0) <= 1 && (
+                              <Button
+                                size="sm"
+                                onClick={() => setRetryPaymentBookingId(booking.id)}
+                                className="ml-2"
+                              >
+                                <RefreshCcw className="h-3 w-3 mr-1" />
+                                Retry Payment
+                              </Button>
+                            )}
                           </div>
                         )}
                         {(booking.status === 'accepted' || booking.status === 'released') && (

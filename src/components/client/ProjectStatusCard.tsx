@@ -19,16 +19,16 @@ interface ProjectStatusCardProps {
   onDispute?: () => void;
   onRetryPayment?: () => void;
   isLoading?: boolean;
+  paymentCount?: number;
 }
 
-export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment, isLoading }: ProjectStatusCardProps) => {
+export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment, isLoading, paymentCount = 0 }: ProjectStatusCardProps) => {
   const isMobile = useIsMobile();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'secondary';
       case 'paid': return 'default';
       case 'payment_rejected': return 'destructive';
-      case 'payment_resubmitted': return 'default';
       case 'delivered': return 'outline';
       case 'accepted': return 'outline';
       case 'released': return 'outline';
@@ -39,7 +39,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
 
   const getStatusProgress = (status: string, workStarted: boolean = false) => {
     // 4-step process: paid -> work started -> delivered -> accepted/released
-    if (status === 'pending' || status === 'payment_rejected' || status === 'payment_resubmitted' || status === 'rejected_by_creator') return 0;
+    if (status === 'pending' || status === 'payment_rejected' || status === 'rejected_by_creator') return 0;
     if (status === 'paid') return workStarted ? 2 : 1;
     if (status === 'delivered') return 3;
     if (status === 'accepted' || status === 'released') return 4;
@@ -48,6 +48,7 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
 
   const isWorkStarted = !!booking.work_started_at;
   const currentProgress = getStatusProgress(booking.status, isWorkStarted);
+  const isPaymentRetried = paymentCount > 1 && booking.status === 'pending';
 
   return (
     <div className="border rounded-lg p-4 bg-muted/20">
@@ -80,14 +81,14 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
             <p className="text-sm font-medium capitalize flex items-center gap-2">
               <Badge variant={getStatusColor(booking.status)}>
                 {booking.status === 'paid' && isWorkStarted ? 'Work Started' : 
-                 booking.status === 'payment_resubmitted' ? 'payment resubmitted' :
+                 isPaymentRetried ? 'Payment Re-submitted' :
                  booking.status.replace('_', ' ')}
               </Badge>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {booking.status === 'pending' && 'Waiting for payment confirmation'}
+              {booking.status === 'pending' && !isPaymentRetried && 'Waiting for payment confirmation'}
+              {booking.status === 'pending' && isPaymentRetried && 'Payment re-submitted - waiting for admin verification'}
               {booking.status === 'payment_rejected' && 'Payment was rejected - please try again'}
-              {booking.status === 'payment_resubmitted' && 'Payment re-submitted - waiting for admin verification'}
               {booking.status === 'paid' && !isWorkStarted && 'Creator will start work soon'}
               {booking.status === 'paid' && isWorkStarted && 'Creator is working on your project'}
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
@@ -102,13 +103,23 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
 
       {/* Status-Specific Content */}
       <div className="space-y-4">
-        {booking.status === 'pending' && (
+        {booking.status === 'pending' && !isPaymentRetried && (
           <div className="flex items-center justify-between p-3 bg-yellow-50 rounded border border-yellow-200">
             <div>
               <p className="text-sm font-medium text-yellow-800">Payment Pending</p>
               <p className="text-xs text-yellow-600">Waiting for payment confirmation</p>
             </div>
             <Clock className="h-4 w-4 text-yellow-600" />
+          </div>
+        )}
+
+        {booking.status === 'pending' && isPaymentRetried && (
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
+            <div>
+              <p className="text-sm font-medium text-blue-800">Payment Re-submitted</p>
+              <p className="text-xs text-blue-600">Payment re-submitted - waiting for admin verification</p>
+            </div>
+            <Clock className="h-4 w-4 text-blue-600" />
           </div>
         )}
         
@@ -140,16 +151,6 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
                 Retry Payment
               </Button>
             </div>
-          </div>
-        )}
-
-        {booking.status === 'payment_resubmitted' && (
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
-            <div>
-              <p className="text-sm font-medium text-blue-800">Payment Re-submitted</p>
-              <p className="text-xs text-blue-600">Payment re-submitted - waiting for admin verification</p>
-            </div>
-            <Clock className="h-4 w-4 text-blue-600" />
           </div>
         )}
         
