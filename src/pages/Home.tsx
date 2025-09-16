@@ -625,8 +625,8 @@ export default function Home() {
           
           <div className="flex items-center justify-center space-x-4">
             <a 
-              href="https://twitter.com/RULeveledUP" 
-              target="_blank" 
+              href="https://x.com/Ruleveled_Up" 
+              target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-80 transition-opacity"
             >
