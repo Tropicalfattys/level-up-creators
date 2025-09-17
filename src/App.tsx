@@ -30,6 +30,7 @@ import { AuthPage } from '@/components/auth/AuthPage';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import Notifications from '@/pages/Notifications';
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +150,9 @@ function App() {
                       </ProtectedRoute>
                     } 
                   />
+                  
+                  {/* Catch-all route for 404 pages */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
               <Footer />
