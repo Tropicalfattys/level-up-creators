@@ -69,6 +69,7 @@ export const AdminPayouts = () => {
   const [selectedTab, setSelectedTab] = useState("pending");
   const [txHashes, setTxHashes] = useState<Record<string, string>>({});
   const [refundTxHashes, setRefundTxHashes] = useState<Record<string, string>>({});
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
@@ -446,25 +447,34 @@ export const AdminPayouts = () => {
     return { status: 'in_progress', label: 'Work In Progress', variant: 'secondary' as const };
   };
 
-  // Filter based on whether payout_tx_hash exists and exclude refunded bookings from pending
-  const pendingPayouts = payouts?.filter(p => !p.payout_tx_hash && p.booking_status !== 'refunded') || [];
-  const completedPayouts = payouts?.filter(p => p.payout_tx_hash) || [];
+  // Sort helper function
+  const sortByDate = <T extends { created_at: string }>(array: T[]) => {
+    return [...array].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  };
+
+  // Filter based on whether payout_tx_hash exists and exclude refunded bookings from pending - with sorting
+  const pendingPayouts = sortByDate(payouts?.filter(p => !p.payout_tx_hash && p.booking_status !== 'refunded') || []);
+  const completedPayouts = sortByDate(payouts?.filter(p => p.payout_tx_hash) || []);
   
-  // Get refunded payment records to show in refunds tab
-  const refundedPayments = payouts?.filter(p => p.booking_status === 'refunded') || [];
+  // Get refunded payment records to show in refunds tab - with sorting
+  const refundedPayments = sortByDate(payouts?.filter(p => p.booking_status === 'refunded') || []);
   
-  // Separate dispute refunds from rejected bookings
-  const disputeRefunds = refunds?.filter(r => r.refund_type === 'dispute') || [];
-  const rejectedBookings = refunds?.filter(r => r.refund_type === 'rejection') || [];
+  // Separate dispute refunds from rejected bookings - with sorting
+  const disputeRefunds = sortByDate(refunds?.filter(r => r.refund_type === 'dispute') || []);
+  const rejectedBookings = sortByDate(refunds?.filter(r => r.refund_type === 'rejection') || []);
   
-  const pendingDisputeRefunds = disputeRefunds.filter(r => !r.refund_tx_hash);
-  const completedDisputeRefunds = disputeRefunds.filter(r => r.refund_tx_hash);
-  const pendingRejectedBookings = rejectedBookings.filter(r => !r.refund_tx_hash);
-  const completedRejectedBookings = rejectedBookings.filter(r => r.refund_tx_hash);
+  const pendingDisputeRefunds = sortByDate(disputeRefunds.filter(r => !r.refund_tx_hash));
+  const completedDisputeRefunds = sortByDate(disputeRefunds.filter(r => r.refund_tx_hash));
+  const pendingRejectedBookings = sortByDate(rejectedBookings.filter(r => !r.refund_tx_hash));
+  const completedRejectedBookings = sortByDate(rejectedBookings.filter(r => r.refund_tx_hash));
   
-  // Keep legacy variables for compatibility
-  const pendingRefunds = refunds?.filter(r => !r.refund_tx_hash) || [];
-  const completedRefunds = refunds?.filter(r => r.refund_tx_hash) || [];
+  // Keep legacy variables for compatibility - with sorting
+  const pendingRefunds = sortByDate(refunds?.filter(r => !r.refund_tx_hash) || []);
+  const completedRefunds = sortByDate(refunds?.filter(r => r.refund_tx_hash) || []);
 
   const PayoutCard = ({ payout, isPending }: { payout: PayoutRecord; isPending: boolean }) => {
     const workStatus = getWorkStatus(payout);
@@ -842,6 +852,20 @@ export const AdminPayouts = () => {
                 </TabsTrigger>
               </TabsList>
             )}
+
+            {/* Sort Control */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-medium">Sort by:</span>
+              <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <TabsContent value="pending">
               {isLoading ? (
