@@ -498,7 +498,7 @@ export const ClientBookings = () => {
                             <AlertCircle className="h-4 w-4 text-red-600" />
                             <div className="flex-1">
                               <p className="text-sm text-red-800">
-                                Payment was rejected - please try again
+                                {(booking.payment_count || 0) <= 1 ? 'Payment was rejected - please try again' : 'Payment has been resubmitted - Please wait for verification'}
                               </p>
                             </div>
                             {(booking.payment_count || 0) <= 1 && (
