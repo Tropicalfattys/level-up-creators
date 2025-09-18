@@ -88,7 +88,8 @@ export const ProjectStatusCard = ({ booking, onAccept, onDispute, onRetryPayment
             <p className="text-xs text-muted-foreground mt-1">
               {booking.status === 'pending' && !isPaymentRetried && 'Waiting for payment confirmation'}
               {booking.status === 'pending' && isPaymentRetried && 'Payment re-submitted - waiting for admin verification'}
-              {booking.status === 'payment_rejected' && 'Payment was rejected - please try again'}
+              {booking.status === 'payment_rejected' && paymentCount <= 1 && 'Payment was rejected - please try again'}
+              {booking.status === 'payment_rejected' && paymentCount > 1 && 'Payment has been resubmitted - Please wait for verification'}
               {booking.status === 'paid' && !isWorkStarted && 'Creator will start work soon'}
               {booking.status === 'paid' && isWorkStarted && 'Creator is working on your project'}
               {booking.status === 'delivered' && 'Project delivered - please review and accept'}
