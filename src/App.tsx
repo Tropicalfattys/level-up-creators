@@ -15,6 +15,7 @@ import Contact from '@/pages/Contact';
 import HowItWorks from '@/pages/HowItWorks';
 import FAQ from '@/pages/FAQ';
 import Settings from '@/pages/Settings';
+import Documentation from '@/pages/Documentation';
 import BecomeCreator from '@/pages/BecomeCreator';
 import CreatorDashboard from '@/pages/CreatorDashboard';
 import Index from '@/pages/Index';
@@ -83,6 +84,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Settings />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/documents" 
+                    element={
+                      <ProtectedRoute>
+                        <Documentation />
                       </ProtectedRoute>
                     } 
                   />

@@ -27,7 +27,8 @@ import {
   Copy,
   Gift,
   Share2,
-  Shield
+  Shield,
+  Book
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -367,6 +368,12 @@ export default function Index() {
                     <Link to="/settings">
                       <Settings className="h-4 w-4 mr-2" />
                       Profile Settings
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link to="/documents">
+                      <Book className="h-4 w-4 mr-2" />
+                      Documents
                     </Link>
                   </Button>
                   {!hasCreatorProfile && (
