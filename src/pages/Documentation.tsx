@@ -143,7 +143,7 @@ const Documentation = () => {
                   Welcome to our cryptocurrency-powered creator marketplace! This platform connects clients with verified creators who offer various services including video messages, live AMAs, tweet campaigns, product reviews, and how-to videos.
                 </p>
                 <p>
-                  Our platform operates on a secure escrow system where payments are held for 3 days after delivery, ensuring both clients and creators are protected throughout the transaction process.
+                  Our platform operates on a secure payment protection system where payments are held for 3 days after delivery, ensuring both clients and creators are protected throughout the transaction process.
                 </p>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2 flex items-center">
@@ -153,7 +153,7 @@ const Documentation = () => {
                   <ul className="space-y-1 text-sm">
                     <li>• Cryptocurrency payments only (USDC)</li>
                     <li>• Real-time messaging between clients and creators</li>
-                    <li>• Secure escrow system with 3-day protection period</li>
+                    <li>• Secure payment protection system with 3-day protection period</li>
                     <li>• Creator tiers with different benefits and features</li>
                     <li>• Referral system with $1 credit per successful signup</li>
                   </ul>
@@ -312,7 +312,7 @@ const Documentation = () => {
                     { step: 1, title: "Select Service", desc: "Choose the service you want from the creator's profile" },
                     { step: 2, title: "Review Details", desc: "Check price, delivery time, and service description" },
                     { step: 3, title: "Connect Wallet", desc: "Connect your cryptocurrency wallet (MetaMask, Phantom, etc.)" },
-                    { step: 4, title: "Make Payment", desc: "Send exact USDC amount to secure escrow" },
+                    { step: 4, title: "Make Payment", desc: "Send exact USDC amount to secure payment protection system" },
                     { step: 5, title: "Chat Opens", desc: "Real-time chat automatically opens with the creator" },
                     { step: 6, title: "Delivery", desc: "Creator delivers your service within agreed timeframe" }
                   ].map((item) => (
@@ -337,7 +337,7 @@ const Documentation = () => {
               </h3>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  All payments are made using USDC cryptocurrency and held in secure escrow:
+                  All payments are made using USDC cryptocurrency and held in secure payment protection system:
                 </p>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2 flex items-center">
@@ -345,7 +345,7 @@ const Documentation = () => {
                     Payment Security
                   </h4>
                   <ul className="space-y-1 text-sm">
-                    <li>• Funds held in secure escrow until delivery</li>
+                    <li>• Funds held in secure payment protection system until delivery</li>
                     <li>• 3-day protection period after delivery</li>
                     <li>• Automatic release if no disputes</li>
                     <li>• Full refund available for valid disputes</li>
@@ -419,7 +419,7 @@ const Documentation = () => {
               </h3>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Our escrow system automatically releases funds after 3 days to ensure creators get paid promptly:
+                  Our payment protection system automatically releases funds after 3 days to ensure creators get paid promptly:
                 </p>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">How It Works</h4>
@@ -1035,13 +1035,13 @@ const Documentation = () => {
               </h3>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Our secure escrow system protects both clients and creators throughout every transaction:
+                  Our secure payment protection system protects both clients and creators throughout every transaction:
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <h4 className="font-medium mb-2">For Clients</h4>
                     <ul className="space-y-1 text-sm">
-                      <li>• Funds held in secure escrow</li>
+                      <li>• Funds held in secure payment protection system</li>
                       <li>• Payment only released after delivery</li>
                       <li>• 3-day review period guaranteed</li>
                       <li>• Full refund for valid disputes</li>
